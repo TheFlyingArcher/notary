@@ -20,10 +20,12 @@
                 <MudRadio Value="CertificateFormat.Pkcs12">PKCS #12</MudRadio>
             </MudRadioGroup>
             <MudDivider />
-            <MudTextField @bind-Value="ViewModel.Password" Label="Password" InputType="InputType.Password" Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))"
-                          HelperText="Private Key Password" Disabled="ViewModel.Format!=CertificateFormat.Pkcs12" />
-            <MudTextField @bind-Value="ViewModel.ConfirmPassword" InputType="InputType.Password" Label="Confirm Password" Validation="@(new Func<string, string>(PasswordMatch))"
-                          HelperText="Confirm Password" Disabled="ViewModel.Format!=CertificateFormat.Pkcs12" />
+            <MudTextField @bind-Value="ViewModel.Password" Label="Password" InputType="InputType.Password"
+                Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))"
+                HelperText="Private Key Password" Disabled="ViewModel.Format!=CertificateFormat.Pkcs12" />
+            <MudTextField @bind-Value="ViewModel.ConfirmPassword" InputType="InputType.Password"
+                Label="Confirm Password" Validation="@(new Func<string, string>(PasswordMatch))"
+                HelperText="Confirm Password" Disabled="ViewModel.Format!=CertificateFormat.Pkcs12" />
         </MudForm>
     </DialogContent>
     <DialogActions>

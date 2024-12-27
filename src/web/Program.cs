@@ -43,6 +43,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 builder.Services.AddControllers();
+
 builder.Services.AddAuth0WebAppAuthentication(o =>
 {
     o.Domain = builder.Configuration["Auth0:Domain"];

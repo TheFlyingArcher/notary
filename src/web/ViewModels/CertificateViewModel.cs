@@ -1,4 +1,5 @@
-﻿using Notary.Contract;
+﻿using MudBlazor;
+using Notary.Contract;
 
 namespace Notary.Web.ViewModels
 {
@@ -6,15 +7,21 @@ namespace Notary.Web.ViewModels
     {
         public CertificateViewModel()
         {
-            Issuers = new();
+            Issuer = new DistinguishedName();
+            Issuers = new List<TreeItemData<CertificateIssuerTreeItem>>();
+            KeyUsages = new List<string>();
+            Name = string.Empty;
+            RevocationReason = string.Empty;
             SerialNumber = string.Empty;
             SignatureAlgorithm = string.Empty;
+            Subject = new DistinguishedName();
+            SubjectAlternativeNames = new List<SubjectAlternativeName>();
             Thumbprint = string.Empty;
         }
 
         public EllipticCurve? EllipticCurve { get; set; }
 
-        public bool Expired { get;set; }
+        public bool Expired { get; set; }
 
         public bool Expiring { get; set; }
 
@@ -23,7 +30,7 @@ namespace Notary.Web.ViewModels
             get; set;
         }
 
-        public HashSet<CertificateIssuerTreeItem> Issuers { get; }
+        public List<TreeItemData<CertificateIssuerTreeItem>> Issuers { get; }
 
         public Algorithm KeyAlgorithm { get; set; }
 

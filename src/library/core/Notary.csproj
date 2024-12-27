@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Platforms>AnyCPU;ARM64</Platforms>
   </PropertyGroup>
 
@@ -22,10 +22,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="7.1.0" />
+    <PackageReference Include="Autofac" Version="8.2.0" />
     <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
-    <PackageReference Include="log4net" Version="2.0.15" />
-    <PackageReference Include="MongoDB.Driver" Version="2.23.1" />
+    <PackageReference Include="log4net" Version="3.0.3" />
+    <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Castle.Core" Version="5.1.1" />
     <PackageReference Include="Autofac.Extras.DynamicProxy" Version="7.1.0" />
