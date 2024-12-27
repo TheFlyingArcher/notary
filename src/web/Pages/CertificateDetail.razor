@@ -105,10 +105,9 @@ else if (Model.Subject != null)
     </MudPaper>
     <MudPaper Elevation="25" Class="mt-6">
         <MudText Typo="Typo.h6">Issuer Tree</MudText>
-        <MudTreeView Items="Model.Issuers">
+        <MudTreeView T="CertificateIssuerTreeItem" Items="@Model.Issuers">
             <ItemTemplate>
-                <MudTreeViewItem Value="@context" Items="@context.Children"
-                                 Text="@context.Name" CanExpand="true" />
+                <MudTreeViewItem Items="@context.Children" Value="@context.Value" Text="@context.Value.Name"></MudTreeViewItem>
             </ItemTemplate>
         </MudTreeView>
     </MudPaper>
@@ -259,7 +258,7 @@ else
     protected CertificateViewModel Model { get; } = new();
     protected bool IsLoading { get; set; } = false;
     protected bool NotFound { get; set; } = false;
-    protected string Slug { get; set; }
+    protected string Slug { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -279,26 +278,27 @@ else
         Certificate? c = null;
         AsymmetricKey? key = null;
         RevocatedCertificate? rc = null;
-        await Task.Run(async () =>
-        {
 
-            c = await CertificateService.GetAsync(Slug);
-            if (c == null)
-                return;
-
-            key = await KeyService.GetAsync(c.KeySlug);
-            if (c.RevocationDate.HasValue)
-            {
-                var rcList = await RevokeSvc.GetRevocatedCertificates();
-                rc = rcList.Find(cc => cc.Slug == c.Thumbprint);
-            }
-        });
-
+        c = await CertificateService.GetAsync(Slug);
         if (c == null)
         {
             NotFound = true;
             IsLoading = false;
             return;
+        }
+
+        key = await KeyService.GetAsync(c.KeySlug);
+        if (key == null)
+        {
+            NotFound = true;
+            IsLoading = false;
+            return;
+        }
+
+        if (c.RevocationDate.HasValue)
+        {
+            var rcList = await RevokeSvc.GetRevocatedCertificates();
+            rc = rcList.Find(cc => cc.Slug == c.Thumbprint);
         }
 
         DateTime utcNow = DateTime.UtcNow;
@@ -323,7 +323,7 @@ else
             Model.RevocationReason = rc.Reason.ToString();
         }
 
-        await Task.Run(async () => await PopulateIssuerTree(c.Slug, Model.Issuers));
+        await PopulateIssuerTree(c.Slug);
         IsLoading = false;
     }
 
@@ -345,25 +345,45 @@ else
         };
         var dialog = await DlgService.ShowAsync<RevokeCertificateDialog>("Revoke Certificate", parameters);
         var result = await dialog.Result;
+        if (result == null)
+        {
+            // I don't see this can be null
+            throw new ArgumentNullException(nameof(result));
+        }
+
         if (!result.Canceled)
         {
             NavManager.NavigateTo("/certificates");
         }
     }
 
-    private async Task PopulateIssuerTree(string certificateSlug, HashSet<CertificateIssuerTreeItem> set)
+    private async Task PopulateIssuerTree(string slug, List<TreeItemData<CertificateIssuerTreeItem>> children = null)
     {
-        var certificate = await CertificateService.GetAsync(certificateSlug);
-        if (certificate != null)
+        var certificate = await CertificateService.GetAsync(slug);
+        if (certificate == null)
         {
-            var caItem = new CertificateIssuerTreeItem
-                {
-                    Name = certificate.Name,
-                    Slug = certificate.Slug
-                };
-            set.Add(caItem);
-            if (!string.IsNullOrEmpty(certificate.IssuingSlug))
-                await PopulateIssuerTree(certificate.IssuingSlug, caItem.Children);
+            throw new ArgumentNullException(nameof(certificate));
         }
+
+        var caItem = new CertificateIssuerTreeItem
+        {
+            Name = certificate.Name,
+            Slug = certificate.Slug
+        };
+
+        var rootItem = new TreeItemData<CertificateIssuerTreeItem>()
+        {
+            Value = caItem
+        };
+
+        if (!string.IsNullOrEmpty(certificate.IssuingSlug))
+        {
+            rootItem.Children = new List<TreeItemData<CertificateIssuerTreeItem>>();
+            await PopulateIssuerTree(certificate.IssuingSlug, rootItem.Children);
+        }
+        if (children != null)
+            children.Add(rootItem);
+        else
+            Model.Issuers.Add(rootItem);
     }
 }

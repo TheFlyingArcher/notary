@@ -4,20 +4,18 @@
     {
         public CertificateIssuerTreeItem()
         {
-            Children = new();
+            Name = string.Empty;
+            Slug = string.Empty;
         }
 
         public CertificateIssuerTreeItem(string name, string slug)
         {
             Name = name;
             Slug = slug;
-            Children = new();
         }
 
         public string Name { get; set; }
 
         public string Slug { get; set; }
-
-        public HashSet<CertificateIssuerTreeItem> Children { get; }
     }
 }
