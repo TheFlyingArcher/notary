@@ -5,17 +5,15 @@ using Autofac.Extensions.DependencyInjection;
 
 using log4net;
 
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.Identity.Web;
-using Microsoft.Identity.Web.UI;
 
 using MudBlazor.Services;
 
 using Notary.Configuration;
 using Notary.Service;
 
-using System.Net;
+using System.Reflection;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +24,10 @@ var config = builder.Configuration
 
 if (config == null)
     throw new InvalidOperationException("Configuration not found. Please ensure a configuration file is present.");
+
 builder.Host.ConfigureContainer<ContainerBuilder>(c =>
 {
+    SetEnvironmentVariables(config);
     c.RegisterInstance(config).SingleInstance();
 
     c.Register(r => LogManager.GetLogger(typeof(Program))).As<ILog>().SingleInstance();
@@ -44,11 +44,14 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddControllers();
 
-builder.Services.AddAuth0WebAppAuthentication(o =>
+if (config.OpenId != null)
 {
-    o.Domain = builder.Configuration["Auth0:Domain"];
-    o.ClientId = builder.Configuration["Auth0:ClientId"];
-});
+    builder.Services.AddAuth0WebAppAuthentication(o =>
+    {
+        o.Domain = config.OpenId.Domain;
+        o.ClientId = config.OpenId.ClientId;
+    });
+}
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMudServices();
@@ -82,3 +85,40 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+static void SetEnvironmentVariables(NotaryConfiguration config)
+{
+    if (config == null)
+        throw new ArgumentNullException(nameof(config));
+
+    // Set root environment variables
+    SetPropertiesEnvVariable(config);
+
+    // Set database environment variables
+    SetPropertiesEnvVariable(config.Database);
+
+    // Set OpenID environment variables
+    SetPropertiesEnvVariable(config.OpenId);
+}
+
+static void SetPropertiesEnvVariable<T>(T configType) where T : class
+{
+    if (configType == null)
+        return;
+
+    var type = configType.GetType();
+    var typeProperties = type.GetProperties(BindingFlags.Public);
+
+    foreach (var p in typeProperties)
+    {
+        var attribute = p.GetCustomAttribute<NotaryEnvironmentVariableAttribute>();
+        if (attribute == null)
+            continue;
+
+        var evValue = Environment.GetEnvironmentVariable(attribute.EnvironmentVariable);
+        if (!string.IsNullOrEmpty(evValue))
+        {
+            p.SetValue(type, evValue);
+        }
+    }
+}
