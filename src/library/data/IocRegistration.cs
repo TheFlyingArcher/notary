@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using System;
+using Autofac;
 
 using MongoDB.Driver;
 using Notary.Configuration;
@@ -16,8 +17,19 @@ namespace Notary.Data
             builder.Register(r =>
             {
                 var config = r.Resolve<NotaryConfiguration>();
-                var settings = MongoClientSettings.FromConnectionString(config.Database.ConnectionString);
+
+                //NOTE: This might not work with MongoDB Atlas. Investigate
+                var settings = MongoClientSettings.FromUrl(new MongoUrl(config.Database.Host));
                 settings.ServerApi = new ServerApi(ServerApiVersion.V1);
+
+                if (!string.IsNullOrEmpty(config.Database.Username) && !string.IsNullOrEmpty(string.Empty))
+                {
+                    settings.Credential = MongoCredential.CreateCredential(
+                        "admin", //TODO: Put into configuration
+                        config.Database.Username,
+                        config.Database.Password
+                    );
+                }
 
                 IMongoClient client = new MongoClient(settings);
                 IMongoDatabase db = client.GetDatabase(config.Database.DatabaseName);
