@@ -1,5 +1,4 @@
-﻿@inject NavigationManager NavigationManager
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase // TODO: Figure out why this is needed
 
 <MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="_darkMode" />
 <MudDialogProvider />
@@ -79,36 +78,3 @@
     </AuthorizeView>
 
 </MudLayout>
-
-@code {
-    bool _drawerOpen = true;
-    bool _darkMode = false;
-    private MudThemeProvider? _themeProvider;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender && _themeProvider != null)
-        {
-            _darkMode = await _themeProvider.GetSystemPreference();
-            await _themeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
-            StateHasChanged();
-        }
-    }
-
-    private void OnLoginClick()
-    {
-        NavigationManager.NavigateTo("Authenticate/Login", new NavigationOptions { ForceLoad = true, ReplaceHistoryEntry = true });
-    }
-
-    private Task OnSystemPreferenceChanged(bool newValue)
-    {
-        _darkMode = newValue;
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    void DrawerToggle()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
-}

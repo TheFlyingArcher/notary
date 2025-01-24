@@ -1,22 +1,15 @@
 ﻿@page "/ca"
 @attribute [Authorize(Roles = "NotaryAdmin,NotaryWriter,NotaryUser")]
-@using Notary
-@using Notary.Contract
-@using Notary.Interface.Service
-@using Notary.Web.ViewModels
-@inject IJSRuntime JS
-@inject IDialogService Dialog
-@inject ICertificateAuthorityService CaService
-@inject ICertificateService CertificateService
-@inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-5">
     <AuthorizeView Roles="NotaryAdmin">
         <Authorized>
-            <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Href="/ca/create">Create Certificate Authority</MudButton>
+            <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Href="/ca/create">
+                Create Certificate Authority</MudButton>
         </Authorized>
         <NotAuthorized>
-            <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Disabled="true">Create Certificate Authority</MudButton>
+            <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Disabled="true">
+                Create Certificate Authority</MudButton>
         </NotAuthorized>
     </AuthorizeView>
 </MudContainer>
@@ -34,14 +27,15 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Name">@context.Name</MudTd>
-                    <MudTd DataLabel="Created">@context.Created</MudTd>
-                    <MudTd DataLabel="NotAfter">@context.NotAfter</MudTd>
-                    <MudTd DataLabel="KeyType">@context.KeyAlgorithm</MudTd>
-                    <MudTh>
-                        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small" OnClick="@(()=>OnCertificateDownloadClick(context.CertificateSlug))" />
-                    </MudTh>
-                </RowTemplate>
-            </MudTable>
+                <MudTd DataLabel="Created">@context.Created</MudTd>
+                <MudTd DataLabel="NotAfter">@context.NotAfter</MudTd>
+                <MudTd DataLabel="KeyType">@context.KeyAlgorithm</MudTd>
+                <MudTh>
+                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small"
+                        OnClick="@(()=>OnCertificateDownloadClick(context.CertificateSlug))" />
+                </MudTh>
+            </RowTemplate>
+        </MudTable>
     }
     else
     {
@@ -50,26 +44,3 @@
         </MudAlert>
     }
 </MudContainer>
-@code {
-    private List<CertificateAuthority> CaList { get; set; } = new();
-    private DownloadCertificateViewModel DownloadModel { get; set; } = new();
-    private bool _isLoading;
-
-    protected override async Task OnInitializedAsync()
-    {
-        _isLoading = true;
-        CaList = await CaService.GetAllAsync();
-        _isLoading = false;
-        await base.OnInitializedAsync();
-    }
-
-    private async Task OnCertificateDownloadClick(string slug)
-    {
-        var parameters = new DialogParameters<DownloadCertificateDialog>
-        {
-            { d=> d.Slug, slug }
-        };
-        var dialog = await Dialog.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
-        var result = await dialog.Result;
-    }
-}

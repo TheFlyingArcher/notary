@@ -1,389 +1,320 @@
 ﻿@page "/certificate"
-@attribute [Authorize(Roles = "NotaryAdmin,NotaryWriter,NotaryUser")]
 
-@using Microsoft.AspNetCore.WebUtilities
-
-@using Notary.Contract
-@using Notary.Interface.Service
 @using Notary.Web.ViewModels
-
-@inject ICertificateRevokeService RevokeSvc;
-@inject IAsymmetricKeyService KeyService
-@inject ICertificateAuthorityService CaService
-@inject ICertificateService CertificateService
-@inject IDialogService DlgService
-@inject NavigationManager NavManager
 
 @if (NotFound)
 {
     <MudGrid Class="mt-16">
-        <MudItem xs="12">
-            <MudPaper Elevation="3" Height="12em">
-                <MudStack Class="d-flex align-center flex-grow-1 gap-4">
-                    <MudItem Class="pa-2">
-                        <MudText Typo="Typo.h3" Color="Color.Error">
-                            <i class="fa-sharp fa-solid fa-circle-xmark"></i>
-                        </MudText>
+    <MudItem xs="12">
+        <MudPaper Elevation="3" Height="12em">
+            <MudStack Class="d-flex align-center flex-grow-1 gap-4">
+                <MudItem Class="pa-2">
+                    <MudText Typo="Typo.h3" Color="Color.Error">
+                        <i class="fa-sharp fa-solid fa-circle-xmark"></i>
+                    </MudText>
+                </MudItem>
+                <MudItem Class="pa-2">
+                    The given certificate was not found. Please try again.
+                </MudItem>
+            </MudStack>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+}
+else if (Model.Subject != null)
+{
+    <MudPaper>
+    <MudToolBar Class="mt-4">
+        <MudIconButton Icon="fa-sharp fa-solid fa-arrow-left" Color="Color.Inherit" Href="/certificates" />
+        <MudSpacer />
+        <MudIconButton Icon="fa-sharp fa-solid fa-download" Color="Color.Inherit"
+            Disabled="Model.RevocationDate.HasValue" OnClick="OnCertificateDownloadClick" />
+        <AuthorizeView Roles="NotaryAdmin,NotaryWriter">
+            <Authorized>
+                <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" OnClick="OnRevokeCertificateClick"
+                    Color="Color.Error" Disabled="Model.RevocationDate.HasValue" />
+            </Authorized>
+            <NotAuthorized>
+                <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" Color="Color.Error" Disabled="true" />
+            </NotAuthorized>
+        </AuthorizeView>
+    </MudToolBar>
+</MudPaper>
+    <MudGrid Class="mt-6">
+        <MudItem xs="6">
+            <MudText Typo="Typo.h6">Status</MudText>
+            <MudPaper Class="mt-2 pa-3">
+                <MudStack>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Valid</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.NotBefore to @Model.NotAfter</MudItem>
+                        </MudGrid>
                     </MudItem>
-                    <MudItem Class="pa-2">
-                        The given certificate was not found. Please try again.
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Status</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">
+                                @if (Model.Expired)
+                                {
+                                    <MudText Color="Color.Error">Expired</MudText>
+                                }
+                                else if (Model.Expiring)
+                                {
+                                    <MudText Color="Color.Warning">Expiring</MudText>
+                                }
+                                else if (Model.RevocationDate.HasValue)
+                                {
+                                    <MudText Color="Color.Info">Revoked</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Color="Color.Success">Valid</MudText>
+                                }
+                            </MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    @if (Model.RevocationDate.HasValue)
+                    {
+                        <MudItem Class="pa-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.button">Reason</MudText>
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudText Typo="Typo.button">:</MudText>
+                                </MudItem>
+                                <MudItem xs="8">@Model.RevocationReason</MudItem>
+                            </MudGrid>
+                        </MudItem>
+                    }
+                    @if (Model.KeyAlgorithm == Algorithm.RSA && Model.RsaKeyLength.HasValue)
+                    {
+                        <MudItem Class="pa-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.button">RSA Key Length</MudText>
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudText Typo="Typo.button">:</MudText>
+                                </MudItem>
+                                <MudItem xs="8">@Model.RsaKeyLength.Value</MudItem>
+                            </MudGrid>
+                        </MudItem>
+                    }
+                    else if (Model.KeyAlgorithm == Algorithm.EllipticCurve && Model.EllipticCurve.HasValue)
+                    {
+                        <MudItem Class="pa-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.button">Elliptic Curve</MudText>
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudText Typo="Typo.button">:</MudText>
+                                </MudItem>
+                                <MudItem xs="8">@Model.EllipticCurve</MudItem>
+                            </MudGrid>
+                        </MudItem>
+                    }
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+    <MudGrid class="mt-6">
+        <MudItem xs="6">
+            <MudText Typo="Typo.h6">Subject</MudText>
+            <MudPaper Class="mt-2 pa-3">
+                <MudStack>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Common Name</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Subject.CommonName</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Organization</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Subject.Organization</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Organization Unit</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Subject.OrganizationalUnit</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Locale</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Subject.Locale</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">State</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Subject.StateProvince</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Country</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Subject.Country</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudText Typo="Typo.h6">Issuer</MudText>
+            <MudPaper Class="mt-2 pa-3">
+                <MudStack>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Common Name</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Issuer.CommonName</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Organization</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Issuer.Organization</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Organization Unit</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Issuer.OrganizationalUnit</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Locale</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Issuer.Locale</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">State</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Issuer.StateProvince</MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem Class="pa-1">
+                        <MudGrid Spacing="2">
+                            <MudItem xs="3">
+                                <MudText Typo="Typo.button">Country</MudText>
+                            </MudItem>
+                            <MudItem xs="1">
+                                <MudText Typo="Typo.button">:</MudText>
+                            </MudItem>
+                            <MudItem xs="8">@Model.Issuer.Country</MudItem>
+                        </MudGrid>
                     </MudItem>
                 </MudStack>
             </MudPaper>
         </MudItem>
     </MudGrid>
-}
-else if (Model.Subject != null)
-{
-    <MudPaper Elevation="25">
-        <MudToolBar Class="mt-4">
-            <MudIconButton Icon="fa-sharp fa-solid fa-arrow-left" Color="Color.Inherit" Href="/certificates" />
-            <MudSpacer />
-            <MudIconButton Icon="fa-sharp fa-solid fa-download" Color="Color.Inherit" Disabled="Model.RevocationDate.HasValue"
-                           OnClick="OnCertificateDownloadClick" />
-            <AuthorizeView Roles="NotaryAdmin,NotaryWriter">
-                <Authorized>
-                    <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" OnClick="OnRevokeCertificateClick"
-                        Color="Color.Error" Disabled="Model.RevocationDate.HasValue" />
-                </Authorized>
-                <NotAuthorized>
-                    <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" Color="Color.Error" Disabled="true" />
-                </NotAuthorized>
-            </AuthorizeView>
-        </MudToolBar>
-    </MudPaper>
-    <MudPaper Elevation="25" Class="mt-4">
-        <MudText Typo="Typo.h6">Status</MudText>
-        <MudGrid>
-            <MudItem xs="4" Class="pa-4">
-                <MudText Typo="Typo.button">Status</MudText>
-                @if (Model.Expired)
-                {
-                    <div>
-                        <div class="d-inline pa-2"><MudIcon Color="Color.Error" Icon="fa-sharp fa-solid fa-octagon-exclamation" Size="Size.Small" /></div>
-                        <div class="d-inline pa-2"><MudText Color="Color.Error">Expired!</MudText></div>
-                    </div>
-                }
-                else if (Model.Expiring)
-                {
-                    <div>
-                        <div class="d-inline pa-2"><MudIcon Color="Color.Warning" Icon="fa-sharp fa-solid fa-triangle-exclamation" Size="Size.Small" /></div>
-                        <div class="d-inline pa-2">Expiring!</div>
-                    </div>
-                }
-                else if (Model.RevocationDate.HasValue)
-                {
-                    <div>
-                        <div class="d-inline pa-2"><MudIcon Color="Color.Error" Icon="fa-sharp fa-solid fa-octagon-exclamation" Size="Size.Small" /></div>
-                        <div class="d-inline pa-2">Revoked!</div>
-                    </div>
-                }
-                else
-                {
-                    <div>
-                        <div class="d-inline pa-2"><MudIcon Color="Color.Success" Icon="fa-sharp fa-solid fa-badge-check" Size="Size.Small" /></div>
-                        <div class="d-inline pa-2">Valid</div>
-                    </div>
-                }
-            </MudItem>
-            <MudItem xs="4" Class="pa-4">
-                <MudText Typo="Typo.button">Expire Date</MudText>
-                <p>@Model.NotAfter</p>
-            </MudItem>
-            <MudItem xs="4" Class="pa-4">
-                <MudText Typo="Typo.button">Revocation Reason</MudText>
-                @if (Model.RevocationDate.HasValue)
-                {
-                    <MudText Color="Color.Error">@Model.RevocationReason</MudText>
-                }
-                else
-                {
-                    <MudText>Valid</MudText>
-                }
+    @if (Model.SubjectAlternativeNames != null && Model.SubjectAlternativeNames.Count > 0)
+    {
+        <MudGrid class="mt-6">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h6">Subject Alternative Names</MudText>
+        <MudPaper Class="mt-6">
+            <MudStack>
+                @foreach (var san in Model.SubjectAlternativeNames)
+                        {
+                            <MudItem Class="pa-3">
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="3">
+                                        <MudText Typo="Typo.button">@san.Name</MudText>
+                                    </MudItem>
+                                    <MudItem xs="1">
+                                        <MudText Typo="Typo.button">:</MudText>
+                                    </MudItem>
+                                    <MudItem xs="8">@san.Kind</MudItem>
+                                </MudGrid>
+                            </MudItem>
+                        }
+                    </MudStack>
+                </MudPaper>
             </MudItem>
         </MudGrid>
-    </MudPaper>
-    <MudPaper Elevation="25" Class="mt-6">
+    }
+    <MudPaper Class="mt-6">
         <MudText Typo="Typo.h6">Issuer Tree</MudText>
         <MudTreeView T="CertificateIssuerTreeItem" Items="@Model.Issuers">
             <ItemTemplate>
-                <MudTreeViewItem Items="@context.Children" Value="@context.Value" Text="@context.Value.Name"></MudTreeViewItem>
+                <MudTreeViewItem Items="@context.Children" Value="@context.Value" Text="@context.Value.Name">
+                </MudTreeViewItem>
             </ItemTemplate>
         </MudTreeView>
-    </MudPaper>
-    <MudPaper Elevation="25" Class="mt-6">
-        <MudText Typo="Typo.h6">Subject</MudText>
-        <MudStack>
-            <MudItem Class="pa-1">
-                <MudGrid Spacing="2">
-                    <MudItem xs="3"><MudText Typo="Typo.button">Common Name</MudText></MudItem>
-                    <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                    <MudItem xs="8">@Model.Subject.CommonName</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Organization</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Subject.Organization</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Organization Unit</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Subject.OrganizationalUnit</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Locale</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Subject.Locale</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">State</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Subject.StateProvince</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Country</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Subject.Country</MudItem>
-                    </MudGrid>
-                </MudItem>
-            </MudStack>
-        </MudPaper>
-    <MudPaper Elevation="25" Class="mt-6">
-        <MudText Typo="Typo.h6">Issuer</MudText>
-        <MudStack>
-            <MudItem Class="pa-1">
-                <MudGrid Spacing="2">
-                    <MudItem xs="3"><MudText Typo="Typo.button">Common Name</MudText></MudItem>
-                    <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                    <MudItem xs="8">@Model.Issuer.CommonName</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Organization</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Issuer.Organization</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Organization Unit</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Issuer.OrganizationalUnit</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Locale</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Issuer.Locale</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">State</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Issuer.StateProvince</MudItem>
-                    </MudGrid>
-                </MudItem>
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Country</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.Issuer.Country</MudItem>
-                    </MudGrid>
-                </MudItem>
-            </MudStack>
-        </MudPaper>
-    @if (Model.SubjectAlternativeNames != null && Model.SubjectAlternativeNames.Count > 0)
-    {
-        <MudPaper Elevation="25" Class="mt-6">
-            <MudText Typo="Typo.h6">Subject Alternative Names</MudText>
-            <MudStack>
-                @foreach (var san in Model.SubjectAlternativeNames)
-                {
-                    <MudItem Class="pa-1">
-                        <MudGrid Spacing="2">
-                            <MudItem xs="3"><MudText Typo="Typo.button">@san.Name</MudText></MudItem>
-                                <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                                <MudItem xs="8">@san.Kind</MudItem>
-                            </MudGrid>
-                        </MudItem>
-                }
-            </MudStack>
-        </MudPaper>
-    }
-    <MudPaper Elevation="25" Class="mt-6">
-        <MudText Typo="Typo.h6">Private Key</MudText>
-        <MudStack>
-            @if (Model.KeyAlgorithm == Algorithm.RSA && Model.RsaKeyLength.HasValue)
-            {
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">RSA Key Length</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.RsaKeyLength.Value</MudItem>
-                        </MudGrid>
-                    </MudItem>
-            }
-            else if (Model.KeyAlgorithm == Algorithm.EllipticCurve && Model.EllipticCurve.HasValue)
-            {
-                <MudItem Class="pa-1">
-                    <MudGrid Spacing="2">
-                        <MudItem xs="3"><MudText Typo="Typo.button">Elliptic Curve</MudText></MudItem>
-                        <MudItem xs="1"><MudText Typo="Typo.button">:</MudText></MudItem>
-                        <MudItem xs="8">@Model.EllipticCurve</MudItem>
-                        </MudGrid>
-                    </MudItem>
-            }
-        </MudStack>
     </MudPaper>
 }
 else
 {
     <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium" />
-}
-
-@code {
-    protected CertificateViewModel Model { get; } = new();
-    protected bool IsLoading { get; set; } = false;
-    protected bool NotFound { get; set; } = false;
-    protected string Slug { get; set; } = string.Empty;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
-
-        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("slug", out var querySlug))
-        {
-            Slug = querySlug;
-        }
-        else
-        {
-            NotFound = true;
-            return;
-        }
-
-        IsLoading = true;
-        Certificate? c = null;
-        AsymmetricKey? key = null;
-        RevocatedCertificate? rc = null;
-
-        c = await CertificateService.GetAsync(Slug);
-        if (c == null)
-        {
-            NotFound = true;
-            IsLoading = false;
-            return;
-        }
-
-        key = await KeyService.GetAsync(c.KeySlug);
-        if (key == null)
-        {
-            NotFound = true;
-            IsLoading = false;
-            return;
-        }
-
-        if (c.RevocationDate.HasValue)
-        {
-            var rcList = await RevokeSvc.GetRevocatedCertificates();
-            rc = rcList.Find(cc => cc.Slug == c.Thumbprint);
-        }
-
-        DateTime utcNow = DateTime.UtcNow;
-        Model.EllipticCurve = key.KeyCurve;
-        Model.Expired = utcNow > c.NotAfter;
-        Model.Expiring = utcNow > c.NotAfter.AddDays(-30) && utcNow <= c.NotAfter;
-        Model.Issuer = c.Issuer;
-        Model.KeyAlgorithm = key.KeyAlgorithm;
-        Model.Name = c.Name;
-        Model.NotAfter = c.NotAfter;
-        Model.NotBefore = c.NotBefore;
-        Model.RevocationDate = c.RevocationDate;
-        Model.RsaKeyLength = key.KeyLength;
-        Model.SerialNumber = c.SerialNumber;
-        Model.SignatureAlgorithm = c.SignatureAlgorithm;
-        Model.Subject = c.Subject;
-        Model.SubjectAlternativeNames = c.SubjectAlternativeNames;
-        Model.Thumbprint = c.Thumbprint;
-
-        if (rc != null)
-        {
-            Model.RevocationReason = rc.Reason.ToString();
-        }
-
-        await PopulateIssuerTree(c.Slug);
-        IsLoading = false;
-    }
-
-    protected async Task OnCertificateDownloadClick()
-    {
-        var parameters = new DialogParameters<DownloadCertificateDialog>
-        {
-            { d=> d.Slug, Slug }
-        };
-        var dialog = await DlgService.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
-        var result = await dialog.Result;
-    }
-
-    protected async Task OnRevokeCertificateClick()
-    {
-        var parameters = new DialogParameters<RevokeCertificateDialog>
-        {
-            { d=> d.Slug, Slug }
-        };
-        var dialog = await DlgService.ShowAsync<RevokeCertificateDialog>("Revoke Certificate", parameters);
-        var result = await dialog.Result;
-        if (result == null)
-        {
-            // I don't see this can be null
-            throw new ArgumentNullException(nameof(result));
-        }
-
-        if (!result.Canceled)
-        {
-            NavManager.NavigateTo("/certificates");
-        }
-    }
-
-    private async Task PopulateIssuerTree(string slug, List<TreeItemData<CertificateIssuerTreeItem>> children = null)
-    {
-        var certificate = await CertificateService.GetAsync(slug);
-        if (certificate == null)
-        {
-            throw new ArgumentNullException(nameof(certificate));
-        }
-
-        var caItem = new CertificateIssuerTreeItem
-        {
-            Name = certificate.Name,
-            Slug = certificate.Slug
-        };
-
-        var rootItem = new TreeItemData<CertificateIssuerTreeItem>()
-        {
-            Value = caItem
-        };
-
-        if (!string.IsNullOrEmpty(certificate.IssuingSlug))
-        {
-            rootItem.Children = new List<TreeItemData<CertificateIssuerTreeItem>>();
-            await PopulateIssuerTree(certificate.IssuingSlug, rootItem.Children);
-        }
-        if (children != null)
-            children.Add(rootItem);
-        else
-            Model.Issuers.Add(rootItem);
-    }
 }

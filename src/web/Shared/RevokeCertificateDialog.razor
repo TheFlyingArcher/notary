@@ -1,14 +1,4 @@
-﻿@using Notary
-@using Notary.Contract
-@using Notary.Interface.Service
-@using Notary.Web.ViewModels
-@using System.Text.RegularExpressions
-
-@inject ICertificateRevokeService RevocationService
-@inject IDialogService Dialog
-@inject AuthenticationStateProvider AuthProvider
-
-<MudDialog>
+﻿<MudDialog>
     <TitleContent>Revoking Certificate</TitleContent>
     <DialogContent>
         <MudStack Class="d-flex align-center flex-grow-1 gap-4">
@@ -19,20 +9,26 @@
             </MudItem>
             <MudItem Class="pa-2">
                 <MudText Typo="Typo.button" Color="Color.Error">Warning!</MudText>
-                You are about to revoke this certificate this action <strong><MudText Typo="Typo.button">cannot be undone!</MudText></strong>
+                You are about to revoke this certificate this action <strong>
+                    <MudText Typo="Typo.button">cannot be undone!</MudText>
+                </strong>
                 This certificate will no longer be valid for use in SSL/TLS or other secure operations.
             </MudItem>
             <MudItem Class="pa-2">
                 <MudForm Model="@Model" @ref="@_form" @bind-IsValid="@_isValid" @bind-Errors="@_errors">
                     <MudText Typo="Typo.body2">Revocation Reason</MudText>
                     <MudSelect @bind-Value="@Model.RevocationReason" Label="Select Revocation Reason"
-                               HelperText="Select why the certificate shall be revoked" Placeholder="Please Select">
-                        <MudSelectItem Value="@(RevocationReason.AaCompromized)">RADIUS Server Compromized</MudSelectItem>
-                        <MudSelectItem Value="@(RevocationReason.AffiliationChanged)">Affiliation Changed</MudSelectItem>
+                        HelperText="Select why the certificate shall be revoked" Placeholder="Please Select">
+                        <MudSelectItem Value="@(RevocationReason.AaCompromized)">RADIUS Server Compromized
+                        </MudSelectItem>
+                        <MudSelectItem Value="@(RevocationReason.AffiliationChanged)">Affiliation Changed
+                        </MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.CaCompromized)">CA Compromized</MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.CertificateHold)">Temporary Revocation</MudSelectItem>
-                        <MudSelectItem Value="@(RevocationReason.CessationOfOperation)">Certificate Unnecessary</MudSelectItem>
-                        <MudSelectItem Value="@(RevocationReason.KeyCompromized)">Private Key Compromized</MudSelectItem>
+                        <MudSelectItem Value="@(RevocationReason.CessationOfOperation)">Certificate Unnecessary
+                        </MudSelectItem>
+                        <MudSelectItem Value="@(RevocationReason.KeyCompromized)">Private Key Compromized
+                        </MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.PrivilegeWithdrawn)">Privileges Revoked</MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.RemoveFromCrl)">CA Removed</MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.Superceded)">Certificate Replaced</MudSelectItem>
@@ -47,31 +43,3 @@
         <MudButton Color="Color.Primary" OnClick="OnOk" Variant="Variant.Filled">OK</MudButton>
     </DialogActions>
 </MudDialog>
-
-@code {
-    [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
-
-    [Parameter] public string Slug { get; set; }
-
-    protected RevokeCertificateDialogViewModel Model { get; } = new();
-    protected MudForm _form;
-    private bool _isValid = false;
-    private string[] _errors = { };
-
-    protected override async Task OnInitializedAsync()
-    {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        Model.UserRevoking = authState.User.Identity.Name;
-    }
-
-    protected void OnCancel()
-    {
-        MudDialog.Cancel();
-    }
-
-    protected async Task OnOk()
-    {
-        await RevocationService.RevokeCertificateAsync(Slug, Model.RevocationReason, Model.UserRevoking);
-        MudDialog.Close();
-    }
-}

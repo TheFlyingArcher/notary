@@ -153,6 +153,54 @@ namespace Notary
             }
         }
 
+        /// <summary>
+        /// Get a friendly name for the revocation reason
+        /// </summary>
+        /// <param name="reason">The reason given</param>
+        /// <returns>Friendly name of the revocation reason</returns>
+        /// <exception cref="InvalidOperationException">Throw if an invalid reason given</exception>
+        public static string RevocationFriendlyName(this RevocationReason reason)
+        {
+            string friendlyReason;
+            switch (reason)
+            {
+                case RevocationReason.AaCompromized:
+                    friendlyReason = "RADIUS server compromized";
+                    break;
+                case RevocationReason.AffiliationChanged:
+                    friendlyReason = "User no longer with organization";
+                    break;
+                case RevocationReason.CaCompromized:
+                    friendlyReason = "CA compromized";
+                    break;
+                case RevocationReason.CertificateHold:
+                    friendlyReason = "Temporary";
+                    break;
+                case RevocationReason.CessationOfOperation:
+                    friendlyReason = "Certificate replaced";
+                    break;
+                case RevocationReason.KeyCompromized:
+                    friendlyReason = "Private key compromized";
+                    break;
+                case RevocationReason.PrivilegeWithdrawn:
+                    friendlyReason = "Privleges withdrawn";
+                    break;
+                case RevocationReason.RemoveFromCrl:
+                    friendlyReason = "CA removed";
+                    break;
+                case RevocationReason.Superceded:
+                    friendlyReason = "Name change";
+                    break;
+                case RevocationReason.Unspecified:
+                    friendlyReason = "Unspecified reason";
+                    break;
+                default:
+                    throw new InvalidOperationException("Incorrect revocation reason");
+            }
+
+            return friendlyReason;
+        }
+
         private static void EncodeLength(BinaryWriter stream, int length)
         {
             if (length < 0) throw new ArgumentOutOfRangeException("length", "Length must be non-negative");
