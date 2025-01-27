@@ -1,0 +1,18 @@
+﻿<MudDialog>
+    <TitleContent>
+        Subject Alternative Name
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_sanText" Label="SAN" HelperText="Enter the Subject Alternative Name"></MudTextField>
+        <MudSelect @bind-Value="_sanKind" Dense="true" T="SanKind">
+            <MudSelectItem Value="@(SanKind.Dns)">DNS</MudSelectItem>
+            <MudSelectItem Value="@(SanKind.Email)">E-Mail</MudSelectItem>
+            <MudSelectItem Value="@(SanKind.IpAddress)">IP Address</MudSelectItem>
+            <MudSelectItem Value="@(SanKind.Uri)">URI</MudSelectItem>
+            <MudSelectItem Value="@(SanKind.UserPrincipal)">User Principal</MudSelectItem>
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnOK">OK</MudButton>
+    </DialogActions>
+</MudDialog>
