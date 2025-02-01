@@ -50,7 +50,8 @@ public partial class DownloadCertificateDialog : ComponentBase
                 cert = await CertificateService.GetAsync(Slug);
                 certBinary = await CertificateService.RequestCertificateAsync(Slug, ViewModel.Format, ViewModel.Password);
             });
-
+            if (cert == null)
+                throw new ArgumentNullException(nameof(cert));
 
             switch (ViewModel.Format)
             {
@@ -105,10 +106,13 @@ public partial class DownloadCertificateDialog : ComponentBase
         return null;
     }
 
+    [Inject]
     public IJSRuntime JS { get; set; }
 
+    [Inject]
     public IDialogService Dialog { get; set; }
 
+    [Inject]
     public ICertificateService CertificateService { get; set; }
 
     private DownloadCertificateViewModel ViewModel { get; set; } = new();

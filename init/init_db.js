@@ -137,7 +137,7 @@ const revocatedCertificateSchema = new Schema({
     }
     await mongoose.connect(connectionString).catch((e) => console.error(e));
 
-    const AsymmetricKey = mongoose.model('asymmetricKey', asymmetricKeySchema);
+    const AsymmetricKey = mongoose.model('asymmetric_key', asymmetricKeySchema);
     const Certificate = mongoose.model('certificate', certificateSchema);
     const CertificateAuthority = mongoose.model('certificate_authority', certificateAuthoritySchema);
     const RevocatedCertificate = mongoose.model('revocated_certificate', revocatedCertificateSchema);

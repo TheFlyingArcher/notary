@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary.Data", "library\data
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary.Service", "library\service\Notary.Service.csproj", "{8352E625-3962-48BB-BCAC-ADEE832CF23D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary.Api", "api\Notary.Api.csproj", "{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary.Test", "test\Notary.Test.csproj", "{9D398B2A-D49A-462B-B63F-AC33743FDE29}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary.Web", "web\Notary.Web.csproj", "{DE8A34B4-0A9F-4381-97B9-BD1819AEABFB}"

@@ -7,6 +7,7 @@ using C = Notary.Contract;
 using Notary.Interface.Service;
 using Notary.Web.ViewModels;
 using System.Text.RegularExpressions;
+using Notary.Web.Shared;
 
 namespace Notary.Web.Pages;
 
@@ -17,17 +18,6 @@ public partial class CreateCertificate : ComponentBase
     private bool _isLoading = true;
     private int _selectedCertKeyUsage = 0;
     private string _selectedExKeyUsage = string.Empty;
-    private string _sanText = string.Empty;
-    private SanKind _sanKind = SanKind.Dns;
-    private bool _sanDialogVisible = false;
-    private DialogOptions _sanDialogOptions = new DialogOptions()
-    {
-        BackdropClick = false,
-        CloseButton = true,
-        FullWidth = true,
-        MaxWidth = MaxWidth.Medium
-    };
-
     private bool success;
     private string[] errors = { };
 
@@ -96,22 +86,28 @@ public partial class CreateCertificate : ComponentBase
         _isLoading = false;
     }
 
-    private void OnSanDialogOpenClick() => _sanDialogVisible = true;
-
-    private void OnSanDialogCloseClick()
+    private async Task OnSanDialogOpenClick()
     {
-        var san = new C.SubjectAlternativeName
+        var options = new DialogOptions()
         {
-            Kind = _sanKind,
-            Name = _sanText
+            BackdropClick = false,
+            CloseButton = true,
+            FullWidth = true,
+            MaxWidth = MaxWidth.Medium
         };
-        ViewModel.SubjectAlternativeNames.Add(san);
 
-        _sanText = string.Empty;
-        _sanKind = SanKind.Dns;
-        _sanDialogVisible = false;
+        var dialog = await DialogService.ShowAsync<SubjectAlternativeNameDialog>("Subject Alternative Name");
+        var result = await dialog.Result;
+
+        if (result != null && !result.Canceled)
+        {
+            if (result.Data == null)
+                throw new ArgumentNullException(nameof(result.Data)); // This should not be the case
+
+            var san = result.Data as C.SubjectAlternativeName;
+            ViewModel.SubjectAlternativeNames.Add(san);
+        }
     }
-
 
     private void OnSanDialogDeleteClick(C.SubjectAlternativeName san)
     {
