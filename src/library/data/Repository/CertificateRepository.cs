@@ -1,19 +1,18 @@
-﻿using Notary.Contract;
-using Notary.Model;
-using Notary.Interface.Repository;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
 using AutoMapper;
 using MongoDB.Driver;
+using Notary.Contract;
+using Notary.Data.Model;
+using Notary.Interface.Repository;
 
 namespace Notary.Data.Repository
 {
     public class CertificateRepository : BaseRepository<Certificate, CertificateModel>, ICertificateRepository
     {
-        public CertificateRepository(IMongoDatabase db):base(db)
+        public CertificateRepository(IMongoDatabase db, IMapper map) : base(db, map)
         {
         }
 
@@ -24,7 +23,7 @@ namespace Notary.Data.Repository
             using (var cursor = await Collection.FindAsync(filter))
             {
                 var certList = await cursor.ToListAsync();
-                return certList.Select(x=>new Certificate(x)).ToList();
+                return certList.Select(x => Mapper.Map<Certificate>(x)).ToList();
             }
         }
 
@@ -43,7 +42,7 @@ namespace Notary.Data.Repository
             if (model == null)
                 return null;
 
-            var cert = new Certificate(model);
+            var cert = Mapper.Map<Certificate>(model);
             return cert;
         }
     }

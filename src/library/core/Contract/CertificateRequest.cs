@@ -1,63 +1,61 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Configuration;
-using System.Runtime.Serialization;
 
 using Newtonsoft.Json;
 
 namespace Notary.Contract
 {
-    [DataContract]
     public class CertificateRequest
     {
         public CertificateRequest()
         {
         }
 
-        [DataMember]
+        [JsonProperty("keyUsageFlags", Required = Required.Always)]
         public IEnumerable<int> CertificateKeyUsageFlags { get; set; }
 
-        [DataMember]
+        [JsonProperty("crl", Required = Required.Always)]
         public string CrlEndpoint { get; set; }
 
-        [DataMember]
+        [JsonProperty("curve", Required = Required.AllowNull)]
         public EllipticCurve? Curve { get; set; }
 
-        [DataMember, Required]
+        [JsonProperty("isCa", Required = Required.Always)]
         public bool IsCaCertificate { get; set; }
 
-        [DataMember, Required]
+        [JsonProperty("alg", Required = Required.Always)]
         public Algorithm KeyAlgorithm { get; set; }
 
-        [DataMember]
+        [JsonProperty("keySize", Required = Required.AllowNull)]
         public int? KeySize { get; set; }
 
-        [DataMember]
+        [JsonProperty("eku", Required = Required.Always)]
         public IEnumerable<string> ExtendedKeyUsages { get; set; }
 
         /// <summary>
         /// Get or set the display name of the certificate
         /// </summary>
-        [DataMember, Required, RegularExpression("[a-zA-Z0-9\\s]+", ErrorMessage = "Only alphanumerics plus spaces allowed")]
+        [JsonProperty("eku", Required = Required.Always)]
+        [RegularExpression("[a-zA-Z0-9\\s]+", ErrorMessage = "Only alphanumerics plus spaces allowed")]
         public string Name { get; set; }
 
-        [DataMember]
+        [JsonProperty("na", Required = Required.Always)]
         public DateTime NotAfter { get; set; }
 
-        [DataMember]
+        [JsonProperty("nb", Required = Required.Always)]
         public DateTime NotBefore { get; set; }
 
-        [DataMember]
+        [JsonProperty("parentSlug", Required = Required.Always)]
         public string ParentCertificateSlug { get; set; }
 
-        [DataMember]
+        [JsonProperty("dn", Required = Required.Always)]
         public DistinguishedName Subject { get; set; }
 
         /// <summary>
         /// Get a list of SAN for the certificate
         /// </summary>
-        [DataMember]
+        [JsonProperty("san", Required = Required.Always)]
         public List<SubjectAlternativeName> SubjectAlternativeNames
         {
             get; set;
@@ -66,7 +64,7 @@ namespace Notary.Contract
         /// <summary>
         /// Get or set the account slug that requested this certificate
         /// </summary>
-        [DataMember]
+        [JsonProperty("requestedBy", Required = Required.Always)]
         public string RequestedBySlug { get; set; }
     }
 }

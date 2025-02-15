@@ -1,13 +1,10 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-
+﻿using System;
+using System.Text;
+using MongoDB.Bson.Serialization.Attributes;
 using Newtonsoft.Json;
-
 using Notary.Contract;
 
-using System;
-using System.Text;
-
-namespace Notary.Model;
+namespace Notary.Data.Model;
 
 public class AsymmetricKeyModel : BaseModel
 {

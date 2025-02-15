@@ -6,7 +6,7 @@ using MongoDB.Bson.Serialization.IdGenerators;
 
 using Notary.Contract;
 
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     [BsonIgnoreExtraElements]
     [BsonDiscriminator(RootClass = true)]

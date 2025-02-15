@@ -5,7 +5,7 @@ using System.Text;
 using MongoDB.Bson.Serialization.Attributes;
 using Notary.Contract;
 
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     public sealed class CertificateModel : BaseModel
     {

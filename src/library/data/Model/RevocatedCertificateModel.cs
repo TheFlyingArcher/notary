@@ -2,7 +2,7 @@
 
 using Notary.Contract;
 
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     public sealed class RevocatedCertificateModel : BaseModel
     {
@@ -10,7 +10,7 @@ namespace Notary.Model
         {
         }
 
-        public RevocatedCertificateModel(RevocatedCertificate entity):base(entity)
+        public RevocatedCertificateModel(RevocatedCertificate entity) : base(entity)
         {
             CertificateSlug = entity.CertificateSlug;
             Reason = entity.Reason;

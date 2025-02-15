@@ -1,10 +1,8 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
-
+﻿using System;
+using MongoDB.Bson.Serialization.Attributes;
 using Notary.Contract;
 
-using System;
-
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     [Collection("certificate_authorities")]
     public class CertificateAuthorityModel : BaseModel

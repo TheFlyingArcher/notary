@@ -1,9 +1,9 @@
 ﻿using System;
 using Autofac;
-
+using AutoMapper;
 using MongoDB.Driver;
-using Notary.Configuration;
 
+using Notary.Configuration;
 using Notary.Data.Repository;
 using Notary.Interface.Repository;
 using Notary.IOC;
@@ -14,6 +14,17 @@ namespace Notary.Data
     {
         protected override void Load(ContainerBuilder builder)
         {
+            // Register the model mappings
+            builder.Register(r =>
+            {
+                var cfg = new MapperConfiguration(c =>
+                {
+                    c.AddProfile<ModelMapProfile>();
+                });
+
+                return cfg.CreateMapper();
+            }).As<IMapper>().SingleInstance();
+
             builder.Register(r =>
             {
                 var config = r.Resolve<NotaryConfiguration>();

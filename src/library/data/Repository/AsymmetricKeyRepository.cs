@@ -1,15 +1,16 @@
 ﻿using System;
-using Notary.Contract;
-using Notary.Model;
-using Notary.Data.Repository;
+using AutoMapper;
 using MongoDB.Driver;
+using Notary.Contract;
+using Notary.Data.Model;
+using Notary.Data.Repository;
 using Notary.Interface.Repository;
 
 namespace Notary.Data;
 
 public class AsymmetricKeyRepository : BaseRepository<AsymmetricKey, AsymmetricKeyModel>, IAsymmetricKeyRepository
 {
-    public AsymmetricKeyRepository(IMongoDatabase db) : base(db)
+    public AsymmetricKeyRepository(IMongoDatabase db, IMapper map) : base(db, map)
     {
     }
 }

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.Serialization;
 using System.Text;
 
-using Notary.Model;
-
 namespace Notary.Contract
 {
     /// <summary>
@@ -18,7 +16,7 @@ namespace Notary.Contract
 
         }
 
-        public RevocatedCertificate(RevocatedCertificateModel model):base(model)
+        public RevocatedCertificate(RevocatedCertificateModel model) : base(model)
         {
             CertificateSlug = model.CertificateSlug;
             Reason = model.Reason;

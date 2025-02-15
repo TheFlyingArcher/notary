@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Linq;
 using System.Reflection;
-
-using Notary.Contract;
-using Notary.Model;
-using Notary.Interface.Repository;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using AutoMapper;
 using MongoDB.Driver;
+using Notary.Contract;
+using Notary.Data.Model;
+using Notary.Interface.Repository;
 
 namespace Notary.Data.Repository
 {
@@ -18,7 +18,9 @@ namespace Notary.Data.Repository
     {
         public IMongoCollection<TM> Collection { get; private set; }
 
-        protected BaseRepository(IMongoDatabase db)
+        public IMapper Mapper { get; private set; }
+
+        protected BaseRepository(IMongoDatabase db, IMapper map)
         {
             var type = typeof(TM);
             var attribute = type.GetCustomAttribute<CollectionAttribute>();
@@ -31,6 +33,8 @@ namespace Notary.Data.Repository
                 string collectionName = GetCollectionName();
                 Collection = db.GetCollection<TM>(collectionName);
             }
+
+            Mapper = map;
         }
 
         public virtual async Task DeleteAsync(string slug, string updatedBySlug)
@@ -65,8 +69,8 @@ namespace Notary.Data.Repository
             using (var collection = await Collection.FindAsync(filter))
             {
                 var models = await collection.ToListAsync();
-                
-                contract.AddRange(models.Select(m => (TC)Activator.CreateInstance(typeof(TC), m)));
+
+                //contract.AddRange(models.Select(m => (TC)Activator.CreateInstance(typeof(TC), m)));
             }
             return contract;
         }
@@ -94,7 +98,7 @@ namespace Notary.Data.Repository
                 entity.Slug = entity.Slugify();
             }
 
-            var model = (TM)Activator.CreateInstance(typeof(TM), entity);
+            var model = Mapper.Map<TM>(entity);
             var filter = Builders<TM>.Filter.Eq("slug", model.Slug);
             var result = await Collection.ReplaceOneAsync(filter, model, new ReplaceOptions { IsUpsert = true });
 
@@ -143,7 +147,7 @@ namespace Notary.Data.Repository
             if (doc == null)
                 return null;
 
-            var obj = (TC)Activator.CreateInstance(typeof(TC), doc);
+            var obj = Mapper.Map<TC>(doc);
             return obj;
         }
     }

@@ -2,7 +2,7 @@
 
 using Notary.Contract;
 
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     public class AddressModel
     {
