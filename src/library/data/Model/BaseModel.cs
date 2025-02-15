@@ -23,16 +23,6 @@ namespace Notary.Data.Model
 
         }
 
-        protected BaseModel(Entity entity)
-        {
-            Active = entity.Active;
-            Created = entity.Created;
-            CreatedBy = entity.CreatedBySlug;
-            Slug = entity.Slug;
-            Updated = entity.Updated;
-            UpdatedBy = entity.UpdatedBySlug;
-        }
-
         [BsonIgnoreIfDefault, BsonId(IdGenerator = typeof(StringObjectIdGenerator))]
         public ObjectId Id { get; set; }
 

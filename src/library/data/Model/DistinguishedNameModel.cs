@@ -15,16 +15,6 @@ namespace Notary.Data.Model
 
         }
 
-        public DistinguishedNameModel(DistinguishedName dn)
-        {
-            CommonName = dn.CommonName;
-            Country = dn.Country;
-            Locale = dn.Locale;
-            Organization = dn.Organization;
-            OrganizationalUnit = dn.OrganizationalUnit;
-            StateProvince = dn.StateProvince;
-        }
-
         [BsonElement("CN"), BsonIgnoreIfDefault, BsonIgnoreIfNull]
         public string CommonName
         {

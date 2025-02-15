@@ -11,11 +11,6 @@ namespace Notary.Data.Model
         {
         }
 
-        public SanModel(SubjectAlternativeName san)
-        {
-            Kind = san.Kind;
-            Name = san.Name;
-        }
         /// <summary>
         /// The kind of SAN
         /// </summary>

@@ -10,17 +10,6 @@ public class AsymmetricKeyModel : BaseModel
 {
     public AsymmetricKeyModel() { }
 
-    public AsymmetricKeyModel(AsymmetricKey key) : base(key)
-    {
-        EncryptedPrivateKey = Encoding.Default.GetString(key.EncryptedPrivateKey);
-        KeyAlgorithm = key.KeyAlgorithm;
-        KeyCurve = key.KeyCurve;
-        KeyLength = key.KeyLength;
-        Name = key.Name;
-        NotAfter = key.NotAfter;
-        NotBefore = key.NotBefore;
-    }
-
     [BsonElement("enc_prv_key")]
     public string EncryptedPrivateKey { get; set; }
 

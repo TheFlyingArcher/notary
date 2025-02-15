@@ -12,23 +12,6 @@ namespace Notary.Data.Model
 
         }
 
-        public CertificateAuthorityModel(CertificateAuthority ca) : base(ca)
-        {
-            CertificateSlug = ca.CertificateSlug;
-            CrlEndpoint = ca.CrlEndpoint;
-            DistinguishedName = new DistinguishedNameModel(ca.DistinguishedName);
-            if (ca.IssuingDn != null)
-                IssuingDn = new DistinguishedNameModel(ca.IssuingDn);
-            IsIssuer = ca.IsIssuer;
-            KeyAlgorithm = ca.KeyAlgorithm;
-            KeyCurve = ca.KeyCurve;
-            KeyLength = ca.KeyLength;
-            Name = ca.Name;
-            NotAfter = ca.NotAfter;
-            NotBefore = ca.NotBefore;
-            ParentCaSlug = ca.ParentCaSlug;
-        }
-
         /// <summary>
         /// Get or set slug of the certificate associated with the CA
         /// </summary>

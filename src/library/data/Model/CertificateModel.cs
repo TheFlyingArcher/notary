@@ -14,25 +14,6 @@ namespace Notary.Data.Model
 
         }
 
-        public CertificateModel(Certificate contract) : base(contract)
-        {
-            Data = contract.Data;
-            IssuingSlug = contract.IssuingSlug;
-            IsCaCertificate = contract.IsCaCertificate;
-            KeySlug = contract.KeySlug;
-            ExtendedKeyUsages = contract.ExtendedKeyUsages;
-            Issuer = new DistinguishedNameModel(contract.Issuer);
-            Name = contract.Name;
-            NotAfter = contract.NotAfter;
-            NotBefore = contract.NotBefore;
-            RevocationDate = contract.RevocationDate;
-            SerialNumber = contract.SerialNumber;
-            SignatureAlgorithm = contract.SignatureAlgorithm;
-            Subject = new DistinguishedNameModel(contract.Subject);
-            SubjectAlternativeNames = contract.SubjectAlternativeNames?.Select(s => new SanModel(s)).ToList();
-            Thumbprint = contract.Thumbprint;
-        }
-
         [BsonElement("cert_key_usages"), BsonRequired]
         public List<string> CertificateKeyUsage { get; set; }
 

@@ -10,14 +10,6 @@ namespace Notary.Data.Model
         {
         }
 
-        public RevocatedCertificateModel(RevocatedCertificate entity) : base(entity)
-        {
-            CertificateSlug = entity.CertificateSlug;
-            Reason = entity.Reason;
-            SerialNumber = entity.SerialNumber;
-            Thumbprint = entity.Thumbprint;
-        }
-
         public string CertificateSlug { get; set; }
 
         /// <summary>

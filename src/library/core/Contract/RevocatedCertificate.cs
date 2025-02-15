@@ -16,14 +16,6 @@ namespace Notary.Contract
 
         }
 
-        public RevocatedCertificate(RevocatedCertificateModel model) : base(model)
-        {
-            CertificateSlug = model.CertificateSlug;
-            Reason = model.Reason;
-            SerialNumber = model.SerialNumber;
-            Thumbprint = model.Thumbprint;
-        }
-
         /// <summary>
         /// Get or set the slug of the certificate that was revoked.
         /// </summary>

@@ -10,17 +10,6 @@ namespace Notary.Data.Model
         {
         }
 
-        public AddressModel(Address addr)
-        {
-            AddressLine = addr.AddressLine;
-            City = addr.City;
-            Country = addr.Country;
-            PostalCode = addr.PostalCode;
-            SecondAddressLine = addr.SecondAddressLine;
-            StateProvince = addr.StateProvince;
-            ThirdAddressLine = addr.ThirdAddressLine;
-        }
-
         /// <summary>
         /// Get or set the primary address line which is the address and street name
         /// </summary>
