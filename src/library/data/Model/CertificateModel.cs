@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
 using MongoDB.Bson.Serialization.Attributes;
-using Notary.Contract;
 
 namespace Notary.Data.Model
 {

@@ -1,7 +1,5 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 
-using Notary.Contract;
-
 namespace Notary.Data.Model
 {
     public class AddressModel

@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Runtime.Serialization;
 using System.Text;
 
 using Newtonsoft.Json;
@@ -14,38 +13,38 @@ namespace Notary.Contract
         [JsonProperty("cn", Required = Required.Always), Required]
         public string CommonName
         {
-            get;set;
+            get; set;
         }
 
 
         [JsonProperty("c", Required = Required.AllowNull)]
         public string Country
         {
-            get;set;
+            get; set;
         }
 
         [JsonProperty("l", Required = Required.AllowNull)]
         public string Locale
         {
-            get;set;
+            get; set;
         }
 
         [JsonProperty("o", Required = Required.AllowNull)]
         public string Organization
         {
-            get;set;
+            get; set;
         }
 
         [JsonProperty("ou", Required = Required.AllowNull)]
         public string OrganizationalUnit
         {
-            get;set;
+            get; set;
         }
 
         [JsonProperty("s", Required = Required.AllowNull)]
         public string StateProvince
         {
-            get;set;
+            get; set;
         }
 
         /// <summary>

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Notary.Contract;
-
-namespace Notary.Data.Model
+﻿namespace Notary.Data.Model
 {
     public class SanModel
     {

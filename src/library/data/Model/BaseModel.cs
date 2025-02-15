@@ -4,8 +4,6 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.IdGenerators;
 
-using Notary.Contract;
-
 namespace Notary.Data.Model
 {
     [BsonIgnoreExtraElements]

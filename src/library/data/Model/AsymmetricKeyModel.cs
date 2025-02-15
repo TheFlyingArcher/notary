@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Text;
+
 using MongoDB.Bson.Serialization.Attributes;
-using Newtonsoft.Json;
-using Notary.Contract;
 
 namespace Notary.Data.Model;
 
