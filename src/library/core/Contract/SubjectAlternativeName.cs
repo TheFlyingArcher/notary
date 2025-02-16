@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Notary.Contract
+﻿namespace Notary.Contract
 {
     public class SubjectAlternativeName
     {
@@ -19,7 +15,7 @@ namespace Notary.Contract
         /// </summary>
         public string Name
         {
-            get;set;
+            get; set;
         }
     }
 }

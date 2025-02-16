@@ -4,9 +4,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson.Serialization.IdGenerators;
 
-using Notary.Contract;
-
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     [BsonIgnoreExtraElements]
     [BsonDiscriminator(RootClass = true)]
@@ -21,16 +19,6 @@ namespace Notary.Model
         protected BaseModel()
         {
 
-        }
-
-        protected BaseModel(Entity entity)
-        {
-            Active = entity.Active;
-            Created = entity.Created;
-            CreatedBy = entity.CreatedBySlug;
-            Slug = entity.Slug;
-            Updated = entity.Updated;
-            UpdatedBy = entity.UpdatedBySlug;
         }
 
         [BsonIgnoreIfDefault, BsonId(IdGenerator = typeof(StringObjectIdGenerator))]

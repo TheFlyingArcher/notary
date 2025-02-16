@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
-
-using Notary.Model;
+﻿using System.Runtime.Serialization;
 
 namespace Notary.Contract
 {
@@ -16,14 +11,6 @@ namespace Notary.Contract
         public RevocatedCertificate()
         {
 
-        }
-
-        public RevocatedCertificate(RevocatedCertificateModel model):base(model)
-        {
-            CertificateSlug = model.CertificateSlug;
-            Reason = model.Reason;
-            SerialNumber = model.SerialNumber;
-            Thumbprint = model.Thumbprint;
         }
 
         /// <summary>

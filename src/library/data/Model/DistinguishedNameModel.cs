@@ -1,13 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-using Notary.Contract;
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     [BsonIgnoreExtraElements]
     public class DistinguishedNameModel
@@ -17,50 +11,40 @@ namespace Notary.Model
 
         }
 
-        public DistinguishedNameModel(DistinguishedName dn)
-        {
-            CommonName = dn.CommonName;
-            Country = dn.Country;
-            Locale = dn.Locale;
-            Organization = dn.Organization;
-            OrganizationalUnit = dn.OrganizationalUnit;
-            StateProvince = dn.StateProvince;
-        }
-
         [BsonElement("CN"), BsonIgnoreIfDefault, BsonIgnoreIfNull]
         public string CommonName
         {
-            get;set;
+            get; set;
         }
 
         [BsonElement("C"), BsonIgnoreIfDefault, BsonIgnoreIfNull]
         public string Country
         {
-            get;set;
+            get; set;
         }
 
         [BsonElement("L"), BsonIgnoreIfDefault, BsonIgnoreIfNull]
         public string Locale
         {
-            get;set;
+            get; set;
         }
 
         [BsonElement("O"), BsonIgnoreIfDefault, BsonIgnoreIfNull]
         public string Organization
         {
-            get;set;
+            get; set;
         }
 
         [BsonElement("OU"), BsonIgnoreIfDefault, BsonIgnoreIfNull]
         public string OrganizationalUnit
         {
-            get;set;
+            get; set;
         }
 
         [BsonElement("S"), BsonIgnoreIfDefault, BsonIgnoreIfNull]
         public string StateProvince
         {
-            get;set;
+            get; set;
         }
     }
 }

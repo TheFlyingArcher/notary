@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Notary.Contract
+﻿namespace Notary.Contract
 {
     public interface ICredentials
     {

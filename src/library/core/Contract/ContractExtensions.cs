@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-using Notary;
-
-namespace Notary.Contract
+﻿namespace Notary.Contract
 {
     public static class ContractExtensions
     {

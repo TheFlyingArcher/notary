@@ -1,24 +1,11 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 
-using Notary.Contract;
-
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     public class AddressModel
     {
         public AddressModel()
         {
-        }
-
-        public AddressModel(Address addr)
-        {
-            AddressLine = addr.AddressLine;
-            City = addr.City;
-            Country = addr.Country;
-            PostalCode = addr.PostalCode;
-            SecondAddressLine = addr.SecondAddressLine;
-            StateProvince = addr.StateProvince;
-            ThirdAddressLine = addr.ThirdAddressLine;
         }
 
         /// <summary>

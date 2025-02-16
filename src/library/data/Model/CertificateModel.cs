@@ -1,36 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using MongoDB.Bson.Serialization.Attributes;
-using Notary.Contract;
 
-namespace Notary.Model
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace Notary.Data.Model
 {
     public sealed class CertificateModel : BaseModel
     {
         public CertificateModel()
         {
 
-        }
-
-        public CertificateModel(Certificate contract) : base(contract)
-        {
-            Data = contract.Data;
-            IssuingSlug = contract.IssuingSlug;
-            IsCaCertificate = contract.IsCaCertificate;
-            KeySlug = contract.KeySlug;
-            ExtendedKeyUsages = contract.ExtendedKeyUsages;
-            Issuer = new DistinguishedNameModel(contract.Issuer);
-            Name = contract.Name;
-            NotAfter = contract.NotAfter;
-            NotBefore = contract.NotBefore;
-            RevocationDate = contract.RevocationDate;
-            SerialNumber = contract.SerialNumber;
-            SignatureAlgorithm = contract.SignatureAlgorithm;
-            Subject = new DistinguishedNameModel(contract.Subject);
-            SubjectAlternativeNames = contract.SubjectAlternativeNames?.Select(s => new SanModel(s)).ToList();
-            Thumbprint = contract.Thumbprint;
         }
 
         [BsonElement("cert_key_usages"), BsonRequired]

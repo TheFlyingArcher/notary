@@ -1,21 +1,11 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 
-using Notary.Contract;
-
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     public sealed class RevocatedCertificateModel : BaseModel
     {
         public RevocatedCertificateModel()
         {
-        }
-
-        public RevocatedCertificateModel(RevocatedCertificate entity):base(entity)
-        {
-            CertificateSlug = entity.CertificateSlug;
-            Reason = entity.Reason;
-            SerialNumber = entity.SerialNumber;
-            Thumbprint = entity.Thumbprint;
         }
 
         public string CertificateSlug { get; set; }

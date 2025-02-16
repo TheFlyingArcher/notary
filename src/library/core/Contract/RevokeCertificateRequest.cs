@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Notary.Contract
+﻿namespace Notary.Contract
 {
     /// <summary>
     /// Data contract for a revocation request

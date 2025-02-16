@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using System.Text;
 
 using Newtonsoft.Json;
-
-using Notary.Model;
 
 namespace Notary.Contract
 {
@@ -13,17 +8,9 @@ namespace Notary.Contract
     {
         protected Entity()
         {
-
-        }
-
-        protected Entity(BaseModel model)
-        {
-            Slug = model.Slug;
-            Created = model.Created;
-            CreatedBySlug = model.CreatedBy;
-            Updated = model.Updated;
-            UpdatedBySlug = model.UpdatedBy;
-            Active = model.Active;
+            Slug = string.Empty;
+            CreatedBySlug = string.Empty;
+            UpdatedBySlug = string.Empty;
         }
 
         /// <summary>

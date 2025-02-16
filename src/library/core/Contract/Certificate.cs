@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-
-using Notary.Model;
 using Newtonsoft.Json;
 
 namespace Notary.Contract
@@ -15,54 +12,6 @@ namespace Notary.Contract
         public Certificate()
         {
 
-        }
-
-        public Certificate(CertificateModel model) : base(model)
-        {
-            CertificateKeyUsage = model.CertificateKeyUsage;
-            Data = model.Data;
-            IssuingSlug = model.IssuingSlug;
-            IsCaCertificate = model.IsCaCertificate;
-            KeySlug = model.KeySlug;
-            ExtendedKeyUsages = model.ExtendedKeyUsages;
-            Name = model.Name;
-            NotAfter = model.NotAfter;
-            NotBefore = model.NotBefore;
-            RevocationDate = model.RevocationDate;
-            SerialNumber = model.SerialNumber;
-            SignatureAlgorithm = model.SignatureAlgorithm;
-            RevocationDate = model.RevocationDate;
-            Thumbprint = model.Thumbprint;
-
-            Issuer = new DistinguishedName
-            {
-                CommonName = model.Issuer.CommonName,
-                Country = model.Issuer.Country,
-                Locale = model.Issuer.Locale,
-                Organization = model.Issuer.Organization,
-                OrganizationalUnit = model.Issuer.OrganizationalUnit,
-                StateProvince = model.Issuer.StateProvince
-            };
-
-            Subject = new DistinguishedName
-            {
-                CommonName = model.Subject.CommonName,
-                Country = model.Subject.Country,
-                Locale = model.Subject.Locale,
-                Organization = model.Subject.Organization,
-                OrganizationalUnit = model.Subject.OrganizationalUnit,
-                StateProvince = model.Subject.StateProvince
-            };
-
-            if (model.SubjectAlternativeNames != null)
-            {
-                SubjectAlternativeNames = new List<SubjectAlternativeName>();
-                SubjectAlternativeNames.AddRange(model.SubjectAlternativeNames.Select(s => new SubjectAlternativeName
-                {
-                    Name = s.Name,
-                    Kind = s.Kind
-                }));
-            }
         }
 
         [JsonProperty("cert_key_usages", Required = Required.Always)]

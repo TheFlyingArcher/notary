@@ -1,28 +1,12 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿using System;
 
-using Newtonsoft.Json;
+using MongoDB.Bson.Serialization.Attributes;
 
-using Notary.Contract;
-
-using System;
-using System.Text;
-
-namespace Notary.Model;
+namespace Notary.Data.Model;
 
 public class AsymmetricKeyModel : BaseModel
 {
     public AsymmetricKeyModel() { }
-
-    public AsymmetricKeyModel(AsymmetricKey key) : base(key)
-    {
-        EncryptedPrivateKey = Encoding.Default.GetString(key.EncryptedPrivateKey);
-        KeyAlgorithm = key.KeyAlgorithm;
-        KeyCurve = key.KeyCurve;
-        KeyLength = key.KeyLength;
-        Name = key.Name;
-        NotAfter = key.NotAfter;
-        NotBefore = key.NotBefore;
-    }
 
     [BsonElement("enc_prv_key")]
     public string EncryptedPrivateKey { get; set; }

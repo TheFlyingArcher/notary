@@ -1,10 +1,4 @@
-﻿using Notary.Contract;
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Notary.Model
+﻿namespace Notary.Data.Model
 {
     public class SanModel
     {
@@ -12,17 +6,12 @@ namespace Notary.Model
         {
         }
 
-        public SanModel(SubjectAlternativeName san)
-        {
-            Kind = san.Kind;
-            Name = san.Name;
-        }
         /// <summary>
         /// The kind of SAN
         /// </summary>
         public SanKind Kind
         {
-            get;set;
+            get; set;
         }
 
         /// <summary>
@@ -30,7 +19,7 @@ namespace Notary.Model
         /// </summary>
         public string Name
         {
-            get;set;
+            get; set;
         }
     }
 }

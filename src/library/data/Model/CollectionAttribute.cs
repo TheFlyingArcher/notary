@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Notary.Model
+namespace Notary.Data.Model
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
     public sealed class CollectionAttribute : Attribute
