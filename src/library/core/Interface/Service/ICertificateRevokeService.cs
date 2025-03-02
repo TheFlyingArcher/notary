@@ -1,8 +1,7 @@
-﻿using Notary.Contract;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Notary.Contract;
 
 namespace Notary.Interface.Service
 {
@@ -12,7 +11,7 @@ namespace Notary.Interface.Service
         /// Generate a Certificate Revocation List
         /// </summary>
         /// <returns>A CRL in PEM format</returns>
-        Task<string> GenerateCrl(string caSlug);
+        Task<byte[]> GenerateCrl(string caSlug);
 
         /// <summary>
         /// Get a list of all revocated certificates

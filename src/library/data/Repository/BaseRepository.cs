@@ -69,8 +69,7 @@ namespace Notary.Data.Repository
             using (var collection = await Collection.FindAsync(filter))
             {
                 var models = await collection.ToListAsync();
-
-                //contract.AddRange(models.Select(m => (TC)Activator.CreateInstance(typeof(TC), m)));
+                contract.AddRange(models.Select(Mapper.Map<TC>));
             }
             return contract;
         }

@@ -47,6 +47,7 @@ namespace Notary.Service
             try
             {
                 string issuerDn = null;
+                string crlEndpoint = null;
                 BigInteger issuerSn = null;
                 AsymmetricCipherKeyPair issuerKeyPair = null;
                 Certificate parentCert = null;
@@ -61,6 +62,7 @@ namespace Notary.Service
                     issuerKeyPair = await KeyService.GetKeyPairAsync(parentCert.KeySlug);
                     issuerSn = cert.SerialNumber;
                     issuerDn = DistinguishedName.BuildDistinguishedName(parentCert.Subject);
+                    crlEndpoint = $"{Configuration.CrlEndpoint}/{parentCert.IssuingSlug}";
                 }
                 var random = GetSecureRandom();
                 var newKey = new AsymmetricKey
@@ -106,7 +108,7 @@ namespace Notary.Service
                     parentCert == null ? certificateKeyPair : issuerKeyPair,
                     issuerSn,
                     request.IsCaCertificate,
-                    request.CrlEndpoint,
+                    crlEndpoint,
                     certKeyUsages,
                     keyUsages.ToArray()
                 );
@@ -122,7 +124,7 @@ namespace Notary.Service
                     IsCaCertificate = request.IsCaCertificate,
                     Issuer = parentCert == null ? request.Subject : parentCert.Subject,
                     IssuingSlug = request.ParentCertificateSlug,
-                    ExtendedKeyUsages = new List<string>(request.ExtendedKeyUsages),
+                    ExtendedKeyUsages = [.. request.ExtendedKeyUsages],
                     KeySlug = newKey.Slug,
                     Name = request.Name,
                     NotAfter = request.NotAfter,
@@ -171,7 +173,7 @@ namespace Notary.Service
                     var certEntry = new X509CertificateEntry(cert);
                     var keyEntry = new AsymmetricKeyEntry(certKey.Private);
 
-                    store.SetKeyEntry(certificate.Subject.ToString(), keyEntry, new X509CertificateEntry[] { certEntry });
+                    store.SetKeyEntry(certificate.Subject.ToString(), keyEntry, [certEntry]);
                     using (var memStream = new MemoryStream())
                     {
                         store.Save(memStream, privateKeyPassword.ToArray(), GetSecureRandom());

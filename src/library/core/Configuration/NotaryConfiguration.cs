@@ -31,6 +31,8 @@ namespace Notary.Configuration
 
         public NotaryDatabaseConfiguration Database { get; set; }
 
+        public string CrlEndpoint { get; set; }
+
         public int HashLength { get; set; }
 
         public NotaryOpenIdConfiguration OpenId { get; set; }

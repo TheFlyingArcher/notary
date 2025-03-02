@@ -1,22 +1,19 @@
-﻿using log4net;
-
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+using log4net;
 using Notary.Configuration;
 using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
-
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.X509.Extension;
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Notary.Service
 {
@@ -37,13 +34,9 @@ namespace Notary.Service
             KeyService = keyService;
         }
 
-        public async Task<string> GenerateCrl(string caSlug)
+        public async Task<byte[]> GenerateCrl(string caSlug)
         {
-            var ca = await CertificateAuthority.GetAsync(caSlug);
-            if (ca == null)
-                throw new ArgumentNullException(nameof(ca));
-
-            var caCert = await CertificateService.GetAsync(ca.CertificateSlug);
+            var caCert = await CertificateService.GetAsync(caSlug);
             if (caCert == null)
                 throw new ArgumentNullException(nameof(caCert));
 
@@ -104,20 +97,8 @@ namespace Notary.Service
             var signatureFactory = new Asn1SignatureFactory("SHA256WithRSA", keyPair.Private);
             crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(signingCertificate));
             var crl = crlGen.Generate(signatureFactory);
-            byte[] crlBinary = null;
-            using (var stream = new MemoryStream())
-            {
-                using (TextWriter tw = new StreamWriter(stream))
-                {
-                    var pw = new PemWriter(tw);
-                    pw.WriteObject(crl);
-                    await pw.Writer.FlushAsync();
-                }
 
-                crlBinary = stream.ToArray();
-            }
-
-            return Encoding.Default.GetString(crlBinary);
+            return crl.GetEncoded();
         }
 
         public async Task<List<RevocatedCertificate>> GetRevocatedCertificates()
@@ -139,6 +120,7 @@ namespace Notary.Service
                 var revocatedCertificate = new RevocatedCertificate
                 {
                     Active = true,
+                    CertificateSlug = slug,
                     Created = DateTime.Now,
                     CreatedBySlug = userRevocatingSlug,
                     Reason = reason,
