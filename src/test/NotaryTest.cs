@@ -13,8 +13,6 @@ public abstract class NotaryTest
             ApplicationKey = It.IsAny<string>(),
             Authentication = AuthenticationProvider.System,
             Database = new NotaryDatabaseConfiguration(),
-            HashLength = It.IsAny<int>(),
-            RootDirectory = It.IsAny<string>(),
             TokenSettings = new NotaryTokenSettingsConfiguration()
         };
     }

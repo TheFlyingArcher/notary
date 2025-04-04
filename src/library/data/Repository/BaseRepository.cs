@@ -12,7 +12,7 @@ using Notary.Interface.Repository;
 
 namespace Notary.Data.Repository
 {
-    public abstract class BaseRepository<TC, TM> : IRepository<TC>
+    internal abstract class BaseRepository<TC, TM> : IRepository<TC>
         where TC : Entity, new()
         where TM : BaseModel, new()
     {
@@ -103,6 +103,14 @@ namespace Notary.Data.Repository
 
             if (!result.IsAcknowledged)
                 throw new InvalidOperationException();
+        }
+
+        public virtual async Task InitializeAsync()
+        {
+            var activeIndex = new CreateIndexModel<TM>(Builders<TM>.IndexKeys.Ascending(a => a.Active));
+            var slugIndex = new CreateIndexModel<TM>(Builders<TM>.IndexKeys.Ascending(s => s.Slug));
+
+            await Collection.Indexes.CreateManyAsync([activeIndex, slugIndex]);
         }
 
         /// <summary>

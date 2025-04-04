@@ -42,6 +42,11 @@ namespace Notary.Interface.Repository
         Task<T> GetByIdAsync(string id);
 
         /// <summary>
+        /// Initializes a repository by setting up appropriate indexes.
+        /// </summary>
+        Task InitializeAsync();
+
+        /// <summary>
         /// Save an entity to the document store
         /// </summary>
         /// <param name="entity">The entity to update or create</param>

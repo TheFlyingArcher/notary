@@ -1,8 +1,8 @@
-﻿using Notary.Contract;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Notary.Contract;
 
 namespace Notary.Interface.Service
 {
@@ -38,5 +38,10 @@ namespace Notary.Interface.Service
         /// <param name="entity">The entity to persist to the data store</param>
         /// <param name="updatedBySlug">The account that persisted the entity</param>
         Task SaveAsync(TEntity entity, string updatedBySlug);
+
+        /// <summary>
+        /// Initialize the underlying datastore
+        /// </summary>
+        Task InitializeAsync();
     }
 }

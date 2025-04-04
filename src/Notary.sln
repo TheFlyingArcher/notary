@@ -13,6 +13,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary.Test", "test\Notary.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary.Web", "web\Notary.Web.csproj", "{DE8A34B4-0A9F-4381-97B9-BD1819AEABFB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Notary.Setup", "setup\Notary.Setup.csproj", "{758D9E78-157D-489D-B434-82A123053B5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,14 @@ Global
 		{DE8A34B4-0A9F-4381-97B9-BD1819AEABFB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DE8A34B4-0A9F-4381-97B9-BD1819AEABFB}.Release|ARM64.ActiveCfg = Release|ARM64
 		{DE8A34B4-0A9F-4381-97B9-BD1819AEABFB}.Release|ARM64.Build.0 = Release|ARM64
+		{758D9E78-157D-489D-B434-82A123053B5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{758D9E78-157D-489D-B434-82A123053B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{758D9E78-157D-489D-B434-82A123053B5C}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{758D9E78-157D-489D-B434-82A123053B5C}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{758D9E78-157D-489D-B434-82A123053B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{758D9E78-157D-489D-B434-82A123053B5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{758D9E78-157D-489D-B434-82A123053B5C}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{758D9E78-157D-489D-B434-82A123053B5C}.Release|ARM64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

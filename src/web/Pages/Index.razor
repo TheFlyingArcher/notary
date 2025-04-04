@@ -1,11 +1,5 @@
 ﻿@page "/"
-@attribute [Authorize]
 
-@using System.Linq
-@using Notary.Contract
-@using Notary.Interface.Service
-
-@inject ICertificateService CertificateService
 <PageTitle>Index</PageTitle>
 
 @if (AllCertificates.Count == 0)
@@ -20,61 +14,27 @@ else
         <MudItem xs="6">
             <MudPaper Height="15em" Class="d-flex flex-column align-center justify-center mud-width-full py-8">
                 <MudText Color="Color.Success" Typo="Typo.h3">Certificates Valid: @ValidCertificates.Count</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="6">
-                <MudPaper Height="15em" Class="d-flex flex-column align-center justify-center mud-width-full py-8">
-                    <MudText Color="Color.Warning" Typo="Typo.h3">Certificates Expiring: @ExpiringCertificates.Count</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="6">
-                <MudPaper Height="15em" Class="d-flex flex-column align-center justify-center mud-width-full py-8">
-                    <MudText Color="Color.Error" Typo="Typo.h3">Certificate Expired: @ExpiredCertificates.Count</MudText>
-                </MudPaper>
-            </MudItem>
-            <MudItem xs="6">
-                <MudPaper Height="15em" Class="d-flex flex-column align-center justify-center mud-width-full py-8">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                    Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-                    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                </MudPaper>
-            </MudItem>
-        </MudGrid>
-}
-
-@code {
-    protected DateTime Now { get; } = DateTime.UtcNow;
-
-    protected List<Certificate> AllCertificates { get; } = new();
-
-    protected List<Certificate> ValidCertificates
-    {
-        get
-        {
-            return AllCertificates.Where(a => a.NotAfter.AddDays(-30) > Now).ToList();
-        }
-    }
-
-    protected List<Certificate> ExpiringCertificates
-    {
-        get
-        {
-            return AllCertificates.Where(a => Now > a.NotAfter.AddDays(-30) && Now <= a.NotAfter).ToList();
-        }
-    }
-
-    protected List<Certificate> ExpiredCertificates
-    {
-        get
-        {
-            return AllCertificates.Where(a => Now > a.NotAfter).ToList();
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        var certificates = await CertificateService.GetAllAsync();
-        AllCertificates.AddRange(certificates);
-    }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Height="15em" Class="d-flex flex-column align-center justify-center mud-width-full py-8">
+                <MudText Color="Color.Warning" Typo="Typo.h3">Certificates Expiring: @ExpiringCertificates.Count</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Height="15em" Class="d-flex flex-column align-center justify-center mud-width-full py-8">
+                <MudText Color="Color.Error" Typo="Typo.h3">Certificate Expired: @ExpiredCertificates.Count</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6">
+            <MudPaper Height="15em" Class="d-flex flex-column align-center justify-center mud-width-full py-8">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et
+                dolore magna aliqua.
+                Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+                Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
+                laborum.
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
