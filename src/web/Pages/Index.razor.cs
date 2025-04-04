@@ -1,11 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using Notary;
 using Notary.Contract;
 using Notary.Interface.Service;
-using Notary.Web.Shared;
-using Notary.Web.ViewModels;
 
 namespace Notary.Web.Pages;
 
