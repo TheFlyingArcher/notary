@@ -5,7 +5,6 @@ using Autofac.Extensions.DependencyInjection;
 using log4net;
 using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
-using Newtonsoft.Json.Serialization;
 using Notary.Configuration;
 using Notary.Service;
 

@@ -1,11 +1,12 @@
-﻿using log4net;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices.Marshalling;
+using System.Text;
+using System.Threading.Tasks;
+using log4net;
 using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Notary.Service
 {
@@ -43,6 +44,11 @@ namespace Notary.Service
                 throw new ArgumentNullException(nameof(entity));
 
             await Repository.SaveAsync(entity);
+        }
+
+        public async virtual Task InitializeAsync()
+        {
+            await Repository.InitializeAsync();
         }
     }
 }

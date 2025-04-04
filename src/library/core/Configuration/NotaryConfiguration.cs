@@ -18,7 +18,6 @@ namespace Notary.Configuration
             ActiveDirectory = config.ActiveDirectory;
             Authentication = config.Authentication;
             Database = config.Database;
-            HashLength = config.HashLength;
             TokenSettings = config.TokenSettings;
         }
 
@@ -33,11 +32,7 @@ namespace Notary.Configuration
 
         public string CrlEndpoint { get; set; }
 
-        public int HashLength { get; set; }
-
         public NotaryOpenIdConfiguration OpenId { get; set; }
-
-        public string RootDirectory { get; set; }
 
         public NotaryTokenSettingsConfiguration TokenSettings { get; set; }
     }

@@ -7,7 +7,7 @@ using Notary.Interface.Repository;
 
 namespace Notary.Data.Repository
 {
-    public class RevocatedCertificateRepository : BaseRepository<RevocatedCertificate, RevocatedCertificateModel>, IRevocatedCertificateRepository
+    internal class RevocatedCertificateRepository : BaseRepository<RevocatedCertificate, RevocatedCertificateModel>, IRevocatedCertificateRepository
     {
         public RevocatedCertificateRepository(IMongoDatabase db, IMapper map) : base(db, map)
         {

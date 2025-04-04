@@ -14,7 +14,6 @@ using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Math;
-using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities.Encoders;
@@ -26,7 +25,6 @@ using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
 using Notary.Logging;
-using Org.BouncyCastle.Asn1.Ocsp;
 
 namespace Notary.Service
 {
