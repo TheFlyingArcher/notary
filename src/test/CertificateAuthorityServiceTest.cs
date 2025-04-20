@@ -1,8 +1,8 @@
 ﻿namespace Notary.Test;
 
-using Notary.Interface.Service;
 using Notary.Contract;
 using Notary.Interface.Repository;
+using Notary.Interface.Service;
 using Notary.Service;
 
 public class CertificateAuthorityServiceTest : NotaryTest
@@ -10,7 +10,7 @@ public class CertificateAuthorityServiceTest : NotaryTest
     private Mock<ICertificateAuthorityRepository> _caRepo;
     private Mock<ICertificateService> _certificateService;
     private Mock<ILog> _log;
-    private CertificateAuthorityService _service = null;
+    private CertificateAuthorityService _service;
 
     public CertificateAuthorityServiceTest()
     {
@@ -20,7 +20,7 @@ public class CertificateAuthorityServiceTest : NotaryTest
     }
 
     [SetUp]
-    public async Task Setup()
+    public void Setup()
     {
         var ca = MockCa();
         var certificate = CreateCertificateMock();
@@ -65,10 +65,13 @@ public class CertificateAuthorityServiceTest : NotaryTest
         var expected = new List<CaBrief>() { caBrief };
         var actual = await _service.GetCaListBrief();
 
-        Assert.That(actual != null, "Actual returned null");
-        Assert.That(actual.Count > 0, "Actual returned empty");
-        Assert.That(actual.Count == expected.Count, "Actual and expected counts differ");
-        Assert.That(actual[0].Slug == expected[0].Slug, "Slugs do not match");
+        Assert.That(actual, Is.Not.EqualTo(null), "Actual returned null");
+        if (actual != null)
+        {
+            Assert.That(actual.Count, Is.GreaterThan(0), "Actual returned empty");
+            Assert.That(actual.Count, Is.EqualTo(expected.Count), "Actual and expected counts differ");
+            Assert.That(actual[0].Slug, Is.EqualTo(expected[0].Slug), "Slugs do not match");
+        }
     }
 
     private CertificateAuthority MockCa()

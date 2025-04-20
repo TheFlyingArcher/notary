@@ -1,6 +1,6 @@
-using Notary.Interface.Service;
 using Notary.Contract;
 using Notary.Interface.Repository;
+using Notary.Interface.Service;
 
 namespace Notary.Test;
 
@@ -9,16 +9,20 @@ public class CertificateServiceTest
     private Mock<ICertificateRepository> _certificateRepo;
     private Mock<ICertificateAuthorityService> _caService;
 
+    private Mock<ICertificateService> _service;
+
     public CertificateServiceTest()
     {
         _certificateRepo = new Mock<ICertificateRepository>();
         _caService = new Mock<ICertificateAuthorityService>();
+        _service = new Mock<ICertificateService>();
     }
 
     [SetUp]
-    public async Task SetupTest()
+    public void SetupTest()
     {
         var certificate = CreateCertificateMock();
+        var request = MockRequest();
         var certificateList = new List<Certificate>
         {
             certificate
@@ -27,12 +31,19 @@ public class CertificateServiceTest
         _certificateRepo.Setup(r => r.GetCertificatesByCaAsync(It.IsAny<string>())).ReturnsAsync(certificateList);
 
         _caService.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(MockCa());
+
+        _service.Setup(s => s.IssueCertificateAsync(request)).ReturnsAsync(certificate);
     }
 
     [Test]
     public async Task IssueCertificateAsyncTest()
     {
+        var request = MockRequest();
+        var mock = _service.Object;
 
+        var certificate = await mock.IssueCertificateAsync(request);
+
+        Assert.That(certificate, Is.Not.EqualTo(null));
     }
 
     private Certificate CreateCertificateMock()

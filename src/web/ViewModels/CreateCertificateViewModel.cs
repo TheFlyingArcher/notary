@@ -1,7 +1,6 @@
-﻿using Notary.Contract;
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
+using Notary.Contract;
 
 namespace Notary.Web.ViewModels
 {
@@ -17,6 +16,7 @@ namespace Notary.Web.ViewModels
             Curve = EllipticCurve.P256;
             KeyAlgorithm = Algorithm.RSA;
             KeySize = 2048;
+            SelectedCertificateKeyUsage = new List<int>();
             SelectedExKeyUsages = new HashSet<string>();
             Subject = new DistinguishedName();
             SubjectAlternativeNames = new List<SubjectAlternativeName>();
@@ -49,12 +49,16 @@ namespace Notary.Web.ViewModels
                 {"1.3.6.1.1.1.1.22","MAC Address"}
             };
 
+
+
             // Default to a typical TLS/SSL certificate
             SelectedExKeyUsages = new List<string>()
             {
                 "1.3.6.1.5.5.7.3.1",
                 "1.3.6.1.5.5.7.3.2"
             };
+
+
         }
 
         public void Reset()

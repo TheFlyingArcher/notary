@@ -1,13 +1,11 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-
 using Notary;
 using Notary.Contract;
 using Notary.Interface.Service;
 using Notary.Web.ViewModels;
-
-using System.Text.RegularExpressions;
 
 namespace Notary.Web.Shared;
 
@@ -16,10 +14,6 @@ public partial class DownloadCertificateDialog : ComponentBase
     private MudForm _form;
     private bool _isValid = false;
     private string[] _errors = { };
-
-    private CertificateFormat _format;
-    private string? _certificatePassword;
-    private string? _confirmPassword;
 
     public DownloadCertificateDialog()
     {
@@ -42,8 +36,8 @@ public partial class DownloadCertificateDialog : ComponentBase
 
         if (_isValid)
         {
-            Certificate cert = null;
-            byte[] certBinary = null;
+            Certificate? cert = null;
+            byte[]? certBinary = null;
             string fileName = string.Empty;
             await Task.Run(async () =>
             {
@@ -98,7 +92,7 @@ public partial class DownloadCertificateDialog : ComponentBase
             yield return "Password must contain at least one digit";
     }
 
-    private string PasswordMatch(string pw)
+    private string? PasswordMatch(string pw)
     {
         if (ViewModel.Password != pw && ViewModel.Format == CertificateFormat.Pkcs12)
             return "Passwords must match";
