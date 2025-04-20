@@ -11,6 +11,10 @@ public class CertificateServiceTest
 
     private Mock<ICertificateService> _service;
 
+    private static Certificate _certificate = CreateCertificateMock();
+
+    private static CertificateRequest _request = MockRequest();
+
     public CertificateServiceTest()
     {
         _certificateRepo = new Mock<ICertificateRepository>();
@@ -21,32 +25,29 @@ public class CertificateServiceTest
     [SetUp]
     public void SetupTest()
     {
-        var certificate = CreateCertificateMock();
-        var request = MockRequest();
         var certificateList = new List<Certificate>
         {
-            certificate
+            _certificate
         };
-        _certificateRepo.Setup(r => r.SaveAsync(certificate));
+        _certificateRepo.Setup(r => r.SaveAsync(_certificate));
         _certificateRepo.Setup(r => r.GetCertificatesByCaAsync(It.IsAny<string>())).ReturnsAsync(certificateList);
 
         _caService.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(MockCa());
 
-        _service.Setup(s => s.IssueCertificateAsync(request)).ReturnsAsync(certificate);
+        _service.Setup(s => s.IssueCertificateAsync(_request)).ReturnsAsync(_certificate);
     }
 
     [Test]
     public async Task IssueCertificateAsyncTest()
     {
-        var request = MockRequest();
         var mock = _service.Object;
 
-        var certificate = await mock.IssueCertificateAsync(request);
+        var certificate = await mock.IssueCertificateAsync(_request);
 
         Assert.That(certificate, Is.Not.EqualTo(null));
     }
 
-    private Certificate CreateCertificateMock()
+    private static Certificate CreateCertificateMock()
     {
         return new Certificate
         {
@@ -88,7 +89,7 @@ public class CertificateServiceTest
         };
     }
 
-    private CertificateAuthority MockCa()
+    private static CertificateAuthority MockCa()
     {
         return new CertificateAuthority
         {
@@ -125,7 +126,7 @@ public class CertificateServiceTest
         };
     }
 
-    private CertificateRequest MockRequest()
+    private static CertificateRequest MockRequest()
     {
         return new CertificateRequest
         {
@@ -135,21 +136,13 @@ public class CertificateServiceTest
             Curve = null,
             KeyAlgorithm = Algorithm.RSA,
             KeySize = It.IsAny<int>(),
-            ExtendedKeyUsages = It.IsAny<List<string>>(),
+            ExtendedKeyUsages = It.IsAny<IEnumerable<string>>(),
             Name = It.IsAny<string>(),
-            NotAfter = It.IsAny<DateTime>(),
-            NotBefore = It.IsAny<DateTime>(),
+            NotAfter = DateTime.MaxValue,
+            NotBefore = DateTime.MinValue,
             RequestedBySlug = It.IsAny<string>(),
-            Subject = new DistinguishedName
-            {
-                CommonName = It.IsAny<string>(),
-                Country = It.IsAny<string>(),
-                Locale = It.IsAny<string>(),
-                Organization = It.IsAny<string>(),
-                OrganizationalUnit = It.IsAny<string>(),
-                StateProvince = It.IsAny<string>()
-            },
-            SubjectAlternativeNames = new List<SubjectAlternativeName>()
+            Subject = It.IsAny<DistinguishedName>(),
+            SubjectAlternativeNames = It.IsAny<List<SubjectAlternativeName>>()
         };
     }
 }
