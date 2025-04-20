@@ -12,7 +12,6 @@
         <Authorized>
             <MudAppBar Fixed="true">
                 <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-                @* <MudText Typo="Typo.h5" Class="ml-3">Notary</MudText> *@
                 @if (_darkMode)
                 {
                     <MudImage Alt="Notary Logo" Src="img/notary-logo-wht.png" Height="48" />
@@ -34,7 +33,7 @@
             </MudMainContent>
         </Authorized>
         <NotAuthorized>
-            @if (context.User.Identity.IsAuthenticated == false)
+            @if (context != null && context.User.Identity != null && context.User.Identity.IsAuthenticated == false)
             {
                 <MudContainer MaxWidth="MaxWidth.Small">
                     <MudGrid Class="mt-16">
