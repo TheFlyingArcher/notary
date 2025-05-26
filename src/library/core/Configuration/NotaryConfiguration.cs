@@ -9,7 +9,10 @@ namespace Notary.Configuration
     {
         public NotaryConfiguration()
         {
-
+            ActiveDirectory = new NotaryActiveDirectoryConfiguration();
+            Database = new NotaryDatabaseConfiguration();
+            OpenId = new NotaryOpenIdConfiguration();
+            TokenSettings = new NotaryTokenSettingsConfiguration();
         }
 
         public NotaryConfiguration(NotaryConfiguration config)
@@ -21,19 +24,19 @@ namespace Notary.Configuration
             TokenSettings = config.TokenSettings;
         }
 
-        public NotaryActiveDirectoryConfiguration ActiveDirectory { get; set; }
+        public NotaryActiveDirectoryConfiguration ActiveDirectory { get; }
 
         [NotaryEnvironmentVariable("NOTARY_APP_KEY")]
         public string ApplicationKey { get; set; }
 
-        public AuthenticationProvider Authentication { get; set; }
+        public AuthenticationProvider Authentication { get; }
 
-        public NotaryDatabaseConfiguration Database { get; set; }
+        public NotaryDatabaseConfiguration Database { get; }
 
         public string CrlEndpoint { get; set; }
 
-        public NotaryOpenIdConfiguration OpenId { get; set; }
+        public NotaryOpenIdConfiguration OpenId { get; }
 
-        public NotaryTokenSettingsConfiguration TokenSettings { get; set; }
+        public NotaryTokenSettingsConfiguration TokenSettings { get; }
     }
 }

@@ -1,25 +1,4 @@
 {
     "version": "0.2.0",
-    "configurations": [
-        {
-            "name": ".NET Core Launch (console)",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "build-setup",
-            "program": "${workspaceFolder}/src/setup/bin/Debug/net8.0/Notary.Setup.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/src/setup",
-            "stopAtEntry": false,
-            "console": "internalConsole",
-            "env": {
-                "NOTARY_DB_HOST": "mongodb://localhost:27017",
-                "NOTARY_DB_NAME": "notary",
-            }
-        },
-        {
-            "name": ".NET Core Attach",
-            "type": "coreclr",
-            "request": "attach"
-        }
-    ]
+    "configurations": []
 }

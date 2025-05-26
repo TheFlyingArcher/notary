@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-web-2f00fce2-0432-4e73-a89a-0aba0c91b909</UserSecretsId>
@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../Notary.ServiceDefaults/Notary.ServiceDefaults.csproj" />
     <ProjectReference Include="..\library\core\Notary.csproj" />
     <ProjectReference Include="..\library\service\Notary.Service.csproj" />
   </ItemGroup>

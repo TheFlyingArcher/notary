@@ -10,23 +10,25 @@ using Notary.Service;
 
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.AddServiceDefaults();
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
-var config = builder.Configuration
-    .GetSection("Notary")
-    .Get<NotaryConfiguration>();
+// var config = builder.Configuration
+//     .GetSection("Notary")
+//     .Get<NotaryConfiguration>();
 
-if (config == null)
-    throw new InvalidOperationException("Configuration not found. Please ensure a configuration file is present.");
+// if (config == null)
+//     throw new InvalidOperationException("Configuration not found. Please ensure a configuration file is present.");
+
+var config = new NotaryConfiguration();
+SetEnvironmentVariables(config);
 
 builder.Host.ConfigureContainer<ContainerBuilder>(c =>
 {
-    SetEnvironmentVariables(config);
     c.RegisterInstance(config).SingleInstance();
-
     c.Register(r => LogManager.GetLogger(typeof(Program))).As<ILog>().SingleInstance();
     RegisterModules.Register(c);
 });
+
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
@@ -101,7 +103,7 @@ static void SetPropertiesEnvVariable<T>(T configType) where T : class
         return;
 
     var type = configType.GetType();
-    var typeProperties = type.GetProperties(BindingFlags.Public);
+    var typeProperties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
     foreach (var p in typeProperties)
     {
@@ -112,7 +114,7 @@ static void SetPropertiesEnvVariable<T>(T configType) where T : class
         var evValue = Environment.GetEnvironmentVariable(attribute.EnvironmentVariable);
         if (!string.IsNullOrEmpty(evValue))
         {
-            p.SetValue(type, evValue);
+            p.SetValue(configType, evValue);
         }
     }
 }

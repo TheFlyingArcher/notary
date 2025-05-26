@@ -15,6 +15,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary.Web", "web\Notary.We
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Notary.Setup", "setup\Notary.Setup.csproj", "{758D9E78-157D-489D-B434-82A123053B5C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Notary.AppHost", "..\Notary.AppHost\Notary.AppHost.csproj", "{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Notary.ServiceDefaults", "..\Notary.ServiceDefaults\Notary.ServiceDefaults.csproj", "{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +83,22 @@ Global
 		{758D9E78-157D-489D-B434-82A123053B5C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{758D9E78-157D-489D-B434-82A123053B5C}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{758D9E78-157D-489D-B434-82A123053B5C}.Release|ARM64.Build.0 = Release|Any CPU
+		{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}.Release|ARM64.Build.0 = Release|Any CPU
+		{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}.Release|ARM64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
