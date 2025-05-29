@@ -9,14 +9,7 @@ WriteLine("Welcome!", ConsoleColor.Green);
 
 try
 {
-    var config = new NotaryConfiguration()
-    {
-        ActiveDirectory = new NotaryActiveDirectoryConfiguration(),
-        Authentication = Notary.AuthenticationProvider.OpenId,
-        Database = new NotaryDatabaseConfiguration(),
-        OpenId = new NotaryOpenIdConfiguration(),
-        TokenSettings = new NotaryTokenSettingsConfiguration()
-    };
+    var config = new NotaryConfiguration();
 
     SetEnvironmentVariables(config);
 

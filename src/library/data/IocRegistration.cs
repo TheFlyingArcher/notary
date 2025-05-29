@@ -33,7 +33,7 @@ namespace Notary.Data
                 var settings = MongoClientSettings.FromUrl(new MongoUrl(config.Database.Host));
                 settings.ServerApi = new ServerApi(ServerApiVersion.V1);
 
-                if (!string.IsNullOrEmpty(config.Database.Username) && !string.IsNullOrEmpty(string.Empty))
+                if (!string.IsNullOrEmpty(config.Database.Username) && !string.IsNullOrEmpty(config.Database.Password))
                 {
                     settings.Credential = MongoCredential.CreateCredential(
                         "admin", //TODO: Put into configuration
