@@ -1,19 +1,15 @@
-﻿using log4net;
-
+﻿using System;
+using System.IO;
+using System.Text;
+using System.Threading.Tasks;
+using log4net;
 using Notary.Contract;
 using Notary.Interface.Repository;
-
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.X509;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Notary.Service
 {

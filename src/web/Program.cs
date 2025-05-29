@@ -12,12 +12,6 @@ using Notary.Service;
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
-// var config = builder.Configuration
-//     .GetSection("Notary")
-//     .Get<NotaryConfiguration>();
-
-// if (config == null)
-//     throw new InvalidOperationException("Configuration not found. Please ensure a configuration file is present.");
 
 var config = new NotaryConfiguration();
 SetEnvironmentVariables(config);
@@ -28,7 +22,6 @@ builder.Host.ConfigureContainer<ContainerBuilder>(c =>
     c.Register(r => LogManager.GetLogger(typeof(Program))).As<ILog>().SingleInstance();
     RegisterModules.Register(c);
 });
-
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
