@@ -5,11 +5,13 @@
     <AuthorizeView Roles="NotaryAdmin">
         <Authorized>
             <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Href="/ca/create">
-                Create Certificate Authority</MudButton>
+                Create Certificate Authority
+            </MudButton>
         </Authorized>
         <NotAuthorized>
             <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Disabled="true">
-                Create Certificate Authority</MudButton>
+                Create Certificate Authority
+            </MudButton>
         </NotAuthorized>
     </AuthorizeView>
 </MudContainer>
@@ -32,7 +34,7 @@
                 <MudTd DataLabel="KeyType">@context.KeyAlgorithm</MudTd>
                 <MudTh>
                     <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small"
-                        OnClick="@(()=>OnCertificateDownloadClick(context.CertificateSlug))" />
+                            OnClick="@(() => OnCertificateDownloadClick(context.CertificateSlug))"/>
                 </MudTh>
             </RowTemplate>
         </MudTable>
@@ -40,7 +42,8 @@
     else
     {
         <MudAlert Severity="Severity.Info">
-            Looks like no certificate authorities have been created. Create one by clicking "Create Certificate Authority".
+            Looks like no certificate authorities have been created. Create one by clicking "Create Certificate
+            Authority".
         </MudAlert>
     }
 </MudContainer>

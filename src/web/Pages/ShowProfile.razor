@@ -1,17 +1,15 @@
 @page "/showprofile"
-@attribute [Authorize]
-@using Auth0.AspNetCore.Authentication
-@using Auth0.Core
 @using Auth0.Core.Exceptions
+@attribute [Authorize]
 
 <AuthorizeView>
     <Authorized>
         <MudText Typo="Typo.h1" Color="Color.Primary">@context.User.Identity.Name</MudText>
-            <MudDivider Class="ma-3" />
-            <MudText Typo="Typo.h3" Color="Color.Default">Claims</MudText>
-            <MudDivider Class="ma-3" />
-            <MudGrid>
-                @foreach (var claim in context.User.Claims)
+        <MudDivider Class="ma-3"/>
+        <MudText Typo="Typo.h3" Color="Color.Default">Claims</MudText>
+        <MudDivider Class="ma-3"/>
+        <MudGrid>
+            @foreach (var claim in context.User.Claims)
             {
                 <MudItem sm="5">@claim.Type</MudItem>
                 <MudItem sm="1">:</MudItem>
@@ -21,13 +19,15 @@
 
     </Authorized>
     <NotAuthorized>
-        <MudAlert Severity="Severity.Error" ShowCloseIcon="true" Elevation="25" Variant="Variant.Filled" ContentAlignment="HorizontalAlignment.Center">
+        <MudAlert Severity="Severity.Error" ShowCloseIcon="true" Elevation="25" Variant="Variant.Filled"
+                  ContentAlignment="HorizontalAlignment.Center">
             You should not be here
         </MudAlert>
     </NotAuthorized>
 </AuthorizeView>
 
 @code {
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -37,4 +37,5 @@
         {
         }
     }
+
 }

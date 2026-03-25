@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
-
 using MudBlazor;
-
 using Notary.Contract;
 using Notary.Interface.Service;
 using Notary.Web.Shared;
@@ -15,9 +13,21 @@ namespace Notary.Web.Pages;
 public partial class CertificateDetail : ComponentBase
 {
     protected CertificateViewModel Model { get; } = new();
-    protected bool IsLoading { get; set; } = false;
-    protected bool NotFound { get; set; } = false;
+    protected bool IsLoading { get; set; }
+    protected bool NotFound { get; set; }
     protected string Slug { get; set; } = string.Empty;
+
+    [Inject] public ICertificateRevokeService RevokeSvc { get; set; }
+
+    [Inject] public IAsymmetricKeyService KeyService { get; set; }
+
+    [Inject] public ICertificateAuthorityService CaService { get; set; }
+
+    [Inject] public ICertificateService CertificateService { get; set; }
+
+    [Inject] public IDialogService DlgService { get; set; }
+
+    [Inject] public NavigationManager NavManager { get; set; }
 
 
     protected override async Task OnInitializedAsync()
@@ -61,7 +71,7 @@ public partial class CertificateDetail : ComponentBase
             rc = rcList.Find(cc => cc.Slug == c.Thumbprint);
         }
 
-        DateTime utcNow = DateTime.UtcNow;
+        var utcNow = DateTime.UtcNow;
         Model.EllipticCurve = key.KeyCurve;
         Model.Expired = utcNow > c.NotAfter;
         Model.Expiring = utcNow > c.NotAfter.AddDays(-30) && utcNow <= c.NotAfter;
@@ -78,10 +88,7 @@ public partial class CertificateDetail : ComponentBase
         Model.SubjectAlternativeNames = c.SubjectAlternativeNames;
         Model.Thumbprint = c.Thumbprint;
 
-        if (rc != null)
-        {
-            Model.RevocationReason = rc.Reason.RevocationFriendlyName();
-        }
+        if (rc != null) Model.RevocationReason = rc.Reason.RevocationFriendlyName();
 
         await PopulateIssuerTree(c.Slug);
         IsLoading = false;
@@ -91,7 +98,7 @@ public partial class CertificateDetail : ComponentBase
     {
         var parameters = new DialogParameters<DownloadCertificateDialog>
         {
-            { d=> d.Slug, Slug }
+            { d => d.Slug, Slug }
         };
         var dialog = await DlgService.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
         var result = await dialog.Result;
@@ -101,29 +108,21 @@ public partial class CertificateDetail : ComponentBase
     {
         var parameters = new DialogParameters<RevokeCertificateDialog>
         {
-            { d=> d.Slug, Slug }
+            { d => d.Slug, Slug }
         };
         var dialog = await DlgService.ShowAsync<RevokeCertificateDialog>("Revoke Certificate", parameters);
         var result = await dialog.Result;
         if (result == null)
-        {
             // I don't see this can be null
             throw new ArgumentNullException(nameof(result));
-        }
 
-        if (!result.Canceled)
-        {
-            NavManager.NavigateTo("/certificates");
-        }
+        if (!result.Canceled) NavManager.NavigateTo("/certificates");
     }
 
     private async Task PopulateIssuerTree(string slug, List<TreeItemData<CertificateIssuerTreeItem>> children = null)
     {
         var certificate = await CertificateService.GetAsync(slug);
-        if (certificate == null)
-        {
-            throw new ArgumentNullException(nameof(certificate));
-        }
+        if (certificate == null) throw new ArgumentNullException(nameof(certificate));
 
         var caItem = new CertificateIssuerTreeItem
         {
@@ -131,7 +130,7 @@ public partial class CertificateDetail : ComponentBase
             Slug = certificate.Slug
         };
 
-        var rootItem = new TreeItemData<CertificateIssuerTreeItem>()
+        var rootItem = new TreeItemData<CertificateIssuerTreeItem>
         {
             Value = caItem
         };
@@ -141,27 +140,10 @@ public partial class CertificateDetail : ComponentBase
             rootItem.Children = new List<TreeItemData<CertificateIssuerTreeItem>>();
             await PopulateIssuerTree(certificate.IssuingSlug, rootItem.Children);
         }
+
         if (children != null)
             children.Add(rootItem);
         else
             Model.Issuers.Add(rootItem);
     }
-
-    [Inject]
-    public ICertificateRevokeService RevokeSvc { get; set; }
-
-    [Inject]
-    public IAsymmetricKeyService KeyService { get; set; }
-
-    [Inject]
-    public ICertificateAuthorityService CaService { get; set; }
-
-    [Inject]
-    public ICertificateService CertificateService { get; set; }
-
-    [Inject]
-    public IDialogService DlgService { get; set; }
-
-    [Inject]
-    public NavigationManager NavManager { get; set; }
 }

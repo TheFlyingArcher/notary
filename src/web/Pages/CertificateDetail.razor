@@ -1,45 +1,44 @@
 ﻿@page "/certificate"
-
 @using Notary.Web.ViewModels
 
 @if (NotFound)
 {
     <MudGrid Class="mt-16">
-    <MudItem xs="12">
-        <MudPaper Elevation="3" Height="12em">
-            <MudStack Class="d-flex align-center flex-grow-1 gap-4">
-                <MudItem Class="pa-2">
-                    <MudText Typo="Typo.h3" Color="Color.Error">
-                        <i class="fa-sharp fa-solid fa-circle-xmark"></i>
-                    </MudText>
-                </MudItem>
-                <MudItem Class="pa-2">
-                    The given certificate was not found. Please try again.
-                </MudItem>
-            </MudStack>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
+        <MudItem xs="12">
+            <MudPaper Elevation="3" Height="12em">
+                <MudStack Class="d-flex align-center flex-grow-1 gap-4">
+                    <MudItem Class="pa-2">
+                        <MudText Typo="Typo.h3" Color="Color.Error">
+                            <i class="fa-sharp fa-solid fa-circle-xmark"></i>
+                        </MudText>
+                    </MudItem>
+                    <MudItem Class="pa-2">
+                        The given certificate was not found. Please try again.
+                    </MudItem>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
 else if (Model.Subject != null)
 {
     <MudPaper>
-    <MudToolBar Class="mt-4">
-        <MudIconButton Icon="fa-sharp fa-solid fa-arrow-left" Color="Color.Inherit" Href="/certificates" />
-        <MudSpacer />
-        <MudIconButton Icon="fa-sharp fa-solid fa-download" Color="Color.Inherit"
-            Disabled="Model.RevocationDate.HasValue" OnClick="OnCertificateDownloadClick" />
-        <AuthorizeView Roles="NotaryAdmin,NotaryWriter">
-            <Authorized>
-                <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" OnClick="OnRevokeCertificateClick"
-                    Color="Color.Error" Disabled="Model.RevocationDate.HasValue" />
-            </Authorized>
-            <NotAuthorized>
-                <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" Color="Color.Error" Disabled="true" />
-            </NotAuthorized>
-        </AuthorizeView>
-    </MudToolBar>
-</MudPaper>
+        <MudToolBar Class="mt-4">
+            <MudIconButton Icon="fa-sharp fa-solid fa-arrow-left" Color="Color.Inherit" Href="/certificates"/>
+            <MudSpacer/>
+            <MudIconButton Icon="fa-sharp fa-solid fa-download" Color="Color.Inherit"
+                           Disabled="Model.RevocationDate.HasValue" OnClick="OnCertificateDownloadClick"/>
+            <AuthorizeView Roles="NotaryAdmin,NotaryWriter">
+                <Authorized>
+                    <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" OnClick="OnRevokeCertificateClick"
+                                   Color="Color.Error" Disabled="Model.RevocationDate.HasValue"/>
+                </Authorized>
+                <NotAuthorized>
+                    <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" Color="Color.Error" Disabled="true"/>
+                </NotAuthorized>
+            </AuthorizeView>
+        </MudToolBar>
+    </MudPaper>
     <MudGrid Class="mt-6">
         <MudItem xs="6">
             <MudText Typo="Typo.h6">Status</MudText>
@@ -281,11 +280,11 @@ else if (Model.Subject != null)
     @if (Model.SubjectAlternativeNames != null && Model.SubjectAlternativeNames.Count > 0)
     {
         <MudGrid class="mt-6">
-    <MudItem xs="12">
-        <MudText Typo="Typo.h6">Subject Alternative Names</MudText>
-        <MudPaper Class="mt-6">
-            <MudStack>
-                @foreach (var san in Model.SubjectAlternativeNames)
+            <MudItem xs="12">
+                <MudText Typo="Typo.h6">Subject Alternative Names</MudText>
+                <MudPaper Class="mt-6">
+                    <MudStack>
+                        @foreach (var san in Model.SubjectAlternativeNames)
                         {
                             <MudItem Class="pa-3">
                                 <MudGrid Spacing="2">
@@ -304,6 +303,7 @@ else if (Model.Subject != null)
             </MudItem>
         </MudGrid>
     }
+
     <MudPaper Class="mt-6">
         <MudText Typo="Typo.h6">Issuer Tree</MudText>
         <MudTreeView T="CertificateIssuerTreeItem" Items="@Model.Issuers">
@@ -316,5 +316,5 @@ else if (Model.Subject != null)
 }
 else
 {
-    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium" />
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium"/>
 }

@@ -1,9 +1,6 @@
-
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-
-using Notary;
 using Notary.Contract;
 using Notary.Interface.Service;
 using Notary.Web.Shared;
@@ -13,9 +10,19 @@ namespace Notary.Web.Pages;
 
 public partial class CertificateAuthorities : ComponentBase
 {
+    private bool _isLoading;
     private List<CertificateAuthority> CaList { get; set; } = new();
     private DownloadCertificateViewModel DownloadModel { get; set; } = new();
-    private bool _isLoading;
+
+    [Inject] public IJSRuntime JS { get; set; }
+
+    [Inject] public IDialogService Dialog { get; set; }
+
+    [Inject] public ICertificateAuthorityService CaService { get; set; }
+
+    [Inject] public ICertificateService CertificateService { get; set; }
+
+    [Inject] public NavigationManager NavigationManager { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -29,25 +36,9 @@ public partial class CertificateAuthorities : ComponentBase
     {
         var parameters = new DialogParameters<DownloadCertificateDialog>
         {
-            { d=> d.Slug, slug }
+            { d => d.Slug, slug }
         };
         var dialog = await Dialog.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
         var result = await dialog.Result;
     }
-
-    [Inject]
-    public IJSRuntime JS { get; set; }
-
-    [Inject]
-    public IDialogService Dialog { get; set; }
-
-    [Inject]
-    public ICertificateAuthorityService CaService { get; set; }
-
-    [Inject]
-    public ICertificateService CertificateService { get; set; }
-
-    [Inject]
-    public NavigationManager NavigationManager { get; set; }
-
 }

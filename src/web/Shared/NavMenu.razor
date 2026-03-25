@@ -1,17 +1,31 @@
 <MudNavMenu>
-    <MudNavLink Href="/" Match="NavLinkMatch.All"><MudIcon Icon="fa-sharp fa-regular fa-home" Size="Size.Small" Class="mr-3" />Home</MudNavLink>
+    <MudNavLink Href="/" Match="NavLinkMatch.All">
+        <MudIcon Icon="fa-sharp fa-regular fa-home" Size="Size.Small" Class="mr-3"/>
+        Home
+    </MudNavLink>
     <AuthorizeView>
         <Authorized>
-            <MudNavLink Href="/certificates" Match="NavLinkMatch.Prefix"><MudIcon Icon="fa-sharp fa-regular fa-file-certificate" Size="Size.Small" Class="mr-3" />Certificates</MudNavLink>
-            <MudNavLink Href="/ca" Match="NavLinkMatch.Prefix"><MudIcon Icon="fa-sharp fa-regular fa-building-shield" Size="Size.Small" Class="mr-3" />Certificate Authority</MudNavLink>
-            <MudNavLink Href="/showprofile" Match="NavLinkMatch.Prefix"><MudIcon Icon="fa-sharp fa-regular fa-circle-user" Size="Size.Small" Class="mr-3" />Show profile</MudNavLink>
+            <MudNavLink Href="/certificates" Match="NavLinkMatch.Prefix">
+                <MudIcon Icon="fa-sharp fa-regular fa-file-certificate" Size="Size.Small" Class="mr-3"/>
+                Certificates
+            </MudNavLink>
+            <MudNavLink Href="/ca" Match="NavLinkMatch.Prefix">
+                <MudIcon Icon="fa-sharp fa-regular fa-building-shield" Size="Size.Small" Class="mr-3"/>
+                Certificate Authority
+            </MudNavLink>
+            <MudNavLink Href="/showprofile" Match="NavLinkMatch.Prefix">
+                <MudIcon Icon="fa-sharp fa-regular fa-circle-user" Size="Size.Small" Class="mr-3"/>
+                Show profile
+            </MudNavLink>
             <MudNavLink Href="Authenticate/Logout" Match="NavLinkMatch.All">
-                <MudIcon Icon="fa-sharp fa-regular fa-person-to-door" Size="Size.Small" Class="mr-3" />Log Out
+                <MudIcon Icon="fa-sharp fa-regular fa-person-to-door" Size="Size.Small" Class="mr-3"/>
+                Log Out
             </MudNavLink>
         </Authorized>
         <NotAuthorized>
             <MudNavLink Href="Authenticate/Login" Match="NavLinkMatch.All">
-                <MudIcon Icon="fa-sharp fa-regular fa-person-to-door" Size="Size.Small" Class="mr-3" />Log In
+                <MudIcon Icon="fa-sharp fa-regular fa-person-to-door" Size="Size.Small" Class="mr-3"/>
+                Log In
             </MudNavLink>
         </NotAuthorized>
     </AuthorizeView>

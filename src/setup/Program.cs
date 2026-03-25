@@ -88,9 +88,6 @@ static void SetPropertiesEnvVariable<T>(T configType) where T : class
             continue;
 
         var evValue = Environment.GetEnvironmentVariable(attribute.EnvironmentVariable);
-        if (!string.IsNullOrEmpty(evValue))
-        {
-            p.SetValue(configType, evValue);
-        }
+        if (!string.IsNullOrEmpty(evValue)) p.SetValue(configType, evValue);
     }
 }

@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Autofac;
+using Notary.Data;
 
-using Autofac;
+namespace Notary.Service;
 
-namespace Notary.Service
+public static class RegisterModules
 {
-    public static class RegisterModules
+    public static void Register(ContainerBuilder builder)
     {
-        public static void Register(ContainerBuilder builder)
-        {
-            builder.RegisterModule(new Data.IocRegistration());
-            builder.RegisterModule(new IocRegistrations());
-        }
+        builder.RegisterModule(new IocRegistration());
+        builder.RegisterModule(new IocRegistrations());
     }
 }

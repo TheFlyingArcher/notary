@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
 using Notary.Contract;
 using Notary.Interface.Service;
 
@@ -15,34 +14,24 @@ public partial class Index : ComponentBase
 
     protected List<Certificate> ValidCertificates
     {
-        get
-        {
-            return AllCertificates.Where(a => a.NotAfter.AddDays(-30) > Now).ToList();
-        }
+        get { return AllCertificates.Where(a => a.NotAfter.AddDays(-30) > Now).ToList(); }
     }
 
     protected List<Certificate> ExpiringCertificates
     {
-        get
-        {
-            return AllCertificates.Where(a => Now > a.NotAfter.AddDays(-30) && Now <= a.NotAfter).ToList();
-        }
+        get { return AllCertificates.Where(a => Now > a.NotAfter.AddDays(-30) && Now <= a.NotAfter).ToList(); }
     }
 
     protected List<Certificate> ExpiredCertificates
     {
-        get
-        {
-            return AllCertificates.Where(a => Now > a.NotAfter).ToList();
-        }
+        get { return AllCertificates.Where(a => Now > a.NotAfter).ToList(); }
     }
+
+    [Inject] public ICertificateService CertificateService { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         var certificates = await CertificateService.GetAllAsync();
         AllCertificates.AddRange(certificates);
     }
-
-    [Inject]
-    public ICertificateService CertificateService { get; set; }
 }

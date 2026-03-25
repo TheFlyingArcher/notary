@@ -1,43 +1,43 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Platforms>AnyCPU;ARM64</Platforms>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Platforms>AnyCPU;ARM64</Platforms>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Autofac" Version="8.2.0" />
-    <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />
-    <PackageReference Include="log4net" Version="3.0.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Castle.Core" Version="5.1.1" />
-    <PackageReference Include="Autofac.Extras.DynamicProxy" Version="7.1.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Autofac" Version="8.2.0"/>
+        <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1"/>
+        <PackageReference Include="log4net" Version="3.0.3"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+        <PackageReference Include="Castle.Core" Version="5.1.1"/>
+        <PackageReference Include="Autofac.Extras.DynamicProxy" Version="7.1.0"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="Security\" />
-    <None Remove="IOC\Interceptor\" />
-    <None Remove="Castle.Core" />
-    <None Remove="Autofac.Extras.DynamicProxy" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Security\" />
-    <Folder Include="IOC\Interceptor\" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Remove="Security\"/>
+        <None Remove="IOC\Interceptor\"/>
+        <None Remove="Castle.Core"/>
+        <None Remove="Autofac.Extras.DynamicProxy"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Folder Include="Security\"/>
+        <Folder Include="IOC\Interceptor\"/>
+    </ItemGroup>
 </Project>

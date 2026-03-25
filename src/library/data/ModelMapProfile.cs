@@ -1,5 +1,4 @@
 using System.Text;
-
 using AutoMapper;
 using Notary.Contract;
 using Notary.Data.Model;
@@ -7,12 +6,12 @@ using Notary.Data.Model;
 namespace Notary.Data;
 
 /// <summary>
-/// A profile to map database models to over-the-wire contracts
+///     A profile to map database models to over-the-wire contracts
 /// </summary>
 public class ModelMapProfile : Profile
 {
     /// <summary>
-    /// Instantiate a new model mapping profile
+    ///     Instantiate a new model mapping profile
     /// </summary>
     public ModelMapProfile()
     {
@@ -23,9 +22,11 @@ public class ModelMapProfile : Profile
 
         // Core models
         CreateMap<AsymmetricKey, AsymmetricKeyModel>()
-            .ForMember(c => c.EncryptedPrivateKey, m => m.MapFrom(n => Encoding.Default.GetString(n.EncryptedPrivateKey)))
+            .ForMember(c => c.EncryptedPrivateKey,
+                m => m.MapFrom(n => Encoding.Default.GetString(n.EncryptedPrivateKey)))
             .ReverseMap()
-            .ForMember(m => m.EncryptedPrivateKey, c => c.MapFrom(d => Encoding.Default.GetBytes(d.EncryptedPrivateKey)));
+            .ForMember(m => m.EncryptedPrivateKey,
+                c => c.MapFrom(d => Encoding.Default.GetBytes(d.EncryptedPrivateKey)));
         CreateMap<Certificate, CertificateModel>().ReverseMap();
         CreateMap<CertificateAuthority, CertificateAuthorityModel>().ReverseMap();
         CreateMap<RevocatedCertificate, RevocatedCertificateModel>().ReverseMap();

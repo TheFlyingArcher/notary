@@ -1,21 +1,18 @@
 ﻿using Org.BouncyCastle.OpenSsl;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Notary.Service
+namespace Notary.Service;
+
+public class PasswordFinder : IPasswordFinder
 {
-    public class PasswordFinder : IPasswordFinder
-    {
-        private string _pwd;
-        public PasswordFinder(string password)
-        {
-            _pwd = password;
-        }
+    private readonly string _pwd;
 
-        public char[] GetPassword()
-        {
-            return _pwd.ToCharArray();
-        }
+    public PasswordFinder(string password)
+    {
+        _pwd = password;
+    }
+
+    public char[] GetPassword()
+    {
+        return _pwd.ToCharArray();
     }
 }

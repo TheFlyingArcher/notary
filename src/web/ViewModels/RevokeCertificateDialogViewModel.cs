@@ -1,13 +1,10 @@
-﻿namespace Notary.Web.ViewModels
+﻿namespace Notary.Web.ViewModels;
+
+public class RevokeCertificateDialogViewModel
 {
-    public class RevokeCertificateDialogViewModel
-    {
-        public RevokeCertificateDialogViewModel() { }
+    public string Slug { get; set; }
 
-        public string Slug { get; set; }
+    public RevocationReason RevocationReason { get; set; }
 
-        public RevocationReason RevocationReason { get; set; }
-
-        public string UserRevoking { get; set; }
-    }
+    public string UserRevoking { get; set; }
 }

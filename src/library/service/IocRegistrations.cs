@@ -1,29 +1,27 @@
 ﻿using Autofac;
-
 using Notary.Interface.Service;
 using Notary.IOC;
 
-namespace Notary.Service
+namespace Notary.Service;
+
+public class IocRegistrations : Module, IRegister
 {
-    public class IocRegistrations : Module, IRegister
+    protected override void Load(ContainerBuilder builder)
     {
-        protected override void Load(ContainerBuilder builder)
-        {
-            builder.RegisterType<AsymmetricKeyService>()
-                .As<IAsymmetricKeyService>()
-                .InstancePerLifetimeScope();
+        builder.RegisterType<AsymmetricKeyService>()
+            .As<IAsymmetricKeyService>()
+            .InstancePerLifetimeScope();
 
-            builder.RegisterType<CertificateAuthorityService>()
-                .As<ICertificateAuthorityService>()
-                .InstancePerLifetimeScope();
+        builder.RegisterType<CertificateAuthorityService>()
+            .As<ICertificateAuthorityService>()
+            .InstancePerLifetimeScope();
 
-            builder.RegisterType<CertificateRevokeService>()
-                .As<ICertificateRevokeService>()
-                .InstancePerLifetimeScope();
+        builder.RegisterType<CertificateRevokeService>()
+            .As<ICertificateRevokeService>()
+            .InstancePerLifetimeScope();
 
-            builder.RegisterType<CertificateService>()
-                .As<ICertificateService>()
-                .InstancePerLifetimeScope();
-        }
+        builder.RegisterType<CertificateService>()
+            .As<ICertificateService>()
+            .InstancePerLifetimeScope();
     }
 }

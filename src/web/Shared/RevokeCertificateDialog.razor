@@ -18,7 +18,7 @@
                 <MudForm Model="@Model" @ref="@_form" @bind-IsValid="@_isValid" @bind-Errors="@_errors">
                     <MudText Typo="Typo.body2">Revocation Reason</MudText>
                     <MudSelect @bind-Value="@Model.RevocationReason" Label="Select Revocation Reason"
-                        HelperText="Select why the certificate shall be revoked" Placeholder="Please Select">
+                               HelperText="Select why the certificate shall be revoked" Placeholder="Please Select">
                         <MudSelectItem Value="@(RevocationReason.AaCompromized)">RADIUS Server Compromized
                         </MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.AffiliationChanged)">Affiliation Changed

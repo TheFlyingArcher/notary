@@ -5,13 +5,11 @@ namespace Notary.Web.Shared;
 
 public partial class MainLayout
 {
-    bool _drawerOpen = true;
-    bool _darkMode = false;
+    private bool _darkMode;
+    private bool _drawerOpen = true;
     private MudThemeProvider? _themeProvider;
 
-    public MainLayout()
-    {
-    }
+    [Inject] public NavigationManager NavigationManager { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -25,7 +23,8 @@ public partial class MainLayout
 
     private void OnLoginClick()
     {
-        NavigationManager.NavigateTo("Authenticate/Login", new NavigationOptions { ForceLoad = true, ReplaceHistoryEntry = true });
+        NavigationManager.NavigateTo("Authenticate/Login",
+            new NavigationOptions { ForceLoad = true, ReplaceHistoryEntry = true });
     }
 
     private Task OnSystemPreferenceChanged(bool newValue)
@@ -35,11 +34,8 @@ public partial class MainLayout
         return Task.CompletedTask;
     }
 
-    void DrawerToggle()
+    private void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
     }
-
-    [Inject]
-    public NavigationManager NavigationManager { get; set; }
 }

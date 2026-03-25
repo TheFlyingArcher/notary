@@ -1,5 +1,3 @@
-using System;
-
 namespace Notary.Configuration;
 
 public class NotaryOpenIdConfiguration
@@ -19,4 +17,7 @@ public class NotaryOpenIdConfiguration
 
     [NotaryEnvironmentVariable("NOTARY_OPENID_DOMAIN")]
     public string Domain { get; set; }
+
+    [NotaryEnvironmentVariable("NOTARY_OPENID_METADATA_URL")]
+    public string MetadataAddress { get; set; }
 }

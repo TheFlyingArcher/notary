@@ -1,20 +1,23 @@
-using Notary;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using Notary.Contract;
 using Notary.Interface.Service;
-using Notary.Web.ViewModels;
 using Notary.Web.Shared;
-
-using MudBlazor;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Notary.Web.Pages;
 
 [Authorize(Roles = "NotaryAdmin,NotaryWriter,NotaryUser")]
 public partial class Certificates : ComponentBase
 {
-    private bool IsLoading { get; set; } = false;
-    private List<Certificate> certificates = new List<Certificate>();
+    private List<Certificate> certificates = new();
+    private bool IsLoading { get; set; }
+
+    [Inject] public IDialogService Dialog { get; set; }
+
+    [Inject] public ICertificateService CertificateService { get; set; }
+
+    [Inject] public NavigationManager NavigationManager { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -32,18 +35,9 @@ public partial class Certificates : ComponentBase
     {
         var parameters = new DialogParameters<DownloadCertificateDialog>
         {
-            { d=> d.Slug, slug }
+            { d => d.Slug, slug }
         };
         var dialog = await Dialog.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
         var result = await dialog.Result;
     }
-
-    [Inject]
-    public IDialogService Dialog { get; set; }
-
-    [Inject]
-    public ICertificateService CertificateService { get; set; }
-
-    [Inject]
-    public NavigationManager NavigationManager { get; set; }
 }

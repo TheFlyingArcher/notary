@@ -1,9 +1,8 @@
-﻿namespace Notary.Web.ViewModels
+﻿namespace Notary.Web.ViewModels;
+
+public enum CertificateAction
 {
-    public enum CertificateAction
-    {
-        Navigate,
-        Download,
-        Delete
-    }
+    Navigate,
+    Download,
+    Delete
 }

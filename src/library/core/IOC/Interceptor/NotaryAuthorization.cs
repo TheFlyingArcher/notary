@@ -1,13 +1,11 @@
-﻿using System;
-using Castle.DynamicProxy;
+﻿using Castle.DynamicProxy;
 
-namespace Notary.IOC.Interceptor
+namespace Notary.IOC.Interceptor;
+
+public class NotaryAuthorization : IInterceptor
 {
-    public class NotaryAuthorization : IInterceptor
+    public void Intercept(IInvocation invocation)
     {
-        public void Intercept(IInvocation invocation)
-        {
-            invocation.Proceed();
-        }
+        invocation.Proceed();
     }
 }

@@ -1,23 +1,20 @@
 ﻿using System;
-using Notary.IOC.Interceptor;
 using Notary.Security;
 
-namespace Notary.IOC
+namespace Notary.IOC;
+
+[AttributeUsage(AttributeTargets.Method)]
+public class NotaryAuthorizationAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Method)]
-    public class NotaryAuthorizationAttribute : Attribute
+    public NotaryAuthorizationAttribute(NotaryOperation op)
     {
-        public NotaryAuthorizationAttribute(NotaryOperation op)
-        {
-        }
-
-        public NotaryAuthorizationAttribute(NotaryOperation nop, bool allowAnon)
-        {
-
-        }
-
-        public NotaryOperation Operation { get; }
-
-        public bool AllowAnonymous { get; }
     }
+
+    public NotaryAuthorizationAttribute(NotaryOperation nop, bool allowAnon)
+    {
+    }
+
+    public NotaryOperation Operation { get; }
+
+    public bool AllowAnonymous { get; }
 }

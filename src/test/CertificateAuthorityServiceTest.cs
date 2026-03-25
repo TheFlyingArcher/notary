@@ -1,15 +1,15 @@
-﻿namespace Notary.Test;
-
-using Notary.Contract;
+﻿using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
 using Notary.Service;
 
+namespace Notary.Test;
+
 public class CertificateAuthorityServiceTest : NotaryTest
 {
-    private Mock<ICertificateAuthorityRepository> _caRepo;
-    private Mock<ICertificateService> _certificateService;
-    private Mock<ILog> _log;
+    private readonly Mock<ICertificateAuthorityRepository> _caRepo;
+    private readonly Mock<ICertificateService> _certificateService;
+    private readonly Mock<ILog> _log;
     private CertificateAuthorityService _service;
 
     public CertificateAuthorityServiceTest()
@@ -25,11 +25,11 @@ public class CertificateAuthorityServiceTest : NotaryTest
         var ca = MockCa();
         var certificate = CreateCertificateMock();
         var config = MockConfiguration();
-        var caList = new List<CertificateAuthority>()
+        var caList = new List<CertificateAuthority>
         {
             ca
         };
-        var certificateList = new List<Certificate>()
+        var certificateList = new List<Certificate>
         {
             certificate
         };
@@ -62,7 +62,7 @@ public class CertificateAuthorityServiceTest : NotaryTest
             Slug = ca.Slug
         };
 
-        var expected = new List<CaBrief>() { caBrief };
+        var expected = new List<CaBrief> { caBrief };
         var actual = await _service.GetCaListBrief();
 
         Assert.That(actual, Is.Not.EqualTo(null), "Actual returned null");

@@ -1,9 +1,7 @@
-﻿using System;
+﻿using Notary.Contract;
 
-using Notary.Contract;
-namespace Notary.Interface.Repository
+namespace Notary.Interface.Repository;
+
+public interface IRevocatedCertificateRepository : IRepository<RevocatedCertificate>
 {
-    public interface IRevocatedCertificateRepository : IRepository<RevocatedCertificate>
-    {
-    }
 }

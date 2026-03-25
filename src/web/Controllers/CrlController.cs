@@ -2,25 +2,26 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Notary.Interface.Service;
 
-namespace Notary.Web.Controllers
+namespace Notary.Web.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class CrlController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class CrlController : ControllerBase
+    public CrlController(ICertificateRevokeService crs)
     {
-        public CrlController(ICertificateRevokeService crs)
-        {
-            CertificateRevokeService = crs;
-        }
+        CertificateRevokeService = crs;
+    }
 
-        [Route("{caSlug}"), AllowAnonymous, HttpGet]
-        public async Task<IActionResult> GetCrl(string caSlug)
-        {
-            byte[] crl = await CertificateRevokeService.GenerateCrl(caSlug);
+    public ICertificateRevokeService CertificateRevokeService { get; }
 
-            return Ok(crl);
-        }
+    [Route("{caSlug}")]
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> GetCrl(string caSlug)
+    {
+        var crl = await CertificateRevokeService.GenerateCrl(caSlug);
 
-        public ICertificateRevokeService CertificateRevokeService { get; private set; }
+        return Ok(crl);
     }
 }

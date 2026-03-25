@@ -1,5 +1,4 @@
-﻿using Notary;
-using Notary.Configuration;
+﻿using Notary.Configuration;
 
 namespace Notary.Test;
 

@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
-using Notary;
 using Notary.Contract;
 using Notary.Interface.Service;
 using Notary.Web.ViewModels;
@@ -11,14 +10,21 @@ namespace Notary.Web.Shared;
 
 public partial class DownloadCertificateDialog : ComponentBase
 {
-    private MudForm _form;
-    private bool _isValid = false;
     private string[] _errors = { };
+    private MudForm _form;
+    private bool _isValid;
 
-    public DownloadCertificateDialog()
-    {
+    [Inject] public IJSRuntime JS { get; set; }
 
-    }
+    [Inject] public IDialogService Dialog { get; set; }
+
+    [Inject] public ICertificateService CertificateService { get; set; }
+
+    private DownloadCertificateViewModel ViewModel { get; } = new();
+
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public string Slug { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -38,11 +44,12 @@ public partial class DownloadCertificateDialog : ComponentBase
         {
             Certificate? cert = null;
             byte[]? certBinary = null;
-            string fileName = string.Empty;
+            var fileName = string.Empty;
             await Task.Run(async () =>
             {
                 cert = await CertificateService.GetAsync(Slug);
-                certBinary = await CertificateService.RequestCertificateAsync(Slug, ViewModel.Format, ViewModel.Password);
+                certBinary =
+                    await CertificateService.RequestCertificateAsync(Slug, ViewModel.Format, ViewModel.Password);
             });
             if (cert == null)
                 throw new ArgumentNullException(nameof(cert));
@@ -59,14 +66,14 @@ public partial class DownloadCertificateDialog : ComponentBase
                     fileName = $"{cert.Name}.pem";
                     break;
             }
+
             if (certBinary != null)
-            {
                 using (var stream = new MemoryStream(certBinary))
                 {
-                    using var streamRef = new DotNetStreamReference(stream, false);
+                    using var streamRef = new DotNetStreamReference(stream);
                     await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
                 }
-            }
+
             MudDialog.Close();
         }
     }
@@ -99,19 +106,4 @@ public partial class DownloadCertificateDialog : ComponentBase
 
         return null;
     }
-
-    [Inject]
-    public IJSRuntime JS { get; set; }
-
-    [Inject]
-    public IDialogService Dialog { get; set; }
-
-    [Inject]
-    public ICertificateService CertificateService { get; set; }
-
-    private DownloadCertificateViewModel ViewModel { get; set; } = new();
-
-    [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
-
-    [Parameter] public string Slug { get; set; }
 }

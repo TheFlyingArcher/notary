@@ -1,29 +1,29 @@
 ﻿@page "/certificates"
 
-@using Notary.Web.ViewModels
-
 <PageTitle>Certificates</PageTitle>
 @if (IsLoading)
 {
-    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium" />
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium"/>
 }
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-5">
     <AuthorizeView Roles="NotaryAdmin,NotaryWriter">
         <Authorized>
             <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled"
-                Href="/certificates/create">Create Certificate</MudButton>
+                       Href="/certificates/create">Create Certificate
+            </MudButton>
         </Authorized>
         <NotAuthorized>
             <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Disabled="true">
-                Create Certificate</MudButton>
+                Create Certificate
+            </MudButton>
         </NotAuthorized>
     </AuthorizeView>
 </MudContainer>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-5">
     <MudTable Items="@certificates" Hover="true" Breakpoint="Breakpoint.Sm" Loading="IsLoading"
-        LoadingProgressColor="Color.Surface">
+              LoadingProgressColor="Color.Surface">
         <HeaderContent>
             <MudTh>Name</MudTh>
             <MudTh>Expire</MudTh>
@@ -42,11 +42,11 @@
             </MudTd>
             <MudTd>
                 <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Search" Size="Size.Small"
-                    Href="@string.Format("certificate?slug={0}", context.Slug)" />
+                        Href="@string.Format("certificate?slug={0}", context.Slug)"/>
                 &nbsp;
                 <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
-                    Disabled="@context.RevocationDate.HasValue"
-                    OnClick="@(()=>OnCertificateDownloadClick(context.Slug))" Size="Size.Small" />
+                        Disabled="@context.RevocationDate.HasValue"
+                        OnClick="@(() => OnCertificateDownloadClick(context.Slug))" Size="Size.Small"/>
             </MudTd>
         </RowTemplate>
         <LoadingContent>

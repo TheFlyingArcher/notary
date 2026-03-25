@@ -3,10 +3,10 @@
 <MudContainer MaxWidth="MaxWidth.Large">
     @if (IsLoading)
     {
-        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium" />
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium"/>
     }
     <MudText Typo="Typo.h4">Create Certificate Authority</MudText>
-    <MudDivider Class="mb-3" />
+    <MudDivider Class="mb-3"/>
     @if (_formErrors.Length > 0)
     {
         <MudItem xs="12" sm="5">
@@ -20,13 +20,13 @@
                 }
             </MudPaper>
         </MudItem>
-        <MudDivider Class="mb-3" />
+        <MudDivider Class="mb-3"/>
     }
 
     <MudForm @ref="_mudForm" Model="ViewModel" @bind-IsValid="_formValid" @bind-Errors="_formErrors">
         <MudSelect @bind-Value="@ViewModel.ParentCaSlug" Required="true"
-            RequiredError="Select a parent CA or select No Parent" Label="Select Parent CA"
-            HelperText="Select a Certificate Authority" Placeholder="Please Select">
+                   RequiredError="Select a parent CA or select No Parent" Label="Select Parent CA"
+                   HelperText="Select a Certificate Authority" Placeholder="Please Select">
             <MudSelectItem Value="@("nop")">No Parent</MudSelectItem>
             @foreach (var ca in ViewModel.CertificateAuthorities)
             {
@@ -34,40 +34,42 @@
             }
         </MudSelect>
         <MudTextField @bind-Value="ViewModel.Name" Label="Name" Required="true"
-            Validation="@(new Func<string, IEnumerable<string>>(ValidateName))"></MudTextField>
+                      Validation="@(new Func<string, IEnumerable<string>>(ValidateName))"></MudTextField>
         <MudTextField @bind-Value="ViewModel.LengthInMonths" Label="CA Validity"
-            HelperText="Enter the CA validity length in months e.g. 48"
-            Validation="@(new Func<int, IEnumerable<string>>(ValidateExpiration))"></MudTextField>
+                      HelperText="Enter the CA validity length in months e.g. 48"
+                      Validation="@(new Func<int, IEnumerable<string>>(ValidateExpiration))"></MudTextField>
         <MudSwitch @bind-Value="ViewModel.IsIssuer" Label="Is Issuer"></MudSwitch>
         <MudTextField Required="false" HelperText="The endpoint which contains the CRL"
-            @bind-Value="@ViewModel.CrlEndpoint" Label="CRL Endpoint">
+                      @bind-Value="@ViewModel.CrlEndpoint" Label="CRL Endpoint">
         </MudTextField>
         <MudTextField @bind-Value="ViewModel.CommonName" Required="true" RequiredError="Please enter a CA Common Name"
-            HelperText="The Common Name for the CA certificate"></MudTextField>
-        <MudDivider Class="my-3" />
+                      HelperText="The Common Name for the CA certificate"></MudTextField>
+        <MudDivider Class="my-3"/>
         <MudLink OnClick="@(() => ViewModel.AdditionalSubjectExpanded = !ViewModel.AdditionalSubjectExpanded)">
-            Additional Properties</MudLink>
+            Additional Properties
+        </MudLink>
         <MudCollapse Expanded="ViewModel.AdditionalSubjectExpanded">
             <MudTextField @bind-Value="@ViewModel.Country" Label="Country" Disabled="ViewModel.SelectedCa!=null">
             </MudTextField>
             <MudTextField @bind-Value="@ViewModel.Locale" Label="Locale" Disabled="ViewModel.SelectedCa!=null">
             </MudTextField>
             <MudTextField @bind-Value="@ViewModel.Organization" Label="Organization"
-                Disabled="ViewModel.SelectedCa!=null"></MudTextField>
+                          Disabled="ViewModel.SelectedCa!=null"></MudTextField>
             <MudTextField @bind-Value="@ViewModel.OrganizationalUnit" Label="Org Unit"
-                Disabled="ViewModel.SelectedCa!=null"></MudTextField>
+                          Disabled="ViewModel.SelectedCa!=null"></MudTextField>
             <MudTextField @bind-Value="@ViewModel.StateProvince" Label="State" Disabled="ViewModel.SelectedCa!=null">
             </MudTextField>
         </MudCollapse>
-        <MudDivider Class="my-3" />
-        <MudLink OnClick="@(()=>ViewModel.KeyAlgorithmExpanded=!ViewModel.KeyAlgorithmExpanded)">Private Key Algorithm
+        <MudDivider Class="my-3"/>
+        <MudLink OnClick="@(() => ViewModel.KeyAlgorithmExpanded = !ViewModel.KeyAlgorithmExpanded)">Private Key
+            Algorithm
         </MudLink>
         <MudCollapse Expanded="ViewModel.KeyAlgorithmExpanded">
             <MudRadioGroup @bind-Value="@ViewModel.KeyType" Disabled="ViewModel.SelectedCa!=null">
                 <MudRadio Value="@Algorithm.RSA">RSA</MudRadio>
                 <MudRadio Value="@Algorithm.EllipticCurve">Elliptic Curve</MudRadio>
             </MudRadioGroup>
-            <MudDivider />
+            <MudDivider/>
             @if (ViewModel.KeyType == Algorithm.RSA)
             {
                 <MudRadioGroup @bind-Value="@ViewModel.KeyLength" T="int" Disabled="ViewModel.SelectedCa!=null">

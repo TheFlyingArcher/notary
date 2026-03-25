@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using AutoMapper;
 using MongoDB.Driver;
 using Notary.Contract;
@@ -17,8 +16,11 @@ internal class AsymmetricKeyRepository : BaseRepository<AsymmetricKey, Asymmetri
 
     public override async Task InitializeAsync()
     {
-        var notAfterIndex = new CreateIndexModel<AsymmetricKeyModel>(Builders<AsymmetricKeyModel>.IndexKeys.Ascending(n => n.NotAfter));
-        var notBeforeIndex = new CreateIndexModel<AsymmetricKeyModel>(Builders<AsymmetricKeyModel>.IndexKeys.Ascending(n => n.NotBefore));
+        var notAfterIndex =
+            new CreateIndexModel<AsymmetricKeyModel>(Builders<AsymmetricKeyModel>.IndexKeys.Ascending(n => n.NotAfter));
+        var notBeforeIndex =
+            new CreateIndexModel<AsymmetricKeyModel>(
+                Builders<AsymmetricKeyModel>.IndexKeys.Ascending(n => n.NotBefore));
 
         await Collection.Indexes.CreateManyAsync([notAfterIndex, notBeforeIndex]);
         await base.InitializeAsync();

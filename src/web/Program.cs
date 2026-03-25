@@ -1,13 +1,11 @@
-using System.Reflection;
-using Auth0.AspNetCore.Authentication;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using log4net;
 using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
+using Notary;
 using Notary.Configuration;
 using Notary.Service;
-
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -33,13 +31,36 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddControllers();
 
-if (config.OpenId != null)
+if (config.Authentication is AuthenticationProvider.OpenId)
 {
-    builder.Services.AddAuth0WebAppAuthentication(o =>
+    if (config.OpenId == null)
+        throw new NotSupportedException("OpenId configuration is not provided.");
+
+    builder.Services.AddAuthentication().AddOpenIdConnect(o =>
     {
-        o.Domain = config.OpenId.Domain;
         o.ClientId = config.OpenId.ClientId;
+        o.MetadataAddress = config.OpenId.MetadataAddress;
+
+        if (!string.IsNullOrEmpty(config.OpenId.ClientSecret))
+            o.ClientSecret = config.OpenId.ClientSecret;
     });
+}
+else if (config.Authentication is AuthenticationProvider.ActiveDirectory or AuthenticationProvider.System)
+{
+    if (config.TokenSettings == null)
+        throw new NotaryException("Please provide token settings for system or AD authentication");
+
+    builder.Services.AddAuthentication().AddJwtBearer(a =>
+    {
+        a.RequireHttpsMetadata = false;
+        a.Audience = config.TokenSettings.Audience;
+        a.Authority = config.TokenSettings.Authority;
+        a.ClaimsIssuer = config.TokenSettings.Issuer;
+    });
+}
+else
+{
+    throw new NotaryException("Something went wrong");
 }
 
 builder.Services.AddHttpContextAccessor();
@@ -66,7 +87,6 @@ app.UseRouting();
 app.UseForwardedHeaders();
 
 app.UseAuthentication();
-
 app.UseAuthorization();
 
 app.MapControllers();
@@ -81,33 +101,11 @@ static void SetEnvironmentVariables(NotaryConfiguration config)
         throw new ArgumentNullException(nameof(config));
 
     // Set root environment variables
-    SetPropertiesEnvVariable(config);
+    NotaryConfiguration.SetPropertiesEnvVariable(config);
 
     // Set database environment variables
-    SetPropertiesEnvVariable(config.Database);
+    NotaryConfiguration.SetPropertiesEnvVariable(config.Database);
 
     // Set OpenID environment variables
-    SetPropertiesEnvVariable(config.OpenId);
-}
-
-static void SetPropertiesEnvVariable<T>(T configType) where T : class
-{
-    if (configType == null)
-        return;
-
-    var type = configType.GetType();
-    var typeProperties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
-    foreach (var p in typeProperties)
-    {
-        var attribute = p.GetCustomAttribute<NotaryEnvironmentVariableAttribute>();
-        if (attribute == null)
-            continue;
-
-        var evValue = Environment.GetEnvironmentVariable(attribute.EnvironmentVariable);
-        if (!string.IsNullOrEmpty(evValue))
-        {
-            p.SetValue(configType, evValue);
-        }
-    }
+    NotaryConfiguration.SetPropertiesEnvVariable(config.OpenId);
 }

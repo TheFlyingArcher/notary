@@ -1,20 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Platforms>AnyCPU;ARM64</Platforms>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Platforms>AnyCPU;ARM64</Platforms>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Autofac" Version="8.2.0" />
-    <PackageReference Include="AutoMapper" Version="13.0.1" />
-    <PackageReference Include="log4net" Version="3.0.3" />
-    <PackageReference Include="MongoDB.Driver" Version="3.1.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Autofac" Version="8.2.0"/>
+        <PackageReference Include="AutoMapper" Version="13.0.1"/>
+        <PackageReference Include="log4net" Version="3.0.3"/>
+        <PackageReference Include="MongoDB.Driver" Version="3.1.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="../core/Notary.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="../core/Notary.csproj"/>
+    </ItemGroup>
 
 </Project>

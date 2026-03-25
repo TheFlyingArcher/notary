@@ -6,14 +6,13 @@ namespace Notary.Test;
 
 public class CertificateServiceTest
 {
-    private Mock<ICertificateRepository> _certificateRepo;
-    private Mock<ICertificateAuthorityService> _caService;
+    private static readonly Certificate _certificate = CreateCertificateMock();
 
-    private Mock<ICertificateService> _service;
+    private static readonly CertificateRequest _request = MockRequest();
+    private readonly Mock<ICertificateAuthorityService> _caService;
+    private readonly Mock<ICertificateRepository> _certificateRepo;
 
-    private static Certificate _certificate = CreateCertificateMock();
-
-    private static CertificateRequest _request = MockRequest();
+    private readonly Mock<ICertificateService> _service;
 
     public CertificateServiceTest()
     {

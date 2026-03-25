@@ -1,37 +1,41 @@
-using System;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-
-using Notary;
-using C = Notary.Contract;
 using Notary.Interface.Service;
-using Notary.Web.ViewModels;
-using System.Text.RegularExpressions;
 using Notary.Web.Shared;
+using Notary.Web.ViewModels;
+using C = Notary.Contract;
 
 namespace Notary.Web.Pages;
 
 public partial class CreateCertificate : ComponentBase
 {
-    private IEnumerable<C.CertificateAuthority> caList = new List<C.CertificateAuthority>();
-    private MudForm form;
     private bool _isLoading = true;
-    private int _selectedCertKeyUsage = 0;
+    private int _selectedCertKeyUsage;
     private string _selectedExKeyUsage = string.Empty;
-    private bool success;
+    private IEnumerable<C.CertificateAuthority> caList = new List<C.CertificateAuthority>();
     private string[] errors = { };
+    private MudForm form;
+    private bool success;
+
+    [Inject] public ICertificateService CertificateService { get; set; }
+
+    [Inject] public ICertificateAuthorityService CertificateAuthorityService { get; set; }
+
+    [Inject] public IDialogService DialogService { get; set; }
+
+    [Inject] public NavigationManager NavigationManager { get; set; }
+
+    public CreateCertificateViewModel ViewModel { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
-        ViewModel.OnCertificateAuthoritySlugChanged += async (c) =>
+        ViewModel.OnCertificateAuthoritySlugChanged += async c =>
         {
             if (c != null && c != "self")
             {
                 _isLoading = true;
-                await Task.Run(async () =>
-                {
-                    ViewModel.SelectedCa = await CertificateAuthorityService.GetAsync(c);
-                });
+                await Task.Run(async () => { ViewModel.SelectedCa = await CertificateAuthorityService.GetAsync(c); });
                 _isLoading = false;
 
                 ViewModel.Subject.Country = ViewModel.SelectedCa.DistinguishedName.Country;
@@ -43,7 +47,8 @@ public partial class CreateCertificate : ComponentBase
                 ViewModel.KeyAlgorithm = ViewModel.SelectedCa.KeyAlgorithm;
                 if (ViewModel.SelectedCa.KeyAlgorithm == Algorithm.RSA && ViewModel.SelectedCa.KeyLength.HasValue)
                     ViewModel.KeySize = ViewModel.SelectedCa.KeyLength.Value;
-                else if (ViewModel.SelectedCa.KeyAlgorithm == Algorithm.EllipticCurve && ViewModel.SelectedCa.KeyCurve.HasValue)
+                else if (ViewModel.SelectedCa.KeyAlgorithm == Algorithm.EllipticCurve &&
+                         ViewModel.SelectedCa.KeyCurve.HasValue)
                     ViewModel.Curve = ViewModel.SelectedCa.KeyCurve.Value;
                 else
                     throw new InvalidCastException("Invalid values for either key size or key curve");
@@ -73,22 +78,15 @@ public partial class CreateCertificate : ComponentBase
         ViewModel.CertificateAuthoritySlug = slug;
 
         if (slug == "self")
-        {
             ViewModel.SelectedCa = null;
-        }
         else
-        {
-            await Task.Run(async () =>
-            {
-                ViewModel.SelectedCa = await CertificateAuthorityService.GetAsync(slug);
-            });
-        }
+            await Task.Run(async () => { ViewModel.SelectedCa = await CertificateAuthorityService.GetAsync(slug); });
         _isLoading = false;
     }
 
     private async Task OnSanDialogOpenClick()
     {
-        var options = new DialogOptions()
+        var options = new DialogOptions
         {
             BackdropClick = false,
             CloseButton = true,
@@ -121,9 +119,9 @@ public partial class CreateCertificate : ComponentBase
         if (!success)
             return;
 
-        DateTime notBefore = DateTime.UtcNow;
-        DateTime notAfter = DateTime.UtcNow.AddMonths(ViewModel.ExpiryLength);
-        TimeSpan ts = notAfter - notBefore;
+        var notBefore = DateTime.UtcNow;
+        var notAfter = DateTime.UtcNow.AddMonths(ViewModel.ExpiryLength);
+        var ts = notAfter - notBefore;
         var request = new C.CertificateRequest
         {
             CertificateKeyUsageFlags = ViewModel.SelectedCertificateKeyUsage,
@@ -152,54 +150,26 @@ public partial class CreateCertificate : ComponentBase
 
     private IEnumerable<string> ValidateExpiration(int months)
     {
-        if (months == 0)
-        {
-            yield return "Please enter a value";
-        }
+        if (months == 0) yield return "Please enter a value";
 
-        if (months > 0 && months < 12)
-        {
-            yield return "Please enter greater than 12 months";
-        }
+        if (months > 0 && months < 12) yield return "Please enter greater than 12 months";
 
         if (ViewModel.SelectedCa != null)
         {
-            DateTime notBefore = ViewModel.SelectedCa.NotBefore;
-            DateTime notAfterCa = ViewModel.SelectedCa.NotAfter;
-            DateTime notAfterCert = DateTime.UtcNow.AddMonths(months);
+            var notBefore = ViewModel.SelectedCa.NotBefore;
+            var notAfterCa = ViewModel.SelectedCa.NotAfter;
+            var notAfterCert = DateTime.UtcNow.AddMonths(months);
 
-            if (notAfterCa < notAfterCert)
-            {
-                yield return "Certificate validity cannot be longer than the CA validity.";
-            }
+            if (notAfterCa < notAfterCert) yield return "Certificate validity cannot be longer than the CA validity.";
         }
     }
 
     private IEnumerable<string> ValidateName(string name)
     {
         if (string.IsNullOrEmpty(name) || string.IsNullOrWhiteSpace(name))
-        {
             yield return "Please enter a certificate name";
-        }
 
         var regex = new Regex("[a-zA-Z0-9\\-]");
-        if (!regex.IsMatch(name))
-        {
-            yield return "Name can only contain alphanumerics and dashes";
-        }
+        if (!regex.IsMatch(name)) yield return "Name can only contain alphanumerics and dashes";
     }
-
-    [Inject]
-    public ICertificateService CertificateService { get; set; }
-
-    [Inject]
-    public ICertificateAuthorityService CertificateAuthorityService { get; set; }
-
-    [Inject]
-    public IDialogService DialogService { get; set; }
-
-    [Inject]
-    public NavigationManager NavigationManager { get; set; }
-
-    public CreateCertificateViewModel ViewModel { get; set; } = new();
 }

@@ -1,9 +1,9 @@
-﻿@inherits LayoutComponentBase // TODO: Figure out why this is needed
+﻿@inherits
 
-<MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="_darkMode" />
-<MudDialogProvider />
-<MudPopoverProvider />
-<MudSnackbarProvider />
+<MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="_darkMode"/>
+<MudDialogProvider/>
+<MudPopoverProvider/>
+<MudSnackbarProvider/>
 
 <PageTitle>Notary</PageTitle>
 
@@ -11,20 +11,21 @@
     <AuthorizeView>
         <Authorized>
             <MudAppBar Fixed="true">
-                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+                <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                               OnClick="@(e => DrawerToggle())"/>
                 @if (_darkMode)
                 {
-                    <MudImage Alt="Notary Logo" Src="img/notary-logo-wht.png" Height="48" />
+                    <MudImage Alt="Notary Logo" Src="img/notary-logo-wht.png" Height="48"/>
                 }
                 else
                 {
-                    <MudImage Alt="Notary Logo" Src="img/notary-logo-blk.png" Height="48" />
+                    <MudImage Alt="Notary Logo" Src="img/notary-logo-blk.png" Height="48"/>
                 }
-                <MudSpacer />
-                <LoginDisplay />
+                <MudSpacer/>
+                <LoginDisplay/>
             </MudAppBar>
             <MudDrawer @bind-Open="@_drawerOpen">
-                <NavMenu />
+                <NavMenu/>
             </MudDrawer>
             <MudMainContent>
                 <MudContainer MaxWidth="MaxWidth.Large">
@@ -33,7 +34,7 @@
             </MudMainContent>
         </Authorized>
         <NotAuthorized>
-            @if (context != null && context.User.Identity != null && context.User.Identity.IsAuthenticated == false)
+            @if (context != null && context.User.Identity != null && !context.User.Identity.IsAuthenticated)
             {
                 <MudContainer MaxWidth="MaxWidth.Small">
                     <MudGrid Class="mt-16">
@@ -43,25 +44,29 @@
                                     <MudItem Class="pa-2">
                                         @if (_darkMode)
                                         {
-                                            <MudImage Alt="Notary Logo" Src="img/notary-logo-wht.png" />
+                                            <MudImage Alt="Notary Logo" Src="img/notary-logo-wht.png"/>
                                         }
                                         else
                                         {
-                                            <MudImage Alt="Notary Logo" Src="img/notary-logo-blk.png" />
+                                            <MudImage Alt="Notary Logo" Src="img/notary-logo-blk.png"/>
                                         }
                                     </MudItem>
                                     <MudItem Class="pa-3">
                                         <p>
-                                            Notary is a simple PKI application designed for hobbyists and curious people like me. It's not intended for any kind of
-                                            enterprise quality or usage. There are solutions out there like Venafi or Microsoft Certificate Services that are enterprise-grade.
-                                            The purposes is to a) relieve my boredom, b) learn about PKI, c) have an alternative to mucking about <code>OpenSSL</code>, and d)
+                                            Notary is a simple PKI application designed for hobbyists and curious people
+                                            like me. It's not intended for any kind of
+                                            enterprise quality or usage. There are solutions out there like Venafi or
+                                            Microsoft Certificate Services that are enterprise-grade.
+                                            The purposes is to a) relieve my boredom, b) learn about PKI, c) have an
+                                            alternative to mucking about <code>OpenSSL</code>, and d)
                                             experimenting with front-end technologies.
                                         </p>
                                     </MudItem>
                                     <MudItem Class="pa-1">
-                                        <MudButton Variant="Variant.Filled" OnClick="@(()=>OnLoginClick())"
+                                        <MudButton Variant="Variant.Filled" OnClick="@(() => OnLoginClick())"
                                                    StartIcon="fa-sharp fa-regular fa-right-to-bracket"
-                                                   Color="Color.Primary" Size="Size.Large">Log In</MudButton>
+                                                   Color="Color.Primary" Size="Size.Large">Log In
+                                        </MudButton>
                                     </MudItem>
                                 </MudStack>
                             </MudPaper>
@@ -71,7 +76,7 @@
             }
             else
             {
-                <UnauthorizedView />
+                <UnauthorizedView/>
             }
         </NotAuthorized>
     </AuthorizeView>

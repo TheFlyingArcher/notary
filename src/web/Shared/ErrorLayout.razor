@@ -2,8 +2,8 @@
 @inject NavigationManager NavigationManager
 @inherits LayoutComponentBase
 
-<MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="_darkMode" />
-<MudSnackbarProvider />
+<MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="_darkMode"/>
+<MudSnackbarProvider/>
 
 <MudAlert Elevation="25" ContentAlignment="HorizontalAlignment.Center" Severity="Severity.Error">
     Status Code: @_httpStatusCode
@@ -12,7 +12,7 @@
 
 @code {
     private int _httpStatusCode;
-    bool _darkMode = false;
+    bool _darkMode;
     private MudThemeProvider? _themeProvider;
 
     protected override Task OnInitializedAsync()
@@ -40,4 +40,5 @@
         StateHasChanged();
         return Task.CompletedTask;
     }
+
 }
