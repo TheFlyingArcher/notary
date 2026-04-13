@@ -11,130 +11,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="826f0beb-9939-4d24-9ab1-35fab443650b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.Notary/.idea/.name" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.Notary/.idea/indexLayout.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.Notary/.idea/projectSettingsUpdater.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.Notary/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Notary.AppHost/Notary.AppHost.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../Notary.AppHost/Notary.AppHost.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Notary.AppHost/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../Notary.AppHost/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Notary.ServiceDefaults/Extensions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../Notary.ServiceDefaults/Extensions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Notary.ServiceDefaults/Notary.ServiceDefaults.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../Notary.ServiceDefaults/Notary.ServiceDefaults.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Algorithm.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Algorithm.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/AuthenticationProvider.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/AuthenticationProvider.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/CertificateFormat.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/CertificateFormat.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Configuration/NotaryActiveDirectoryConfiguration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Configuration/NotaryActiveDirectoryConfiguration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Configuration/NotaryConfiguration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Configuration/NotaryConfiguration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Configuration/NotaryDatabaseConfiguration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Configuration/NotaryDatabaseConfiguration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Configuration/NotaryEnvironmentVariableAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Configuration/NotaryEnvironmentVariableAttribute.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Configuration/NotaryOpenIdConfiguration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Configuration/NotaryOpenIdConfiguration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Configuration/NotaryTokenSettingsConfiguration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Configuration/NotaryTokenSettingsConfiguration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/Address.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/Address.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/AsymmetricKey.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/AsymmetricKey.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/CaBrief.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/CaBrief.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/CaCertificateList.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/CaCertificateList.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/Certificate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/Certificate.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/CertificateAuthority.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/CertificateAuthority.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/CertificateDownloadRequest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/CertificateDownloadRequest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/CertificateKeyUsage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/CertificateKeyUsage.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/CertificateRequest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/CertificateRequest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/ContractExtensions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/ContractExtensions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/DistinguishedName.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/DistinguishedName.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/Entity.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/Entity.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/ISluggable.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/ISluggable.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/RevocatedCertificate.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/RevocatedCertificate.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/RevokeCertificateRequest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/RevokeCertificateRequest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Contract/SubjectAlternativeName.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Contract/SubjectAlternativeName.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/EllipticCurve.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/EllipticCurve.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/IOC/IRegister.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/IOC/IRegister.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/IOC/Interceptor/NotaryAuthorization.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/IOC/Interceptor/NotaryAuthorization.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/IOC/NotaryAuthorizationAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/IOC/NotaryAuthorizationAttribute.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Repository/IAsymmetricKeyRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Repository/IAsymmetricKeyRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Repository/ICertificateAuthorityRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Repository/ICertificateAuthorityRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Repository/ICertificateRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Repository/ICertificateRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Repository/IRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Repository/IRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Repository/IRevocatedCertificateRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Repository/IRevocatedCertificateRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Service/IAsymmetricKeyService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Service/IAsymmetricKeyService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Service/ICertificateAuthorityService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Service/ICertificateAuthorityService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Service/ICertificateRevokeService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Service/ICertificateRevokeService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Service/ICertificateService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Service/ICertificateService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Interface/Service/IEntityService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Interface/Service/IEntityService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/KeyPurposeFlags.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/KeyPurposeFlags.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Logging/LoggedException.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Logging/LoggedException.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Logging/LoggingExtensions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Logging/LoggingExtensions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Notary.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Notary.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/NotaryException.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/NotaryException.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/NotaryExtensions.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/NotaryExtensions.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/RevocationReason.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/RevocationReason.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/SanKind.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/SanKind.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/Security/NotaryOperation.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/Security/NotaryOperation.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/core/ViewModel/NotaryViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/core/ViewModel/NotaryViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/IocRegistration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/IocRegistration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/AddressModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/AddressModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/AsymmetricKeyModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/AsymmetricKeyModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/BaseModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/BaseModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/CertificateAuthorityModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/CertificateAuthorityModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/CertificateModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/CertificateModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/CollectionAttribute.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/CollectionAttribute.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/DistinguishedNameModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/DistinguishedNameModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/RevocatedCertificateModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/RevocatedCertificateModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Model/SanModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Model/SanModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/ModelMapProfile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/ModelMapProfile.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/data/Notary.Data.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/library/data/Notary.Data.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/service/AsymmetricKeyService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/AsymmetricKeyService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/service/CertificateAuthorityService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/CertificateAuthorityService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/service/CertificateRevokeService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/CertificateRevokeService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/service/CertificateService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/CertificateService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/service/CryptographicEntityService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/CryptographicEntityService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/service/EntityService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/EntityService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/library/core/Contract/Account.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/library/core/Contract/Token.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/library/core/Interface/Repository/IAccountRepository.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/library/core/Interface/Repository/ITokenService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/library/core/Interface/Service/IAccountService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/library/service/AccountService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.Notary/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.Notary/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/library/service/IocRegistrations.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/IocRegistrations.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/library/service/Notary.Service.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/Notary.Service.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/service/PasswordFinder.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/PasswordFinder.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/library/service/RegisterModules.cs" beforeDir="false" afterPath="$PROJECT_DIR$/library/service/RegisterModules.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup/Notary.Setup.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/setup/Notary.Setup.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/setup/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/CertificateAuthorityServiceTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/test/CertificateAuthorityServiceTest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/CertificateServiceTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/test/CertificateServiceTest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/Notary.Test.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/test/Notary.Test.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/NotaryTest.cs" beforeDir="false" afterPath="$PROJECT_DIR$/test/NotaryTest.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/App.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/App.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Controllers/AuthenticateController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Controllers/AuthenticateController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Controllers/CrlController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Controllers/CrlController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Notary.Web.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/web/Notary.Web.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/CertificateAuthorities.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/CertificateAuthorities.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/CertificateAuthorities.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/CertificateAuthorities.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/CertificateDetail.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/CertificateDetail.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/CertificateDetail.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/CertificateDetail.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/Certificates.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/Certificates.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/Certificates.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/Certificates.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/CreateCertificate.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/CreateCertificate.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/CreateCertificate.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/CreateCertificate.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/CreateCertificateAuthority.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/CreateCertificateAuthority.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/CreateCertificateAuthority.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/CreateCertificateAuthority.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/Error.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/Error.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/Error.cshtml.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/Error.cshtml.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/Index.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/Index.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/Index.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/Index.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/ShowProfile.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/ShowProfile.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Pages/_Host.cshtml" beforeDir="false" afterPath="$PROJECT_DIR$/web/Pages/_Host.cshtml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/DownloadCertificateDialog.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/DownloadCertificateDialog.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/DownloadCertificateDialog.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/DownloadCertificateDialog.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/ErrorLayout.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/ErrorLayout.razor" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/Shared/MainLayout.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/MainLayout.razor" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/Shared/MainLayout.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/MainLayout.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/MainLayout.razor.css" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/MainLayout.razor.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/NavMenu.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/NavMenu.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/NavMenu.razor.css" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/NavMenu.razor.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/RevokeCertificateDialog.razor" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/RevokeCertificateDialog.razor" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/RevokeCertificateDialog.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/RevokeCertificateDialog.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/Shared/SubjectAlternativeNameDialog.razor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/Shared/SubjectAlternativeNameDialog.razor.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/ViewModels/CertificateAction.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/ViewModels/CertificateAction.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/ViewModels/CertificateIssuerTreeItem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/ViewModels/CertificateIssuerTreeItem.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/ViewModels/CertificateViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/ViewModels/CertificateViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/ViewModels/CreateCertificateAuthorityViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/ViewModels/CreateCertificateAuthorityViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/ViewModels/CreateCertificateViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/ViewModels/CreateCertificateViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/ViewModels/DownloadCertificateViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/ViewModels/DownloadCertificateViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/ViewModels/RevokeCertificateDialogViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/web/ViewModels/RevokeCertificateDialogViewModel.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -152,16 +39,28 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/bcline760/notary.git",
-    "accountId": "3ff4d4ba-20aa-4ce0-ab13-a0207005e75e"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;TheFlyingArcher&quot;
   }
-}]]></component>
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/bcline760/notary.git&quot;,
+    &quot;accountId&quot;: &quot;3ff4d4ba-20aa-4ce0-ab13-a0207005e75e&quot;
+  }
+}</component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/bf9021a960b74107a7e141aa06bc9d8a0a53c929178c2fb95b1597be8af8dc/ExceptionDispatchInfo.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/../Notary.ServiceDefaults/Extensions.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/library/core/Contract/Account.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/library/core/Contract/Token.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/library/core/Interface/Repository/IAccountRepository.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/library/core/Interface/Repository/ITokenService.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/library/core/Interface/Service/IAccountService.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/library/data/IocRegistration.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/library/service/AccountService.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="KubernetesApiPersistence">{}</component>
   <component name="KubernetesApiProvider">{
@@ -176,22 +75,22 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Aspire Host.Notary.AppHost: http.executor": "Debug",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "refactor-auth",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Aspire Host.Notary.AppHost: http.executor&quot;: &quot;Debug&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;refactor-auth&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Aspire Host.Notary.AppHost: http">
     <configuration name="Notary.AppHost: http" type="AspireHostConfiguration" factoryName="Aspire Host" activateToolWindowBeforeRun="false">
       <option name="PROJECT_FILE_PATH" value="$PROJECT_DIR$/../Notary.AppHost/Notary.AppHost.csproj" />
@@ -300,8 +199,26 @@
       <workItem from="1773263961883" duration="1756000" />
       <workItem from="1773266165179" duration="2478000" />
       <workItem from="1773702163684" duration="4946000" />
-      <workItem from="1774305312961" duration="3170000" />
+      <workItem from="1774305312961" duration="6635000" />
+      <workItem from="1775090392645" duration="21111000" />
     </task>
+    <task id="LOCAL-00001" summary="Major refactor. Add system/AD authentication.">
+      <option name="closed" value="true" />
+      <created>1774397872787</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1774397872787</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Add workspace">
+      <option name="closed" value="true" />
+      <created>1774397888505</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1774397888505</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -349,6 +266,9 @@
   </component>
   <component name="VcsManagerConfiguration">
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+    <MESSAGE value="Major refactor. Add system/AD authentication." />
+    <MESSAGE value="Add workspace" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add workspace" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

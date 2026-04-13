@@ -1,4 +1,4 @@
-﻿@inherits
+﻿@inherits LayoutComponentBase
 
 <MudThemeProvider @ref="_themeProvider" @bind-IsDarkMode="_darkMode"/>
 <MudDialogProvider/>
@@ -62,6 +62,13 @@
                                             experimenting with front-end technologies.
                                         </p>
                                     </MudItem>
+                                    @if (NotaryConfiguration.Authentication == AuthenticationProvider.ActiveDirectory ||
+                                         NotaryConfiguration.Authentication == AuthenticationProvider.System)
+                                    {
+                                        <MudItem Class="pa-1">
+                                            
+                                        </MudItem>
+                                    }
                                     <MudItem Class="pa-1">
                                         <MudButton Variant="Variant.Filled" OnClick="@(() => OnLoginClick())"
                                                    StartIcon="fa-sharp fa-regular fa-right-to-bracket"

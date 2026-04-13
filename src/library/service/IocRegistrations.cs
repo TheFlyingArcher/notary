@@ -8,6 +8,10 @@ public class IocRegistrations : Module, IRegister
 {
     protected override void Load(ContainerBuilder builder)
     {
+        builder.RegisterType<AccountService>()
+            .As<IAccountService>()
+            .InstancePerLifetimeScope();
+
         builder.RegisterType<AsymmetricKeyService>()
             .As<IAsymmetricKeyService>()
             .InstancePerLifetimeScope();
