@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.32014.148
+# Visual Studio Version 18
+VisualStudioVersion = 18.7.11911.148 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Notary", "library\core\Notary.csproj", "{22808892-41E4-4D60-AC55-4E80454307DE}"
 EndProject
@@ -18,6 +18,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Notary.AppHost", "..\Notary.AppHost\Notary.AppHost.csproj", "{BA54F065-E433-43CF-B5AF-ADF2EBEE05A3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Notary.ServiceDefaults", "..\Notary.ServiceDefaults\Notary.ServiceDefaults.csproj", "{F74D2493-C14C-4A05-821A-D94DDE0A2CFB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{378801B0-2141-4817-BF33-38295BC8F901}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		Dockerfile = Dockerfile
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,14 +57,6 @@ Global
 		{8352E625-3962-48BB-BCAC-ADEE832CF23D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8352E625-3962-48BB-BCAC-ADEE832CF23D}.Release|ARM64.ActiveCfg = Release|ARM64
 		{8352E625-3962-48BB-BCAC-ADEE832CF23D}.Release|ARM64.Build.0 = Release|ARM64
-		{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}.Debug|ARM64.Build.0 = Debug|ARM64
-		{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}.Release|ARM64.ActiveCfg = Release|ARM64
-		{E061C2BC-027D-40E7-9B49-4E87ABAFDAE8}.Release|ARM64.Build.0 = Release|ARM64
 		{9D398B2A-D49A-462B-B63F-AC33743FDE29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9D398B2A-D49A-462B-B63F-AC33743FDE29}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9D398B2A-D49A-462B-B63F-AC33743FDE29}.Debug|ARM64.ActiveCfg = Debug|ARM64
