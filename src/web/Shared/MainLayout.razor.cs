@@ -17,8 +17,7 @@ public partial class MainLayout
     {
         if (firstRender && _themeProvider != null)
         {
-            _darkMode = await _themeProvider.GetSystemPreference();
-            await _themeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
+            await _themeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChanged);
             StateHasChanged();
         }
     }
@@ -28,7 +27,7 @@ public partial class MainLayout
         NavigationManager.NavigateTo("Authenticate/Login", new NavigationOptions { ForceLoad = true, ReplaceHistoryEntry = true });
     }
 
-    private Task OnSystemPreferenceChanged(bool newValue)
+    private Task OnSystemDarkModeChanged(bool newValue)
     {
         _darkMode = newValue;
         StateHasChanged();

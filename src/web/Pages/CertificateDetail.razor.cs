@@ -117,7 +117,7 @@ public partial class CertificateDetail : ComponentBase
         }
     }
 
-    private async Task PopulateIssuerTree(string slug, List<TreeItemData<CertificateIssuerTreeItem>> children = null)
+    private async Task PopulateIssuerTree(string slug, IReadOnlyCollection<ITreeItemData<CertificateIssuerTreeItem>> children = null)
     {
         var certificate = await CertificateService.GetAsync(slug);
         if (certificate == null)
@@ -142,7 +142,7 @@ public partial class CertificateDetail : ComponentBase
             await PopulateIssuerTree(certificate.IssuingSlug, rootItem.Children);
         }
         if (children != null)
-            children.Add(rootItem);
+            children.Append(rootItem);
         else
             Model.Issuers.Add(rootItem);
     }

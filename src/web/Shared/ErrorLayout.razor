@@ -28,13 +28,12 @@
     {
         if (firstRender && _themeProvider != null)
         {
-            _darkMode = await _themeProvider.GetSystemPreference();
-            await _themeProvider.WatchSystemPreference(OnSystemPreferenceChanged);
+            await _themeProvider.WatchSystemDarkModeAsync(OnSystemDarkModeChanged);
             StateHasChanged();
         }
     }
 
-    private Task OnSystemPreferenceChanged(bool newValue)
+    private Task OnSystemDarkModeChanged(bool newValue)
     {
         _darkMode = newValue;
         StateHasChanged();

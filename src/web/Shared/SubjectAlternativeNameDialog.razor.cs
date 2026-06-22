@@ -28,5 +28,5 @@ public partial class SubjectAlternativeNameDialog : ComponentBase
     }
 
     [CascadingParameter]
-    private MudDialogInstance MudDialog { get; set; }
+    private IMudDialogInstance MudDialog { get; set; }
 }

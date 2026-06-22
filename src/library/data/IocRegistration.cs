@@ -1,6 +1,7 @@
 ﻿using System;
 using Autofac;
 using AutoMapper;
+using Microsoft.Extensions.Logging.Abstractions;
 using MongoDB.Driver;
 
 using Notary.Configuration;
@@ -20,7 +21,7 @@ namespace Notary.Data
                 var cfg = new MapperConfiguration(c =>
                 {
                     c.AddProfile<ModelMapProfile>();
-                });
+                }, NullLoggerFactory.Instance);
 
                 return cfg.CreateMapper();
             }).As<IMapper>().SingleInstance();
