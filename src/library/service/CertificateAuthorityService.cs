@@ -30,6 +30,8 @@ namespace Notary.Service
             if (entity.KeyAlgorithm == Algorithm.RSA && !entity.KeyLength.HasValue)
                 throw new ArgumentException("Must supply a key length if using RSA");
 
+            entity.DistinguishedName.Validate();
+
             CertificateAuthority parentCa = null;
             if (!string.IsNullOrEmpty(entity.ParentCaSlug))
             {
