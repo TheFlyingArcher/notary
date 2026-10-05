@@ -115,9 +115,9 @@ namespace Notary.Web.ViewModels
 
         public bool KeyUsageExpanded { get; set; }
 
-        public IEnumerable<int> SelectedCertificateKeyUsage { get; set; }
+        public IReadOnlyCollection<int> SelectedCertificateKeyUsage { get; set; }
 
-        public IEnumerable<string> SelectedExKeyUsages { get; set; }
+        public IReadOnlyCollection<string> SelectedExKeyUsages { get; set; }
 
         /// <summary>
         /// Get or set the display name of the certificate

@@ -39,7 +39,7 @@ public partial class RevokeCertificateDialog : ComponentBase
         MudDialog.Close();
     }
 
-    [CascadingParameter] private MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
 
     [Parameter] public string Slug { get; set; }
 

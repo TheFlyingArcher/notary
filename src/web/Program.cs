@@ -1,10 +1,18 @@
 using System.Reflection;
+
 using Auth0.AspNetCore.Authentication;
+
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+
+using AutoMapper.Contrib.Autofac.DependencyInjection;
 using log4net;
+
 using Microsoft.AspNetCore.HttpOverrides;
+
 using MudBlazor.Services;
+using MudBlazor.Translations;
+
 using Notary.Configuration;
 using Notary.Service;
 
@@ -20,6 +28,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(c =>
 {
     c.RegisterInstance(config).SingleInstance();
     c.Register(r => LogManager.GetLogger(typeof(Program))).As<ILog>().SingleInstance();
+    c.RegisterAutoMapper(typeof(RegisterModules).Assembly);
     RegisterModules.Register(c);
 });
 
@@ -27,10 +36,11 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders =
         ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
+
     options.KnownProxies.Clear();
 });
 
+builder.Services.AddMudTranslations();
 builder.Services.AddControllers();
 
 if (config.OpenId != null)

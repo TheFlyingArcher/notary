@@ -138,8 +138,9 @@ public partial class CertificateDetail : ComponentBase
 
         if (!string.IsNullOrEmpty(certificate.IssuingSlug))
         {
-            rootItem.Children = new List<TreeItemData<CertificateIssuerTreeItem>>();
-            await PopulateIssuerTree(certificate.IssuingSlug, rootItem.Children);
+            var issuerChildren = new List<TreeItemData<CertificateIssuerTreeItem>>();
+            await PopulateIssuerTree(certificate.IssuingSlug, issuerChildren);
+            rootItem.Children = issuerChildren;
         }
         if (children != null)
             children.Add(rootItem);
