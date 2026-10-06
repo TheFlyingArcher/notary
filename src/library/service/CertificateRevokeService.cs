@@ -40,6 +40,7 @@ namespace Notary.Service
             if (caCert == null)
                 throw new ArgumentNullException(nameof(caCert));
 
+            var keyInfo = await KeyService.GetAsync(caCert.KeySlug);
             var keyPair = await KeyService.GetKeyPairAsync(caCert.KeySlug);
             var signingCertificate = GetX509FromPem(caCert.Data);
             var crlGen = new X509V2CrlGenerator();
@@ -48,57 +49,49 @@ namespace Notary.Service
 
             crlGen.SetIssuerDN(signingCertificate.SubjectDN);
             crlGen.SetThisUpdate(DateTime.UtcNow);
-            crlGen.SetNextUpdate(DateTime.UtcNow.AddYears(1));
+            crlGen.SetNextUpdate(DateTime.UtcNow.AddDays(30));
 
             foreach (var cert in revocatedCerts)
             {
                 var rc = await CertificateService.GetAsync(cert.CertificateSlug);
                 var certificate = GetX509FromPem(rc.Data);
-
-                int reason = -1;
-                switch (cert.Reason)
-                {
-                    case RevocationReason.Unspecified:
-                        reason = CrlReason.Unspecified;
-                        break;
-                    case RevocationReason.KeyCompromized:
-                        reason = CrlReason.KeyCompromise;
-                        break;
-                    case RevocationReason.CaCompromized:
-                        reason = CrlReason.CACompromise;
-                        break;
-                    case RevocationReason.AffiliationChanged:
-                        reason = CrlReason.AffiliationChanged;
-                        break;
-                    case RevocationReason.Superceded:
-                        reason = CrlReason.Superseded;
-                        break;
-                    case RevocationReason.CessationOfOperation:
-                        reason = CrlReason.CessationOfOperation;
-                        break;
-                    case RevocationReason.CertificateHold:
-                        reason = CrlReason.CertificateHold;
-                        break;
-                    case RevocationReason.RemoveFromCrl:
-                        reason = CrlReason.RemoveFromCrl;
-                        break;
-                    case RevocationReason.PrivilegeWithdrawn:
-                        reason = CrlReason.PrivilegeWithdrawn;
-                        break;
-                    case RevocationReason.AaCompromized:
-                        reason = CrlReason.AACompromise;
-                        break;
-                }
-
-                crlGen.AddCrlEntry(certificate.SerialNumber, cert.Created, reason);
-                crlGen.AddExtension(X509Extensions.CrlNumber, false, new CrlNumber(BigInteger.Arbitrary(16)));
+                crlGen.AddCrlEntry(certificate.SerialNumber, cert.Created, MapRevocationReason(cert.Reason));
             }
 
-            var signatureFactory = new Asn1SignatureFactory("SHA256WithRSA", keyPair.Private);
-            crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(signingCertificate));
+            // CRL number uses Unix epoch seconds — always increases between CRL issuances
+            crlGen.AddExtension(X509Extensions.CrlNumber, false,
+                new CrlNumber(BigInteger.ValueOf(DateTimeOffset.UtcNow.ToUnixTimeSeconds())));
+            crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier, false,
+                new AuthorityKeyIdentifierStructure(signingCertificate));
+
+            var signatureAlgorithm = keyInfo.KeyAlgorithm == Algorithm.EllipticCurve
+                ? "SHA256WithECDSA"
+                : "SHA256WithRSA";
+
+            var signatureFactory = new Asn1SignatureFactory(signatureAlgorithm, keyPair.Private);
             var crl = crlGen.Generate(signatureFactory);
 
+            crl.Verify(signingCertificate.GetPublicKey());
+
             return crl.GetEncoded();
+        }
+
+        private static int MapRevocationReason(RevocationReason reason)
+        {
+            return reason switch
+            {
+                RevocationReason.Unspecified        => CrlReason.Unspecified,
+                RevocationReason.KeyCompromized     => CrlReason.KeyCompromise,
+                RevocationReason.CaCompromized      => CrlReason.CACompromise,
+                RevocationReason.AffiliationChanged => CrlReason.AffiliationChanged,
+                RevocationReason.Superceded         => CrlReason.Superseded,
+                RevocationReason.CessationOfOperation => CrlReason.CessationOfOperation,
+                RevocationReason.CertificateHold    => CrlReason.CertificateHold,
+                RevocationReason.RemoveFromCrl      => CrlReason.RemoveFromCrl,
+                RevocationReason.PrivilegeWithdrawn => CrlReason.PrivilegeWithdrawn,
+                RevocationReason.AaCompromized      => CrlReason.AACompromise,
+                _                                   => CrlReason.Unspecified
+            };
         }
 
         public async Task<List<RevocatedCertificate>> GetRevocatedCertificates()

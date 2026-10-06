@@ -44,6 +44,8 @@ namespace Notary.Service
         {
             try
             {
+                request.Subject.Validate();
+
                 string issuerDn = null;
                 string crlEndpoint = null;
                 BigInteger issuerSn = null;
