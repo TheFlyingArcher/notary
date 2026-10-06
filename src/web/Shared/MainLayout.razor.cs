@@ -17,7 +17,9 @@ public partial class MainLayout
     {
         if (firstRender && _themeProvider != null)
         {
+            _darkMode = await _themeProvider.GetSystemDarkModeAsync();
             await _themeProvider.WatchSystemDarkModeAsync(OnSystemPreferenceChanged);
+            StateHasChanged();
         }
     }
 

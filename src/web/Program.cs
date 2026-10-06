@@ -14,6 +14,7 @@ using MudBlazor.Services;
 using MudBlazor.Translations;
 
 using Notary.Configuration;
+using Notary.Data;
 using Notary.Service;
 
 
@@ -28,7 +29,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(c =>
 {
     c.RegisterInstance(config).SingleInstance();
     c.Register(r => LogManager.GetLogger(typeof(Program))).As<ILog>().SingleInstance();
-    c.RegisterAutoMapper(typeof(RegisterModules).Assembly);
+    c.RegisterAutoMapper(typeof(ModelMapProfile).Assembly);
     RegisterModules.Register(c);
 });
 

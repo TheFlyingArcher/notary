@@ -28,11 +28,9 @@
     {
         if (firstRender && _themeProvider != null)
         {
-            await _themeProvider.WatchSystemDarkModeAsync(async d =>
-            {
-                _darkMode = d;
-                StateHasChanged();
-            });
+            _darkMode = await _themeProvider.GetSystemDarkModeAsync();
+            await _themeProvider.WatchSystemDarkModeAsync(OnSystemPreferenceChanged);
+            StateHasChanged();
         }
     }
 
