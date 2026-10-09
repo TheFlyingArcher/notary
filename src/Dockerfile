@@ -8,14 +8,16 @@ EXPOSE 443
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 ARG TARGETARCH
-WORKDIR /src
-COPY ["./web/Notary.Web.csproj", "web/"]
-COPY ["./library/core/Notary.csproj", "library/core/"]
-COPY ["./library/service/Notary.Service.csproj", "library/service/"]
-COPY ["./library/data/Notary.Data.csproj", "library/data/"]
-RUN dotnet restore "./web/Notary.Web.csproj" -a ${TARGETARCH}
-COPY . .
-WORKDIR "/src/web"
+WORKDIR /repo
+COPY ["src/web/Notary.Web.csproj", "src/web/"]
+COPY ["src/library/core/Notary.csproj", "src/library/core/"]
+COPY ["src/library/service/Notary.Service.csproj", "src/library/service/"]
+COPY ["src/library/data/Notary.Data.csproj", "src/library/data/"]
+COPY ["Notary.ServiceDefaults/Notary.ServiceDefaults.csproj", "Notary.ServiceDefaults/"]
+RUN dotnet restore "./src/web/Notary.Web.csproj" -a ${TARGETARCH}
+COPY src/ src/
+COPY Notary.ServiceDefaults/ Notary.ServiceDefaults/
+WORKDIR "/repo/src/web"
 RUN dotnet build "./Notary.Web.csproj" -c $BUILD_CONFIGURATION -o /app/build --nologo --no-restore -a ${TARGETARCH}
 
 FROM build AS publish
