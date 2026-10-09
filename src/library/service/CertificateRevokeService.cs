@@ -47,12 +47,6 @@ namespace Notary.Service
             KeyService = keyService;
         }
 
-        public override async Task InitializeAsync()
-        {
-            await base.InitializeAsync();
-            await BackfillLegacyRevocationsAsync();
-        }
-
         public async Task<Result<CrlDocument>> GetCrlAsync(string caSlug, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(caSlug))
@@ -316,18 +310,14 @@ namespace Notary.Service
                 if (revocation.InvalidityDate.HasValue)
                     entryExtensions.AddExtension(X509Extensions.InvalidityDate, false, new Asn1GeneralizedTime(TruncateToSeconds(revocation.InvalidityDate.Value)));
 
-                var revokedOn = revocation.RevocationDate == default ? revocation.Created : revocation.RevocationDate;
                 crlGen.AddCrlEntry(
                     new BigInteger(revocation.SerialNumber, 16),
-                    TruncateToSeconds(revokedOn),
+                    TruncateToSeconds(revocation.RevocationDate),
                     entryExtensions.IsEmpty ? null : entryExtensions.Generate());
             }
 
-            // Continue from the persisted counter. A first CRL starts at the Unix time so it also exceeds any number
-            // handed out by the previous time-based implementation.
-            var crlNumber = existing != null
-                ? existing.Number + 1
-                : DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            // Continue from the persisted counter; RFC 5280 requires the CRL number to increase monotonically
+            var crlNumber = (existing?.Number ?? 0) + 1;
             crlGen.AddExtension(X509Extensions.CrlNumber, false, new CrlNumber(BigInteger.ValueOf(crlNumber)));
             crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(signingCertificate));
 
@@ -355,26 +345,6 @@ namespace Notary.Service
             await _crlRepository.SaveAsync(record);
 
             return Result<CrlDocument>.Ok(ToDocument(record));
-        }
-
-        /// <summary>
-        /// Revocations written before the issuer and revocation date were recorded cannot be placed in a CRL.
-        /// Fill them in from the certificate.
-        /// </summary>
-        private async Task BackfillLegacyRevocationsAsync()
-        {
-            foreach (var revocation in await _revocationRepository.GetWithoutIssuerAsync())
-            {
-                var certificate = await CertificateService.GetAsync(revocation.CertificateSlug);
-                if (certificate == null || string.IsNullOrEmpty(certificate.IssuingSlug))
-                    continue;
-
-                revocation.IssuerSlug = certificate.IssuingSlug;
-                if (revocation.RevocationDate == default)
-                    revocation.RevocationDate = DateTime.SpecifyKind(revocation.Created, DateTimeKind.Utc);
-
-                await _revocationRepository.SaveAsync(revocation);
-            }
         }
 
         // A CRL is refreshed once half of its validity has elapsed, so clients always find one that is current

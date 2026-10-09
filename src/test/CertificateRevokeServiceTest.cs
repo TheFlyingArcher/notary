@@ -293,28 +293,6 @@ public class CertificateRevokeServiceTest
         Assert.That((await _service.GetCrlAsync(noCrlSign.Slug)).Status, Is.EqualTo(ResultStatus.Invalid));
     }
 
-    [Test]
-    public async Task LegacyRevocationsAreAssignedToTheirIssuerOnInitialize()
-    {
-        var root = await IssueAsync("root", isCa: true);
-        var leaf = await IssueAsync("leaf", parent: root);
-        await _revocationRepo.SaveAsync(new RevocatedCertificate
-        {
-            Active = true,
-            CertificateSlug = leaf.Slug,
-            Created = DateTime.UtcNow.AddDays(-2),
-            Reason = RevocationReason.KeyCompromized,
-            SerialNumber = leaf.SerialNumber,
-            Thumbprint = leaf.Thumbprint
-        });
-
-        await _service.InitializeAsync();
-
-        var crl = await GetCrlAsync(root);
-        Assert.That(crl.IsRevoked(Serial(leaf)), Is.True);
-        Assert.That(crl.GetRevokedCertificate(Serial(leaf)).RevocationDate, Is.LessThan(DateTime.UtcNow.AddDays(-1)));
-    }
-
     private async Task<Certificate> IssueAsync(
         string name,
         bool isCa = false,
@@ -428,9 +406,6 @@ public class CertificateRevokeServiceTest
 
         public Task<RevocatedCertificate> GetActiveByCertificateAsync(string certificateSlug) =>
             Task.FromResult(Items.Values.Where(r => r.Active && r.CertificateSlug == certificateSlug).Select(Clone).FirstOrDefault());
-
-        public Task<List<RevocatedCertificate>> GetWithoutIssuerAsync() =>
-            Task.FromResult(Items.Values.Where(r => r.Active && r.IssuerSlug == null).Select(Clone).ToList());
     }
 
     private class FakeKeyService : IAsymmetricKeyService

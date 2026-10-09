@@ -37,12 +37,6 @@ namespace Notary.Data.Repository
             return await RunQuery(filter);
         }
 
-        public async Task<List<RevocatedCertificate>> GetWithoutIssuerAsync()
-        {
-            var filter = Builders<RevocatedCertificateModel>.Filter.Where(r => r.IssuerSlug == null && r.Active);
-            return await FindAsync(filter);
-        }
-
         private async Task<List<RevocatedCertificate>> FindAsync(FilterDefinition<RevocatedCertificateModel> filter)
         {
             using var cursor = await Collection.FindAsync(filter);

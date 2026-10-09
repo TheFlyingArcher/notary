@@ -16,10 +16,5 @@ namespace Notary.Interface.Repository
         /// </summary>
         /// <returns>The revocation or null if the certificate is not revoked</returns>
         Task<RevocatedCertificate> GetActiveByCertificateAsync(string certificateSlug);
-
-        /// <summary>
-        /// Get active revocations that were stored without an issuer (legacy records)
-        /// </summary>
-        Task<List<RevocatedCertificate>> GetWithoutIssuerAsync();
     }
 }
