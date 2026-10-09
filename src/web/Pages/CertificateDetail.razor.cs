@@ -37,7 +37,7 @@ public partial class CertificateDetail : ComponentBase
         IsLoading = true;
         Certificate? c = null;
         AsymmetricKey? key = null;
-        RevocatedCertificate? rc = null;
+        Revocation? rc = null;
 
         c = await CertificateService.GetAsync(Slug);
         if (c == null)
@@ -57,8 +57,7 @@ public partial class CertificateDetail : ComponentBase
 
         if (c.RevocationDate.HasValue)
         {
-            var rcList = await RevokeSvc.GetRevocatedCertificates();
-            rc = rcList.Find(cc => cc.Slug == c.Thumbprint);
+            rc = await RevokeSvc.GetRevocationAsync(c.Slug);
         }
 
         DateTime utcNow = DateTime.UtcNow;

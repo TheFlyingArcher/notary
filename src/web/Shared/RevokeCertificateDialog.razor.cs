@@ -35,7 +35,21 @@ public partial class RevokeCertificateDialog : ComponentBase
 
     protected async Task OnOk()
     {
-        await RevocationService.RevokeCertificateAsync(Slug, Model.RevocationReason, Model.UserRevoking);
+        var result = await RevocationService.RevokeCertificateAsync(Slug, Model.RevocationReason, Model.UserRevoking);
+        if (result.IsSuccess)
+        {
+            Snackbar.Add(
+                result.Value > 1 ? $"Revoked {result.Value} certificates" : "Certificate revoked",
+                Severity.Success);
+            MudDialog.Close();
+            return;
+        }
+
+        Snackbar.Add(result.Error, Severity.Error);
+        if (result.Status != ResultStatus.Failed)
+            return;
+
+        // Some certificates were revoked before the failure; leave the dialog so the page reflects them.
         MudDialog.Close();
     }
 
@@ -50,6 +64,9 @@ public partial class RevokeCertificateDialog : ComponentBase
 
     [Inject]
     public IDialogService Dialog { get; set; }
+
+    [Inject]
+    public ISnackbar Snackbar { get; set; }
 
     [Inject]
     public AuthenticationStateProvider AuthProvider { get; set; }

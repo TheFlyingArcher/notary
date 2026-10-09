@@ -28,6 +28,7 @@ public class ModelMapProfile : Profile
             .ForMember(m => m.EncryptedPrivateKey, c => c.MapFrom(d => Encoding.Default.GetBytes(d.EncryptedPrivateKey)));
         CreateMap<Certificate, CertificateModel>().ReverseMap();
         CreateMap<CertificateAuthority, CertificateAuthorityModel>().ReverseMap();
-        CreateMap<RevocatedCertificate, RevocatedCertificateModel>().ReverseMap();
+        CreateMap<Revocation, RevocationModel>().ReverseMap();
+        CreateMap<CrlRecord, CrlRecordModel>().ReverseMap();
     }
 }

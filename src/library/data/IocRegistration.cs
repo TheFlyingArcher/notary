@@ -51,7 +51,8 @@ namespace Notary.Data
             builder.RegisterType<AsymmetricKeyRepository>().As<IAsymmetricKeyRepository>().InstancePerLifetimeScope();
             builder.RegisterType<CertificateAuthorityRepository>().As<ICertificateAuthorityRepository>().InstancePerLifetimeScope();
             builder.RegisterType<CertificateRepository>().As<ICertificateRepository>().InstancePerLifetimeScope();
-            builder.RegisterType<RevocatedCertificateRepository>().As<IRevocatedCertificateRepository>().InstancePerLifetimeScope();
+            builder.RegisterType<CrlRecordRepository>().As<ICrlRecordRepository>().InstancePerLifetimeScope();
+            builder.RegisterType<RevocationRepository>().As<IRevocationRepository>().InstancePerLifetimeScope();
         }
     }
 }

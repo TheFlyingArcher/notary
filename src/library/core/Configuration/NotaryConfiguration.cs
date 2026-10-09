@@ -18,6 +18,8 @@ namespace Notary.Configuration
         public NotaryConfiguration(NotaryConfiguration config)
         {
             ApplicationKey = config.ApplicationKey;
+            CrlEndpoint = config.CrlEndpoint;
+            CrlValidityDays = config.CrlValidityDays;
             ActiveDirectory = config.ActiveDirectory;
             Authentication = config.Authentication;
             Database = config.Database;
@@ -33,7 +35,16 @@ namespace Notary.Configuration
 
         public NotaryDatabaseConfiguration Database { get; }
 
+        /// <summary>
+        /// Get or set the absolute base URL under which CRLs are published, e.g. http://pki.example.com/api/crl
+        /// </summary>
+        [NotaryEnvironmentVariable("NOTARY_CRL_ENDPOINT")]
         public string CrlEndpoint { get; set; }
+
+        /// <summary>
+        /// Get or set the number of days a CRL is valid for (nextUpdate - thisUpdate). Defaults to 7.
+        /// </summary>
+        public int CrlValidityDays { get; set; } = 7;
 
         public NotaryOpenIdConfiguration OpenId { get; }
 

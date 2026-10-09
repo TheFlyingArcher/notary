@@ -13,6 +13,8 @@
                     <MudText Typo="Typo.button">cannot be undone!</MudText>
                 </strong>
                 This certificate will no longer be valid for use in SSL/TLS or other secure operations.
+                Only a temporary revocation can be undone. Revoking a certificate authority also revokes
+                every certificate it has issued, as CA compromised.
             </MudItem>
             <MudItem Class="pa-2">
                 <MudForm Model="@Model" @ref="@_form" @bind-IsValid="@_isValid" @bind-Errors="@_errors">
@@ -30,7 +32,6 @@
                         <MudSelectItem Value="@(RevocationReason.KeyCompromized)">Private Key Compromized
                         </MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.PrivilegeWithdrawn)">Privileges Revoked</MudSelectItem>
-                        <MudSelectItem Value="@(RevocationReason.RemoveFromCrl)">CA Removed</MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.Superceded)">Certificate Replaced</MudSelectItem>
                         <MudSelectItem Value="@(RevocationReason.Unspecified)">Unspecified</MudSelectItem>
                     </MudSelect>

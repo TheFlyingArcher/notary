@@ -1,14 +1,24 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿using System;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace Notary.Data.Model
 {
-    public sealed class RevocatedCertificateModel : BaseModel
+    public sealed class RevocationModel : BaseModel
     {
-        public RevocatedCertificateModel()
+        public RevocationModel()
         {
         }
 
         public string CertificateSlug { get; set; }
+
+        [BsonElement("iss_slug")]
+        public string IssuerSlug { get; set; }
+
+        [BsonElement("rev_date")]
+        public DateTime RevocationDate { get; set; }
+
+        [BsonElement("inv_date")]
+        public DateTime? InvalidityDate { get; set; }
 
         /// <summary>
         /// Get or set the reason the certificate was revoked

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
@@ -62,7 +62,7 @@ namespace Notary.Service
                     issuerKeyPair = await KeyService.GetKeyPairAsync(parentCert.KeySlug);
                     issuerSn = cert.SerialNumber;
                     issuerDn = DistinguishedName.BuildDistinguishedName(parentCert.Subject);
-                    crlEndpoint = $"{Configuration.CrlEndpoint}/{parentCert.IssuingSlug}";
+                    crlEndpoint = BuildCrlEndpoint(parentCert.Slug);
                 }
                 var random = GetSecureRandom();
                 var newKey = new AsymmetricKey
@@ -204,19 +204,15 @@ namespace Notary.Service
         /// shows how to create this from the issuing certificate. Since we're creating a self-signed certificate, we have to do this slightly differently.
         /// </summary>
         /// <param name="certificateGenerator">The object used to generate certificate</param>
-        /// <param name="issuerDN">The issuer's distinguished name</param>
         /// <param name="issuerKeyPair">The issuer's key pair</param>
-        /// <param name="issuerSerialNumber">The issuer's serial number</param>
         private void AddAuthorityKeyIdentifier(X509V3CertificateGenerator certificateGenerator,
-                                                      X509Name issuerDN,
-                                                      AsymmetricCipherKeyPair issuerKeyPair,
-                                                      BigInteger issuerSerialNumber)
+                                                      AsymmetricCipherKeyPair issuerKeyPair)
         {
+            // RFC 5280 4.2.1.1: only the key identifier is needed. Naming the issuer certificate (issuer DN + serial)
+            // must reference the issuer's *own* issuer, and a mismatch makes validators such as OpenSSL
+            // fail to find the issuing CA, which in turn prevents any revocation check.
             var authorityKeyIdentifierExtension =
-                new AuthorityKeyIdentifier(
-                    SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(issuerKeyPair.Public),
-                    new GeneralNames(new GeneralName(issuerDN)),
-                    issuerSerialNumber);
+                new AuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(issuerKeyPair.Public));
             certificateGenerator.AddExtension(
                 X509Extensions.AuthorityKeyIdentifier.Id, false, authorityKeyIdentifierExtension);
         }
@@ -229,6 +225,25 @@ namespace Notary.Service
         private void AddCertificateKeyUsage(X509V3CertificateGenerator certificateGenerator, int keyUsageFlags)
         {
             certificateGenerator.AddExtension(X509Extensions.KeyUsage.Id, true, new KeyUsage(keyUsageFlags));
+        }
+
+        /// <summary>
+        /// Build the CRL distribution point URL for certificates issued by the given CA
+        /// </summary>
+        /// <param name="issuerSlug">The slug of the issuing CA certificate</param>
+        /// <returns>The absolute URL or null if no valid CRL endpoint is configured</returns>
+        private string BuildCrlEndpoint(string issuerSlug)
+        {
+            var baseUrl = Configuration.CrlEndpoint?.TrimEnd('/');
+            if (string.IsNullOrWhiteSpace(baseUrl)
+                || !Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
+                || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                Logger.Warn("No valid absolute http(s) CrlEndpoint is configured; issued certificates will have no CRL distribution point.");
+                return null;
+            }
+
+            return $"{baseUrl}/{Uri.EscapeDataString(issuerSlug)}";
         }
 
         private void AddCrlEndpoint(X509V3CertificateGenerator certificateGenerator, string crlEndpoint)
@@ -350,7 +365,7 @@ namespace Notary.Service
             certGen.SetNotBefore(notBefore);
             certGen.SetNotAfter(notAfter);
 
-            AddAuthorityKeyIdentifier(certGen, issuer, issuerKeyPair, issuerSn);
+            AddAuthorityKeyIdentifier(certGen, issuerKeyPair);
             AddSubjectKeyIdentifier(certGen, subjectKeyPair);
             AddBasicConstraints(certGen, isCA);
             AddCertificateKeyUsage(certGen, certificateKeyUsageFlags);

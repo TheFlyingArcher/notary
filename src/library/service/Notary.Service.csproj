@@ -15,6 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Notary.Test" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../data/Notary.Data.csproj" />
     <ProjectReference Include="../core/Notary.csproj" />
   </ItemGroup>

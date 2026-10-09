@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Threading.RateLimiting;
 using Auth0.AspNetCore.Authentication;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -33,6 +34,19 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 builder.Services.AddControllers();
 
+// The CRL endpoint is anonymous; throttle it per client
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("crl", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 60,
+            Window = TimeSpan.FromMinutes(1)
+        }));
+});
+
 if (config.OpenId != null)
 {
     builder.Services.AddAuth0WebAppAuthentication(o =>
@@ -64,6 +78,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseForwardedHeaders();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 
