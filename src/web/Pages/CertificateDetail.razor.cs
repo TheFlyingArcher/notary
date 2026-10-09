@@ -37,7 +37,7 @@ public partial class CertificateDetail : ComponentBase
         IsLoading = true;
         Certificate? c = null;
         AsymmetricKey? key = null;
-        RevocatedCertificate? rc = null;
+        Revocation? rc = null;
 
         c = await CertificateService.GetAsync(Slug);
         if (c == null)

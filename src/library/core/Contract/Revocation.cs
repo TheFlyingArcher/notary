@@ -7,9 +7,9 @@ namespace Notary.Contract
     /// A contract for revoked certificate records
     /// </summary>
     [DataContract]
-    public class RevocatedCertificate : Entity
+    public class Revocation : Entity
     {
-        public RevocatedCertificate()
+        public Revocation()
         {
 
         }

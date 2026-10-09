@@ -172,7 +172,7 @@ public class CertificateRevokeServiceTest
         var again = await _service.RevokeCertificateAsync(leaf.Slug, RevocationReason.KeyCompromized, "admin");
 
         Assert.That(again.Status, Is.EqualTo(ResultStatus.Conflict));
-        Assert.That((await _service.GetRevocatedCertificates()).Count, Is.EqualTo(1));
+        Assert.That((await _service.GetRevocations()).Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -399,12 +399,12 @@ public class CertificateRevokeServiceTest
     {
     }
 
-    private class FakeRevocationRepository : FakeRepository<RevocatedCertificate>, IRevocatedCertificateRepository
+    private class FakeRevocationRepository : FakeRepository<Revocation>, IRevocationRepository
     {
-        public Task<List<RevocatedCertificate>> GetActiveByIssuerAsync(string issuerSlug) =>
+        public Task<List<Revocation>> GetActiveByIssuerAsync(string issuerSlug) =>
             Task.FromResult(Items.Values.Where(r => r.Active && r.IssuerSlug == issuerSlug).Select(Clone).ToList());
 
-        public Task<RevocatedCertificate> GetActiveByCertificateAsync(string certificateSlug) =>
+        public Task<Revocation> GetActiveByCertificateAsync(string certificateSlug) =>
             Task.FromResult(Items.Values.Where(r => r.Active && r.CertificateSlug == certificateSlug).Select(Clone).FirstOrDefault());
     }
 

@@ -3,9 +3,9 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Notary.Data.Model
 {
-    public sealed class RevocatedCertificateModel : BaseModel
+    public sealed class RevocationModel : BaseModel
     {
-        public RevocatedCertificateModel()
+        public RevocationModel()
         {
         }
 

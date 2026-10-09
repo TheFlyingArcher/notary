@@ -4,7 +4,7 @@ Responds to `docs/raw/notary-raw-intent-revocation.md`.
 
 ## 1. Evaluation of the current CRL implementation
 
-What exists: `CertificateRevokeService.GenerateCrl`, `CrlController` (`GET api/crl/{caSlug}`), a `RevocatedCertificate` record, the revoke dialog in the UI, and a CRL Distribution Point extension written into issued certificates. The BouncyCastle CRL generation itself is sound (signed, verified, `CrlNumber`, `AuthorityKeyIdentifier`, reason codes). The problems are in how it is wired.
+What exists: `CertificateRevokeService.GenerateCrl`, `CrlController` (`GET api/crl/{caSlug}`), a `Revocation` record, the revoke dialog in the UI, and a CRL Distribution Point extension written into issued certificates. The BouncyCastle CRL generation itself is sound (signed, verified, `CrlNumber`, `AuthorityKeyIdentifier`, reason codes). The problems are in how it is wired.
 
 ### Defects (ordered by severity)
 
@@ -21,7 +21,7 @@ What exists: `CertificateRevokeService.GenerateCrl`, `CrlController` (`GET api/c
 | 9 | `CertificateHold` is supported, but there is no un-hold path (`RemoveFromCrl`, code 8, is mislabelled as "whole CA removed") | `RevocationReason` | Holds are permanent in practice. |
 | 10 | Reason codes: a `CaCompromized` or `KeyCompromized` revocation has no `invalidityDate`. The enum has typos and does not match RFC 5280 naming. | `RevocationReason` | Cosmetic, but `invalidityDate` matters for key compromise. |
 | 11 | No authorization check in `RevokeCertificateAsync` beyond the UI. Revoking a CA does not cascade to certificates it issued. | service | Policy gap. |
-| 12 | `RevocatedCertificate.SlugProperties()` is only `Thumbprint`, and nothing indexes `CertificateSlug` or the issuer | repo | Slow, unfiltered `GetAllAsync` scans as the data grows. |
+| 12 | `Revocation.SlugProperties()` is only `Thumbprint`, and nothing indexes `CertificateSlug` or the issuer | repo | Slow, unfiltered `GetAllAsync` scans as the data grows. |
 | 13 | There are no tests for any revocation code | `src/test` | Nothing verifies the CRL parses or contains the right serials. |
 
 ## 2. Which method fits Notary
@@ -39,9 +39,9 @@ What exists: `CertificateRevokeService.GenerateCrl`, `CrlController` (`GET api/c
 
 1. **Fix the CDP URL** (`CertificateService.cs:65`): use `parentCert.Slug`. Validate `Configuration.CrlEndpoint` is set (absolute `http(s)` URI). Existing already-issued certificates keep the bad URL; document that they must be re-issued.
 2. **Model changes**
-   - `RevocatedCertificate` gains `IssuerSlug` (the CA that issued the revoked certificate, taken from `Certificate.IssuingSlug`), `RevocationDate` (UTC) and `InvalidityDate?`.
+   - `Revocation` gains `IssuerSlug` (the CA that issued the revoked certificate, taken from `Certificate.IssuingSlug`), `RevocationDate` (UTC) and `InvalidityDate?`.
    - Add Mongo indexes: unique on `CertificateSlug`; non-unique on `IssuerSlug`.
-   - `IRevocatedCertificateRepository` gets `GetByIssuerAsync(issuerSlug)`.
+   - `IRevocationRepository` gets `GetByIssuerAsync(issuerSlug)`.
 3. **Revoke service**
    - Reject unknown, already revoked or self-signed-root-for-CRL certificates. Return a `Result<T>`-style outcome instead of silently doing nothing.
    - Use `DateTime.UtcNow` throughout.

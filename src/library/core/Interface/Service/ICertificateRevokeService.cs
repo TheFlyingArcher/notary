@@ -6,7 +6,7 @@ using Notary.Contract;
 
 namespace Notary.Interface.Service
 {
-    public interface ICertificateRevokeService : IEntityService<RevocatedCertificate>
+    public interface ICertificateRevokeService : IEntityService<Revocation>
     {
         /// <summary>
         /// Get the current CRL of a certificate authority. A cached CRL is returned while it is fresh;
@@ -18,13 +18,13 @@ namespace Notary.Interface.Service
         /// <summary>
         /// Get a list of all active revocations
         /// </summary>
-        Task<List<RevocatedCertificate>> GetRevocatedCertificates();
+        Task<List<Revocation>> GetRevocations();
 
         /// <summary>
         /// Get the active revocation of a certificate
         /// </summary>
         /// <returns>The revocation, or null if the certificate is not revoked</returns>
-        Task<RevocatedCertificate> GetRevocationAsync(string certificateSlug);
+        Task<Revocation> GetRevocationAsync(string certificateSlug);
 
         /// <summary>
         /// Revoke a certificate. Revoking a CA (for any reason except <see cref="RevocationReason.CertificateHold"/>)

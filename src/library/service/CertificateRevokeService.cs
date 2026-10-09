@@ -20,7 +20,7 @@ namespace Notary.Service
     /// <summary>
     /// Revokes certificates and publishes RFC 5280 CRLs for the certificate authorities that issued them.
     /// </summary>
-    internal class CertificateRevokeService : CryptographicEntityService<RevocatedCertificate>, ICertificateRevokeService
+    internal class CertificateRevokeService : CryptographicEntityService<Revocation>, ICertificateRevokeService
     {
         // CRL issuance reads, increments and writes the per-CA CRL number. Serialize it within the process.
         private static readonly SemaphoreSlim s_crlLock = new(1, 1);
@@ -28,19 +28,19 @@ namespace Notary.Service
         // The bit position of cRLSign in the X.509 KeyUsage extension
         private const int CrlSignKeyUsageBit = 6;
 
-        private readonly IRevocatedCertificateRepository _revocationRepository;
+        private readonly IRevocationRepository _revocationRepository;
         private readonly ICrlRecordRepository _crlRepository;
 
         public CertificateRevokeService(
-            IRevocatedCertificateRepository revocatedCertificateRepo,
+            IRevocationRepository revocationRepo,
             ICrlRecordRepository crlRecordRepo,
             ICertificateService certificateService,
             IAsymmetricKeyService keyService,
             ILog log,
             NotaryConfiguration config
-        ) : base(revocatedCertificateRepo, log)
+        ) : base(revocationRepo, log)
         {
-            _revocationRepository = revocatedCertificateRepo;
+            _revocationRepository = revocationRepo;
             _crlRepository = crlRecordRepo;
             CertificateService = certificateService;
             Configuration = config;
@@ -67,14 +67,14 @@ namespace Notary.Service
             }
         }
 
-        public async Task<List<RevocatedCertificate>> GetRevocatedCertificates()
+        public async Task<List<Revocation>> GetRevocations()
         {
-            var revocatedCerts = await Repository.GetAllAsync();
+            var revocations = await Repository.GetAllAsync();
 
-            return revocatedCerts.Where(r => r.Active).ToList();
+            return revocations.Where(r => r.Active).ToList();
         }
 
-        public async Task<RevocatedCertificate> GetRevocationAsync(string certificateSlug)
+        public async Task<Revocation> GetRevocationAsync(string certificateSlug)
         {
             return await _revocationRepository.GetActiveByCertificateAsync(certificateSlug);
         }
@@ -169,7 +169,7 @@ namespace Notary.Service
 
         private async Task RevokeOneAsync(Certificate certificate, RevocationReason reason, string userSlug, DateTime now, DateTime? invalidityDate)
         {
-            var revocation = new RevocatedCertificate
+            var revocation = new Revocation
             {
                 Active = true,
                 CertificateSlug = certificate.Slug,
