@@ -15,9 +15,6 @@ namespace Notary.Contract
         [JsonProperty("keyUsageFlags", Required = Required.Always)]
         public IEnumerable<int> CertificateKeyUsageFlags { get; set; }
 
-        [JsonProperty("crl", Required = Required.Always)]
-        public string CrlEndpoint { get; set; }
-
         [JsonProperty("curve", Required = Required.AllowNull)]
         public EllipticCurve? Curve { get; set; }
 

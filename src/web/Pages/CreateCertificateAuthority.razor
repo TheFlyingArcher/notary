@@ -39,9 +39,13 @@
             HelperText="Enter the CA validity length in months e.g. 48"
             Validation="@(new Func<int, IEnumerable<string>>(ValidateExpiration))"></MudTextField>
         <MudSwitch @bind-Value="ViewModel.IsIssuer" Label="Is Issuer"></MudSwitch>
-        <MudTextField Required="false" HelperText="The endpoint which contains the CRL"
-            @bind-Value="@ViewModel.CrlEndpoint" Label="CRL Endpoint">
-        </MudTextField>
+        @if (IsCrlHostLoopback)
+        {
+            <MudAlert Severity="Severity.Warning" Class="my-2">
+                Certificates issued by the selected parent will point to a CRL at <b>@CrlBaseUrl</b>, which other
+                machines cannot reach. Browse to this site by its public hostname or set NOTARY_CRL_ENDPOINT.
+            </MudAlert>
+        }
         <MudTextField @bind-Value="ViewModel.CommonName" Required="true" RequiredError="Please enter a CA Common Name"
             HelperText="The Common Name for the CA certificate"></MudTextField>
         <MudDivider Class="my-3" />

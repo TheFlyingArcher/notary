@@ -34,10 +34,12 @@ namespace Notary.Service
             NotaryConfiguration config,
             IAsymmetricKeyService keyService,
             ICertificateRepository repository,
+            ICrlBaseUrlProvider crlBaseUrlProvider,
             ILog log) : base(repository, log)
         {
             Configuration = config;
             KeyService = keyService;
+            CrlBaseUrlProvider = crlBaseUrlProvider;
         }
 
         public async Task<Certificate> IssueCertificateAsync(CertificateRequest request)
@@ -234,12 +236,12 @@ namespace Notary.Service
         /// <returns>The absolute URL or null if no valid CRL endpoint is configured</returns>
         private string BuildCrlEndpoint(string issuerSlug)
         {
-            var baseUrl = Configuration.CrlEndpoint?.TrimEnd('/');
+            var baseUrl = CrlBaseUrlProvider.GetCrlBaseUrl()?.TrimEnd('/');
             if (string.IsNullOrWhiteSpace(baseUrl)
                 || !Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri)
                 || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
             {
-                Logger.Warn("No valid absolute http(s) CrlEndpoint is configured; issued certificates will have no CRL distribution point.");
+                Logger.Warn("No valid absolute http(s) CRL base URL could be determined; issued certificates will have no CRL distribution point.");
                 return null;
             }
 
@@ -415,5 +417,7 @@ namespace Notary.Service
         protected NotaryConfiguration Configuration { get; }
 
         protected IAsymmetricKeyService KeyService { get; }
+
+        protected ICrlBaseUrlProvider CrlBaseUrlProvider { get; }
     }
 }

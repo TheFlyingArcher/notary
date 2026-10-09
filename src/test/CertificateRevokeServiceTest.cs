@@ -29,7 +29,9 @@ public class CertificateRevokeServiceTest
     [SetUp]
     public void SetUp()
     {
-        var config = new NotaryConfiguration { CrlEndpoint = CrlEndpoint };
+        var config = new NotaryConfiguration();
+        var baseUrlProvider = new Mock<ICrlBaseUrlProvider>();
+        baseUrlProvider.Setup(p => p.GetCrlBaseUrl()).Returns(CrlEndpoint);
         var log = new Mock<ILog>().Object;
 
         _keys = new FakeKeyService();
@@ -37,7 +39,7 @@ public class CertificateRevokeServiceTest
         _revocationRepo = new FakeRevocationRepository();
         _crlRepo = new FakeCrlRepository();
 
-        _certificates = new CertificateService(config, _keys, (ICertificateRepository)_certificateRepo, log);
+        _certificates = new CertificateService(config, _keys, (ICertificateRepository)_certificateRepo, baseUrlProvider.Object, log);
         _service = new CertificateRevokeService(_revocationRepo, _crlRepo, _certificates, _keys, log, config);
     }
 

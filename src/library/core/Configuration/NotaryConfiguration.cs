@@ -36,7 +36,8 @@ namespace Notary.Configuration
         public NotaryDatabaseConfiguration Database { get; }
 
         /// <summary>
-        /// Get or set the absolute base URL under which CRLs are published, e.g. http://pki.example.com/api/crl
+        /// Get or set an optional absolute base URL under which CRLs are published, e.g. http://pki.example.com/api/crl.
+        /// When unset, the base URL is derived from the address the application is being accessed at.
         /// </summary>
         [NotaryEnvironmentVariable("NOTARY_CRL_ENDPOINT")]
         public string CrlEndpoint { get; set; }

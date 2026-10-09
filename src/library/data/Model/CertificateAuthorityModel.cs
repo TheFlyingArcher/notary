@@ -17,12 +17,6 @@ namespace Notary.Data.Model
         [BsonElement("cert_slug")]
         public string CertificateSlug { get; set; }
 
-        /// <summary>
-        /// Endpoint to the CRL
-        /// </summary>
-        [BsonElement("crl_endpoint")]
-        public string CrlEndpoint { get; set; }
-
         [BsonElement("dn")]
         public DistinguishedNameModel DistinguishedName { get; set; }
 

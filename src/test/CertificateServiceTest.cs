@@ -131,7 +131,6 @@ public class CertificateServiceTest
         return new CertificateRequest
         {
             CertificateKeyUsageFlags = It.IsAny<IEnumerable<int>>(),
-            CrlEndpoint = It.IsAny<string>(),
             ParentCertificateSlug = It.IsAny<string>(),
             Curve = null,
             KeyAlgorithm = Algorithm.RSA,
