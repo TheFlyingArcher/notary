@@ -18,6 +18,7 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
 var config = new NotaryConfiguration();
 SetEnvironmentVariables(config);
+config.Validate();
 
 builder.Host.ConfigureContainer<ContainerBuilder>(c =>
 {

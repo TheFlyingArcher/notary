@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+
+using Newtonsoft.Json;
 
 namespace Notary.Configuration
 {
@@ -24,6 +26,22 @@ namespace Notary.Configuration
             Authentication = config.Authentication;
             Database = config.Database;
             TokenSettings = config.TokenSettings;
+        }
+
+        /// <summary>
+        /// Validate the configuration, failing fast on values that would otherwise surface as runtime defects
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown when a configured value is invalid</exception>
+        public void Validate()
+        {
+            // The CRL endpoint is optional; when set it must be an absolute http(s) URL
+            if (!string.IsNullOrWhiteSpace(CrlEndpoint)
+                && (!Uri.TryCreate(CrlEndpoint, UriKind.Absolute, out var uri)
+                    || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)))
+            {
+                throw new InvalidOperationException(
+                    $"NOTARY_CRL_ENDPOINT '{CrlEndpoint}' is not a valid absolute http(s) URL, e.g. https://pki.example.com/api/crl");
+            }
         }
 
         public NotaryActiveDirectoryConfiguration ActiveDirectory { get; }
