@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿using System;
+using System.Runtime.Serialization;
 
 namespace Notary.Contract
 {
@@ -17,6 +18,24 @@ namespace Notary.Contract
         /// Get or set the slug of the certificate that was revoked.
         /// </summary>
         public string CertificateSlug { get; set; }
+
+        /// <summary>
+        /// Get or set the slug of the CA that issued the revoked certificate. Null for self-signed roots.
+        /// </summary>
+        [DataMember]
+        public string IssuerSlug { get; set; }
+
+        /// <summary>
+        /// Get or set when the certificate was revoked (UTC)
+        /// </summary>
+        [DataMember]
+        public DateTime RevocationDate { get; set; }
+
+        /// <summary>
+        /// Get or set the date the certificate is known or suspected to have been compromised (UTC)
+        /// </summary>
+        [DataMember]
+        public DateTime? InvalidityDate { get; set; }
 
         /// <summary>
         /// Get or set the reason the certificate was revoked

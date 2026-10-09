@@ -12,7 +12,8 @@ namespace Notary.Data.Model
         typeof(CertificateModel),
         typeof(CertificateAuthorityModel),
         typeof(AsymmetricKeyModel),
-        typeof(RevocatedCertificateModel)
+        typeof(RevocatedCertificateModel),
+        typeof(CrlRecordModel)
     )]
     public abstract class BaseModel
     {

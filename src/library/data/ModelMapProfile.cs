@@ -29,5 +29,6 @@ public class ModelMapProfile : Profile
         CreateMap<Certificate, CertificateModel>().ReverseMap();
         CreateMap<CertificateAuthority, CertificateAuthorityModel>().ReverseMap();
         CreateMap<RevocatedCertificate, RevocatedCertificateModel>().ReverseMap();
+        CreateMap<CrlRecord, CrlRecordModel>().ReverseMap();
     }
 }
