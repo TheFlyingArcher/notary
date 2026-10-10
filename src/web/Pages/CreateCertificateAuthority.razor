@@ -43,7 +43,7 @@
         {
             <MudAlert Severity="Severity.Warning" Class="my-2">
                 Certificates issued by the selected parent will point to a CRL at <b>@CrlBaseUrl</b>, which other
-                machines cannot reach. Browse to this site by its public hostname or set NOTARY_CRL_ENDPOINT.
+                machines cannot reach. Browse to this site by its public hostname or set NOTARY_CRL_ENDPOINT to its public address.
             </MudAlert>
         }
         <MudTextField @bind-Value="ViewModel.CommonName" Required="true" RequiredError="Please enter a CA Common Name"

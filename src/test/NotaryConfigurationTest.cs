@@ -16,6 +16,20 @@ public class NotaryConfigurationTest
         Assert.DoesNotThrow(config.Validate);
     }
 
+    [TestCase(null, null)]
+    [TestCase("  ", null)]
+    [TestCase("https://pki.example.com", "https://pki.example.com/api/crl")]
+    [TestCase("https://pki.example.com/", "https://pki.example.com/api/crl")]
+    [TestCase("https://pki.example.com:8443/pki", "https://pki.example.com:8443/pki/api/crl")]
+    [TestCase("https://pki.example.com/api/crl", "https://pki.example.com/api/crl")]
+    [TestCase("https://pki.example.com/API/CRL/", "https://pki.example.com/API/CRL")]
+    public void GetConfiguredCrlBaseUrlAppendsCrlPathOnce(string? endpoint, string? expected)
+    {
+        var config = new NotaryConfiguration { CrlEndpoint = endpoint };
+
+        Assert.That(config.GetConfiguredCrlBaseUrl(), Is.EqualTo(expected));
+    }
+
     [TestCase("pki.example.com/api/crl")]
     [TestCase("/api/crl")]
     [TestCase("not a url")]

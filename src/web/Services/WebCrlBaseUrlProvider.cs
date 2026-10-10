@@ -9,15 +9,9 @@ namespace Notary.Web.Services;
 /// </summary>
 public class WebCrlBaseUrlProvider(NotaryConfiguration configuration, NavigationManager navigationManager) : ICrlBaseUrlProvider
 {
-    private const string CrlPath = "api/crl";
-
     public string GetCrlBaseUrl()
     {
-        if (!string.IsNullOrWhiteSpace(configuration.CrlEndpoint))
-        {
-            return configuration.CrlEndpoint.TrimEnd('/');
-        }
-
-        return navigationManager.ToAbsoluteUri(CrlPath).AbsoluteUri.TrimEnd('/');
+        return configuration.GetConfiguredCrlBaseUrl()
+            ?? navigationManager.ToAbsoluteUri(NotaryConfiguration.CrlPath).AbsoluteUri.TrimEnd('/');
     }
 }
