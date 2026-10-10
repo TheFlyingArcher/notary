@@ -19,9 +19,39 @@ namespace Notary.Web.ViewModels
             Thumbprint = string.Empty;
         }
 
+        /// <summary>
+        /// Get or set the CRL number of the CRL currently published for this CA
+        /// </summary>
+        public long? CrlNumber { get; set; }
+
+        /// <summary>
+        /// Get or set the date the published CRL must be replaced by (CAs only)
+        /// </summary>
+        public DateTime? CrlNextUpdate { get; set; }
+
+        /// <summary>
+        /// Get or set why no CRL could be shown for this CA, if that is the case
+        /// </summary>
+        public string CrlUnavailableReason { get; set; }
+
+        /// <summary>
+        /// Get or set the URL the CRL for certificates issued by this CA is published at
+        /// </summary>
+        public string CrlUrl { get; set; }
+
         public EllipticCurve? EllipticCurve { get; set; }
 
         public bool Expired { get; set; }
+
+        /// <summary>
+        /// Get or set whether this certificate is a certificate authority
+        /// </summary>
+        public bool IsCaCertificate { get; set; }
+
+        /// <summary>
+        /// Get or set whether the certificate is only temporarily revoked and can be reinstated
+        /// </summary>
+        public bool IsOnHold { get; set; }
 
         public bool Expiring { get; set; }
 

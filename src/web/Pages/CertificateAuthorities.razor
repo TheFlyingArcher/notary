@@ -31,6 +31,9 @@
                 <MudTd DataLabel="NotAfter">@context.NotAfter</MudTd>
                 <MudTd DataLabel="KeyType">@context.KeyAlgorithm</MudTd>
                 <MudTh>
+                    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Search" Size="Size.Small"
+                        Href="@string.Format("certificate?slug={0}", context.CertificateSlug)" />
+                    &nbsp;
                     <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small"
                         OnClick="@(()=>OnCertificateDownloadClick(context.CertificateSlug))" />
                 </MudTh>
