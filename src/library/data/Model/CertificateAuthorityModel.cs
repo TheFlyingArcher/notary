@@ -3,6 +3,8 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Notary.Data.Model
 {
+    // Not inherited from BaseModel; tolerates fields removed from the model, e.g. crl_endpoint
+    [BsonIgnoreExtraElements]
     [Collection("certificate_authorities")]
     public class CertificateAuthorityModel : BaseModel
     {
