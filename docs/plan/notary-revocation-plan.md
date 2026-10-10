@@ -4,7 +4,7 @@ Responds to `docs/raw/notary-raw-intent-revocation.md`.
 
 ## Status (as of 2026-10-10, main at `12d49e4`)
 
-**Phase 1 (CRL) is functionally complete and UAT-verified; UI polish and a few hardening items remain. Phase 2 (OCSP) has not started.**
+**Phase 1 (CRL) is functionally complete and UAT-verified; a few hardening items remain. Phase 2 (OCSP) has not started.**
 
 UAT (OpenSSL `verify -crl_check_all` against the live app, root → intermediate → leaf): the chain verifies against empty CRLs; revoking the leaf lists its serial, reason (Key Compromise) and a higher CRL number in the intermediate's CRL and verification fails with `certificate revoked`; placing the intermediate on hold lists it in the root's CRL and fails the chain at depth 1; reinstating removes it. Implemented in PRs #28, #29 and #30.
 
@@ -17,7 +17,7 @@ UAT (OpenSSL `verify -crl_check_all` against the live app, root → intermediate
 | 3. Revoke service | Done | `Result<T>` outcomes (not found, already revoked, invalid reason or date), UTC, record-first with rollback, CA revocation cascades as CA compromised (hold does not cascade), `ReinstateCertificateAsync` for `CertificateHold` only. |
 | 4. CRL generation | Done (IDP optional, not built) | Validates the CA, `CrlSign` and expiry; entries filtered by issuer with reason and `invalidityDate`; CRL number persisted per CA (`CrlRecord`); `nextUpdate` from `CrlValidityDays` (default 7); signed DER cached and regenerated when stale or after a revocation. Issuing Distribution Point not implemented. |
 | 5. Controller | Done | `application/pkix-crl`, `.crl` suffix, `Cache-Control`, `ETag`, `Last-Modified`, 404 for unknown or non-CA slugs, rate limited. |
-| 6. UI | Partly done | Done: revoke dialog (with CA-cascade warning), revocation details on the certificate page. Open: CRL URL and next-update on the CA detail page; a way to reinstate a held certificate; a way to revoke a CA (no UI path exists yet). |
+| 6. UI | Done (UAT pending) | Revoke dialog with CA-cascade warning (stronger alert on CA certificates), revocation details on the certificate page, CRL URL / next update / CRL number on the CA certificate page, a Reinstate action for held certificates, and a details link on the CA list that gives a path to revoke a CA. Built but not yet exercised in the running UI. |
 | 7. Tests | Done (one gap) | 17 revocation tests: chain, signatures, issuer filtering, CRL number and caching, stale CRL, double revoke, cascade, hold and reinstate, non-CA and no-`CrlSign` rejection, key usage handling. Open: a .NET `X509Chain` offline-revocation interop test (OpenSSL interop was verified manually in UAT). |
 
 ### Defects
@@ -32,7 +32,7 @@ UAT (OpenSSL `verify -crl_check_all` against the live app, root → intermediate
 | 6 | CRL re-signed on every request | Fixed (cached; rate limited) |
 | 7 | No CA / `CrlSign` / validity checks | Fixed |
 | 8 | No IDP and no AIA | Partly: intermediates now carry a CDP. IDP (optional) and AIA (Phase 2) not built |
-| 9 | No un-hold path | Service fixed; no UI. `RemoveFromCrl` label unchanged |
+| 9 | No un-hold path | Fixed (service and UI Reinstate action). `RemoveFromCrl` label unchanged |
 | 10 | `invalidityDate` missing; enum naming | `invalidityDate` fixed; enum typos (`Compromized`, `Superceded`) remain |
 | 11 | No authorization or cascade | Cascade fixed. `RevokeCertificateAsync` still does no role check (pages only) |
 | 12 | Unindexed scans | Fixed (indexes); slug index not unique |
@@ -45,12 +45,11 @@ UAT (OpenSSL `verify -crl_check_all` against the live app, root → intermediate
 - The live CA-compromised cascade is covered by a unit test only.
 
 ### Remaining work
-1. CA detail page: CRL URL and next-update.
-2. UI to reinstate a held certificate, and to revoke a CA.
-3. `http://` CRL URL support and a redirect exemption for `/api/crl`.
-4. Unique index on revocation `CertificateSlug`; `X509Chain` interop test.
-5. Optional: Issuing Distribution Point; fix the `RevocationReason` naming; role check inside `RevokeCertificateAsync`.
-6. Phase 2 (OCSP) as described below.
+1. UAT the new UI: CRL section on a CA certificate, Reinstate on a held certificate, revoking a CA from the CA list.
+2. `http://` CRL URL support and a redirect exemption for `/api/crl`.
+3. Unique index on revocation `CertificateSlug`; `X509Chain` interop test.
+4. Optional: Issuing Distribution Point; fix the `RevocationReason` naming; role check inside `RevokeCertificateAsync`.
+5. Phase 2 (OCSP) as described below.
 
 ## 1. Evaluation of the current CRL implementation
 
@@ -122,6 +121,6 @@ Phase 1 is roughly 1–2 days including tests and is a prerequisite for Phase 2.
 
 ## 4. Open decisions
 - ~~Should revoking a CA cascade to everything it issued?~~ Decided and implemented: yes, as CA compromised (a hold does not cascade).
-- ~~Is `CertificateHold` / un-hold needed?~~ Decided and implemented in the service; UI still open.
+- ~~Is `CertificateHold` / un-hold needed?~~ Decided and implemented, including a Reinstate action in the UI.
 - ~~CRL `nextUpdate` period?~~ Implemented as `CrlValidityDays`, default 7.
 - Phase 2 OCSP: go ahead after CRL, or defer? **Still open.**
