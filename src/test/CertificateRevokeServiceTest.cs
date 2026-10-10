@@ -56,6 +56,15 @@ public class CertificateRevokeServiceTest
     }
 
     [Test]
+    public async Task CertificateWithoutKeyUsageSelectionOmitsTheKeyUsageExtension()
+    {
+        var root = await IssueAsync("root", isCa: true);
+        var leaf = await IssueAsync("leaf", parent: root, keyUsage: 0);
+
+        Assert.That(Parse(leaf).GetExtensionValue(X509Extensions.KeyUsage), Is.Null);
+    }
+
+    [Test]
     public async Task AuthorityKeyIdentifierMatchesTheIssuersSubjectKeyIdentifier()
     {
         var root = await IssueAsync("root", isCa: true);

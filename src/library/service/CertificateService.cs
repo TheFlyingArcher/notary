@@ -370,7 +370,10 @@ namespace Notary.Service
             AddAuthorityKeyIdentifier(certGen, issuerKeyPair);
             AddSubjectKeyIdentifier(certGen, subjectKeyPair);
             AddBasicConstraints(certGen, isCA);
-            AddCertificateKeyUsage(certGen, certificateKeyUsageFlags);
+
+            // RFC 5280 requires at least one bit when the extension is present; an empty one is rejected by OpenSSL 3.x
+            if (certificateKeyUsageFlags != 0)
+                AddCertificateKeyUsage(certGen, certificateKeyUsageFlags);
 
             if (!string.IsNullOrEmpty(crlEndpoint))
                 AddCrlEndpoint(certGen, crlEndpoint);
