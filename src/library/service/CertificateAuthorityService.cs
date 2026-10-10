@@ -54,7 +54,6 @@ namespace Notary.Service
                     (int)CertificateKeyUsage.KeyEncipherment,
                     (int)CertificateKeyUsage.DataEncipherment
                 },
-                CrlEndpoint = entity.CrlEndpoint,
                 Curve = entity.KeyCurve,
                 IsCaCertificate = true,
                 KeyAlgorithm = entity.KeyAlgorithm,

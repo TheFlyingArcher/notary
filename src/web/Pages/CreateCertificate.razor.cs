@@ -19,6 +19,7 @@ public partial class CreateCertificate : ComponentBase
     private int _selectedCertKeyUsage = 0;
     private string _selectedExKeyUsage = string.Empty;
     private bool success;
+    private bool _submitAttempted;
     private string[] errors = { };
 
     protected override async Task OnInitializedAsync()
@@ -114,11 +115,15 @@ public partial class CreateCertificate : ComponentBase
         ViewModel.SubjectAlternativeNames.Remove(san);
     }
 
+    private bool KeyUsageMissing => _submitAttempted && ViewModel.SelectedCertificateKeyUsage.Count == 0;
+
     private async Task OnSubmitAsync()
     {
+        _submitAttempted = true;
         await form.Validate();
 
-        if (!success)
+        // An empty Key Usage extension is invalid (RFC 5280), so at least one usage is required
+        if (!success || KeyUsageMissing)
             return;
 
         DateTime notBefore = DateTime.UtcNow;

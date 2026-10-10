@@ -29,7 +29,9 @@ public class CertificateRevokeServiceTest
     [SetUp]
     public void SetUp()
     {
-        var config = new NotaryConfiguration { CrlEndpoint = CrlEndpoint };
+        var config = new NotaryConfiguration();
+        var baseUrlProvider = new Mock<ICrlBaseUrlProvider>();
+        baseUrlProvider.Setup(p => p.GetCrlBaseUrl()).Returns(CrlEndpoint);
         var log = new Mock<ILog>().Object;
 
         _keys = new FakeKeyService();
@@ -37,7 +39,7 @@ public class CertificateRevokeServiceTest
         _revocationRepo = new FakeRevocationRepository();
         _crlRepo = new FakeCrlRepository();
 
-        _certificates = new CertificateService(config, _keys, (ICertificateRepository)_certificateRepo, log);
+        _certificates = new CertificateService(config, _keys, (ICertificateRepository)_certificateRepo, baseUrlProvider.Object, log);
         _service = new CertificateRevokeService(_revocationRepo, _crlRepo, _certificates, _keys, log, config);
     }
 
@@ -51,6 +53,15 @@ public class CertificateRevokeServiceTest
         Assert.That(GetCrlUrl(root), Is.Null, "A self-signed root has no CRL distribution point");
         Assert.That(GetCrlUrl(intermediate), Is.EqualTo($"{CrlEndpoint}/{root.Slug}"));
         Assert.That(GetCrlUrl(leaf), Is.EqualTo($"{CrlEndpoint}/{intermediate.Slug}"));
+    }
+
+    [Test]
+    public async Task CertificateWithoutKeyUsageSelectionOmitsTheKeyUsageExtension()
+    {
+        var root = await IssueAsync("root", isCa: true);
+        var leaf = await IssueAsync("leaf", parent: root, keyUsage: 0);
+
+        Assert.That(Parse(leaf).GetExtensionValue(X509Extensions.KeyUsage), Is.Null);
     }
 
     [Test]

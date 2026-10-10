@@ -18,12 +18,6 @@ namespace Notary.Contract
         public string CertificateSlug { get; set; }
 
         /// <summary>
-        /// Endpoint to the CRL
-        /// </summary>
-        [JsonProperty("crl", Required = Required.Always)]
-        public string CrlEndpoint { get; set; }
-
-        /// <summary>
         /// Get or set the CA distinguished name
         /// </summary>
         [JsonProperty("dn", Required = Required.Always)]

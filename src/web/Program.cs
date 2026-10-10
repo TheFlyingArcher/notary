@@ -7,7 +7,9 @@ using log4net;
 using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
 using Notary.Configuration;
+using Notary.Interface.Service;
 using Notary.Service;
+using Notary.Web.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,11 +18,13 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
 var config = new NotaryConfiguration();
 SetEnvironmentVariables(config);
+config.Validate();
 
 builder.Host.ConfigureContainer<ContainerBuilder>(c =>
 {
     c.RegisterInstance(config).SingleInstance();
     c.Register(r => LogManager.GetLogger(typeof(Program))).As<ILog>().SingleInstance();
+    c.RegisterType<WebCrlBaseUrlProvider>().As<ICrlBaseUrlProvider>().InstancePerLifetimeScope();
     RegisterModules.Register(c);
 });
 

@@ -80,7 +80,6 @@ namespace Notary.Web.Pages
             {
                 Active = true,
                 Created = now,
-                CrlEndpoint = ViewModel.CrlEndpoint,
                 IsIssuer = ViewModel.IsIssuer,
                 KeyAlgorithm = ViewModel.KeyType,
                 KeyCurve = ViewModel.Curve,
@@ -148,6 +147,16 @@ namespace Notary.Web.Pages
                 yield return "Name can only contain alphanumerics and dashes";
             }
         }
+
+        // A parent CA publishes the CRL for the certificates it issues; a root CA's own certificate needs none
+        private bool IsCrlHostLoopback =>
+            !string.IsNullOrEmpty(ViewModel.ParentCaSlug) && ViewModel.ParentCaSlug != "nop"
+            && Uri.TryCreate(CrlBaseUrl, UriKind.Absolute, out var uri) && uri.IsLoopback;
+
+        private string CrlBaseUrl => CrlBaseUrlProvider.GetCrlBaseUrl();
+
+        [Inject]
+        public ICrlBaseUrlProvider CrlBaseUrlProvider { get; set; }
 
         [Inject]
         public ICertificateAuthorityService CertificateAuthorityService { get; set; }
