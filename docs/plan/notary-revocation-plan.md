@@ -2,6 +2,56 @@
 
 Responds to `docs/raw/notary-raw-intent-revocation.md`.
 
+## Status (as of 2026-10-10, main at `12d49e4`)
+
+**Phase 1 (CRL) is functionally complete and UAT-verified; UI polish and a few hardening items remain. Phase 2 (OCSP) has not started.**
+
+UAT (OpenSSL `verify -crl_check_all` against the live app, root → intermediate → leaf): the chain verifies against empty CRLs; revoking the leaf lists its serial, reason (Key Compromise) and a higher CRL number in the intermediate's CRL and verification fails with `certificate revoked`; placing the intermediate on hold lists it in the root's CRL and fails the chain at depth 1; reinstating removes it. Implemented in PRs #28, #29 and #30.
+
+### Phase 1 steps
+
+| Step | Status | Notes |
+|------|--------|-------|
+| 1. Fix the CDP URL | Done | Uses the issuer's certificate slug. The base URL is now derived (`ICrlBaseUrlProvider`): `NOTARY_CRL_ENDPOINT` is the site's public address (e.g. `https://pki.example.com`) and `/api/crl` is appended; when unset, the address the app is accessed at is used. An invalid value stops startup. The per-CA CRL Endpoint textbox was removed (it was never used). Roots get no CDP (self-signed). |
+| 2. Model changes | Mostly done | `IssuerSlug`, UTC `RevocationDate`, `InvalidityDate?` added; indexes on `IssuerSlug` and `CertificateSlug`. Gap: the `CertificateSlug` index is not unique (duplicates are rejected in the service instead). Queries are `GetActiveByIssuerAsync` / `GetActiveByCertificateAsync`. |
+| 3. Revoke service | Done | `Result<T>` outcomes (not found, already revoked, invalid reason or date), UTC, record-first with rollback, CA revocation cascades as CA compromised (hold does not cascade), `ReinstateCertificateAsync` for `CertificateHold` only. |
+| 4. CRL generation | Done (IDP optional, not built) | Validates the CA, `CrlSign` and expiry; entries filtered by issuer with reason and `invalidityDate`; CRL number persisted per CA (`CrlRecord`); `nextUpdate` from `CrlValidityDays` (default 7); signed DER cached and regenerated when stale or after a revocation. Issuing Distribution Point not implemented. |
+| 5. Controller | Done | `application/pkix-crl`, `.crl` suffix, `Cache-Control`, `ETag`, `Last-Modified`, 404 for unknown or non-CA slugs, rate limited. |
+| 6. UI | Partly done | Done: revoke dialog (with CA-cascade warning), revocation details on the certificate page. Open: CRL URL and next-update on the CA detail page; a way to reinstate a held certificate; a way to revoke a CA (no UI path exists yet). |
+| 7. Tests | Done (one gap) | 17 revocation tests: chain, signatures, issuer filtering, CRL number and caching, stale CRL, double revoke, cascade, hold and reinstate, non-CA and no-`CrlSign` rejection, key usage handling. Open: a .NET `X509Chain` offline-revocation interop test (OpenSSL interop was verified manually in UAT). |
+
+### Defects
+
+| # | Defect | Status |
+|---|--------|--------|
+| 1 | Wrong CDP slug | Fixed |
+| 2 | CRL included other CAs' revocations | Fixed |
+| 3 | Controller returned JSON/base64 | Fixed |
+| 4 | Revoke not atomic or idempotent | Fixed |
+| 5 | Local time used as revocation time | Fixed |
+| 6 | CRL re-signed on every request | Fixed (cached; rate limited) |
+| 7 | No CA / `CrlSign` / validity checks | Fixed |
+| 8 | No IDP and no AIA | Partly: intermediates now carry a CDP. IDP (optional) and AIA (Phase 2) not built |
+| 9 | No un-hold path | Service fixed; no UI. `RemoveFromCrl` label unchanged |
+| 10 | `invalidityDate` missing; enum naming | `invalidityDate` fixed; enum typos (`Compromized`, `Superceded`) remain |
+| 11 | No authorization or cascade | Cascade fixed. `RevokeCertificateAsync` still does no role check (pages only) |
+| 12 | Unindexed scans | Fixed (indexes); slug index not unique |
+| 13 | No tests | Fixed |
+
+### Found during UAT (not in the original plan)
+- Certificates issued without a key usage carried an empty critical Key Usage extension that OpenSSL 3.x rejects. The extension is now omitted when no usage is selected, and the Create Certificate page requires at least one.
+- `BsonIgnoreExtraElements` is not inherited, so `CertificateAuthorityModel` needed its own attribute to read documents that still contain the removed `crl_endpoint`.
+- **Production concern:** Windows CryptoAPI generally does not fetch CRLs from `https://` URLs, and `UseHttpsRedirection` redirects plain-HTTP requests to HTTPS. Real Windows clients need an `http://` CRL URL that is exempt from the redirect. Not yet addressed.
+- The live CA-compromised cascade is covered by a unit test only.
+
+### Remaining work
+1. CA detail page: CRL URL and next-update.
+2. UI to reinstate a held certificate, and to revoke a CA.
+3. `http://` CRL URL support and a redirect exemption for `/api/crl`.
+4. Unique index on revocation `CertificateSlug`; `X509Chain` interop test.
+5. Optional: Issuing Distribution Point; fix the `RevocationReason` naming; role check inside `RevokeCertificateAsync`.
+6. Phase 2 (OCSP) as described below.
+
 ## 1. Evaluation of the current CRL implementation
 
 What exists: `CertificateRevokeService.GenerateCrl`, `CrlController` (`GET api/crl/{caSlug}`), a `Revocation` record, the revoke dialog in the UI, and a CRL Distribution Point extension written into issued certificates. The BouncyCastle CRL generation itself is sound (signed, verified, `CrlNumber`, `AuthorityKeyIdentifier`, reason codes). The problems are in how it is wired.
@@ -71,7 +121,7 @@ What exists: `CertificateRevokeService.GenerateCrl`, `CrlController` (`GET api/c
 Phase 1 is roughly 1–2 days including tests and is a prerequisite for Phase 2. Phase 2 is roughly 2–3 days.
 
 ## 4. Open decisions
-- Should revoking a CA cascade to everything it issued?
-- Is `CertificateHold` / un-hold needed, or should it be removed from the enum?
-- CRL `nextUpdate` period (suggested: 7 days)?
-- Phase 2 OCSP: go ahead after CRL, or defer?
+- ~~Should revoking a CA cascade to everything it issued?~~ Decided and implemented: yes, as CA compromised (a hold does not cascade).
+- ~~Is `CertificateHold` / un-hold needed?~~ Decided and implemented in the service; UI still open.
+- ~~CRL `nextUpdate` period?~~ Implemented as `CrlValidityDays`, default 7.
+- Phase 2 OCSP: go ahead after CRL, or defer? **Still open.**
