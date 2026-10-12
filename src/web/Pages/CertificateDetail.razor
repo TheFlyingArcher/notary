@@ -25,12 +25,19 @@ else if (Model.Subject != null)
 {
     <MudPaper>
     <MudToolBar Class="mt-4">
-        <MudIconButton Icon="fa-sharp fa-solid fa-arrow-left" Color="Color.Inherit" Href="/certificates" />
+        <MudIconButton Icon="fa-sharp fa-solid fa-arrow-left" Color="Color.Inherit" Href="@ListUrl" />
         <MudSpacer />
         <MudIconButton Icon="fa-sharp fa-solid fa-download" Color="Color.Inherit"
             Disabled="Model.RevocationDate.HasValue" OnClick="OnCertificateDownloadClick" />
         <AuthorizeView Roles="NotaryAdmin,NotaryWriter">
             <Authorized>
+                @if (Model.IsOnHold)
+                {
+                    <MudTooltip Text="Reinstate (lift the temporary revocation)">
+                        <MudIconButton Icon="fa-sharp fa-solid fa-rotate-left" OnClick="OnReinstateCertificateClick"
+                            Color="Color.Success" />
+                    </MudTooltip>
+                }
                 <MudIconButton Icon="fa-sharp fa-solid fa-circle-xmark" OnClick="OnRevokeCertificateClick"
                     Color="Color.Error" Disabled="Model.RevocationDate.HasValue" />
             </Authorized>
@@ -130,6 +137,62 @@ else if (Model.Subject != null)
             </MudPaper>
         </MudItem>
     </MudGrid>
+    @if (Model.IsCaCertificate)
+    {
+        <MudGrid Class="mt-6">
+            <MudItem xs="6">
+                <MudText Typo="Typo.h6">Certificate Revocation List</MudText>
+                <MudPaper Class="mt-2 pa-3">
+                    <MudStack>
+                        <MudItem Class="pa-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.button">CRL URL</MudText>
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudText Typo="Typo.button">:</MudText>
+                                </MudItem>
+                                <MudItem xs="8" Style="overflow-wrap:anywhere">@(Model.CrlUrl ?? "Not available")</MudItem>
+                            </MudGrid>
+                        </MudItem>
+                        @if (Model.CrlUnavailableReason != null)
+                        {
+                            <MudItem Class="pa-1">
+                                <MudAlert Severity="Severity.Warning">
+                                    A CRL cannot be published for this authority: @Model.CrlUnavailableReason
+                                </MudAlert>
+                            </MudItem>
+                        }
+                        else
+                        {
+                            <MudItem Class="pa-1">
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="3">
+                                        <MudText Typo="Typo.button">Next Update</MudText>
+                                    </MudItem>
+                                    <MudItem xs="1">
+                                        <MudText Typo="Typo.button">:</MudText>
+                                    </MudItem>
+                                    <MudItem xs="8">@Model.CrlNextUpdate</MudItem>
+                                </MudGrid>
+                            </MudItem>
+                            <MudItem Class="pa-1">
+                                <MudGrid Spacing="2">
+                                    <MudItem xs="3">
+                                        <MudText Typo="Typo.button">CRL Number</MudText>
+                                    </MudItem>
+                                    <MudItem xs="1">
+                                        <MudText Typo="Typo.button">:</MudText>
+                                    </MudItem>
+                                    <MudItem xs="8">@Model.CrlNumber</MudItem>
+                                </MudGrid>
+                            </MudItem>
+                        }
+                    </MudStack>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
     <MudGrid class="mt-6">
         <MudItem xs="6">
             <MudText Typo="Typo.h6">Subject</MudText>

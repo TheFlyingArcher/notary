@@ -16,6 +16,16 @@
                 Only a temporary revocation can be undone. Revoking a certificate authority also revokes
                 every certificate it has issued, as CA compromised.
             </MudItem>
+            @if (IsCaCertificate)
+            {
+                <MudItem Class="pa-2">
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+                        This is a certificate authority. Unless the reason is a temporary revocation, every certificate
+                        it has issued, directly or through sub-authorities, will be revoked as well and this cannot
+                        be undone.
+                    </MudAlert>
+                </MudItem>
+            }
             <MudItem Class="pa-2">
                 <MudForm Model="@Model" @ref="@_form" @bind-IsValid="@_isValid" @bind-Errors="@_errors">
                     <MudText Typo="Typo.body2">Revocation Reason</MudText>

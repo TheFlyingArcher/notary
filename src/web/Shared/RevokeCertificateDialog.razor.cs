@@ -57,6 +57,8 @@ public partial class RevokeCertificateDialog : ComponentBase
 
     [Parameter] public string Slug { get; set; }
 
+    [Parameter] public bool IsCaCertificate { get; set; }
+
     protected RevokeCertificateDialogViewModel Model { get; } = new();
 
     [Inject]
