@@ -1,0 +1,19 @@
+project:
+  name: "notary"
+  description: "PKI application for a Raspberry Pi server farm: API plus Blazor web UI"
+  created: "2026-10-12T00:00:00Z"
+  fire_version: "0.1.8"
+
+workspace:
+  type: brownfield
+  structure: monolith
+  autonomy_bias: balanced
+  run_scope_preference: single
+  run_scope_history: []
+  scanned_at: "2026-10-12T00:00:00Z"
+
+intents: []
+
+runs:
+  active: []
+  completed: []
