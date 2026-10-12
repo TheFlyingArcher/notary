@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a new capability or improvement for Notary
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Certificate authorities
+        - Certificates
+        - Revocation / CRLs
+        - Authentication
+        - Web UI
+        - Setup
+        - Docker / deployment
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: What are you trying to do that Notary doesn't support today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should it work? Include any relevant standards (for example RFC 5280).
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
