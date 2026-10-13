@@ -1,5 +1,6 @@
 using C = Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Validity;
 using Notary.Web.ViewModels;
 
 using System.Text.RegularExpressions;
@@ -59,6 +60,9 @@ namespace Notary.Web.Pages
                     ViewModel.KeyLength = 2048;
                     ViewModel.Curve = EllipticCurve.P256;
                 }
+
+                RefreshValidity();
+                await InvokeAsync(StateHasChanged);
             };
 
             IsLoading = true;
@@ -67,6 +71,8 @@ namespace Notary.Web.Pages
                 ViewModel.CertificateAuthorities = await CertificateAuthorityService.GetAllAsync();
             });
             IsLoading = false;
+
+            RefreshValidity();
         }
 
         private async Task OnSubmitAsync()
@@ -85,7 +91,7 @@ namespace Notary.Web.Pages
                 KeyCurve = ViewModel.Curve,
                 KeyLength = ViewModel.KeyLength,
                 Name = ViewModel.Name,
-                NotAfter = now.AddMonths(ViewModel.LengthInMonths),
+                NotAfter = ViewModel.SelectedPeriod.AddTo(now),
                 NotBefore = now,
                 ParentCaSlug = ViewModel.ParentCaSlug == "nop" ? null : ViewModel.ParentCaSlug,
                 Updated = now,
@@ -104,11 +110,15 @@ namespace Notary.Web.Pages
             };
 
             IsLoading = true;
-            await Task.Run(async () =>
-            {
-                await CertificateAuthorityService.SaveAsync(ca, null);
-            });
+            var result = await Task.Run(async () => await CertificateAuthorityService.CreateAsync(ca, null));
             IsLoading = false;
+
+            if (!result.IsSuccess)
+            {
+                Snackbar.Add(result.Error, Severity.Error);
+                return;
+            }
+
             NavigationManager.NavigateTo("ca");
         }
 
@@ -121,17 +131,27 @@ namespace Notary.Web.Pages
             ViewModel.SelectedCa = slug == string.Empty ? null : await CertificateAuthorityService.GetAsync(slug);
         }
 
-        private IEnumerable<string> ValidateExpiration(int months)
-        {
-            if (months == 0)
-            {
-                yield return "Please enter a value";
-            }
+        // A self-signed root has no issuer to cap it; a parent CA caps the child at the parent's expiry
+        private CertificateRole ValidityRole => ViewModel.SelectedCa == null ? CertificateRole.RootCa : CertificateRole.IntermediateCa;
 
-            if (months > 0 && months < 12)
-            {
-                yield return "Please enter greater than 12 months";
-            }
+        private IReadOnlyList<ValidityOption> ValidityOptions =>
+            ValidityPolicy.Evaluate(ValidityRole, DateTime.UtcNow, ViewModel.SelectedCa?.NotAfter);
+
+        private bool AnyValidityAllowed => ValidityOptions.Any(o => o.IsAllowed);
+
+        private string ValidityHelperText => AnyValidityAllowed
+            ? "Choose how long the CA is valid. Child certificates cannot outlive it."
+            : "No validity period fits within the parent CA's remaining lifetime.";
+
+        // Keep the current choice if it is still allowed, otherwise fall back to the recommended or longest allowed period
+        private void RefreshValidity()
+        {
+            var allowed = ValidityOptions.Where(o => o.IsAllowed).ToList();
+
+            if (ViewModel.SelectedPeriod != null && allowed.Any(o => o.Period == ViewModel.SelectedPeriod))
+                return;
+
+            ViewModel.SelectedPeriod = (allowed.FirstOrDefault(o => o.IsRecommended) ?? allowed.LastOrDefault())?.Period;
         }
 
         private IEnumerable<string> ValidateName(string name)
@@ -160,6 +180,9 @@ namespace Notary.Web.Pages
 
         [Inject]
         public ICertificateAuthorityService CertificateAuthorityService { get; set; }
+
+        [Inject]
+        public ISnackbar Snackbar { get; set; }
 
         [Inject]
         public NavigationManager NavigationManager { get; set; }

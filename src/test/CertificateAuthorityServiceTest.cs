@@ -74,6 +74,53 @@ public class CertificateAuthorityServiceTest : NotaryTest
         }
     }
 
+    [Test]
+    public async Task CreateAsync_IssuanceRejectedForValidity_ReturnsInvalidAndDoesNotSave()
+    {
+        var parent = MockCa();
+        parent.Slug = "parent";
+        parent.CertificateSlug = "parent-cert";
+        _caRepo.Setup(r => r.GetAsync("parent")).ReturnsAsync(parent);
+        _certificateService
+            .Setup(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()))
+            .ReturnsAsync(Result<Certificate>.Fail(ResultStatus.Invalid, "too long"));
+
+        var child = MockCa();
+        child.Slug = "child";
+        child.ParentCaSlug = "parent";
+        child.KeyAlgorithm = Algorithm.EllipticCurve;
+        child.DistinguishedName.Country = "US";
+
+        var result = await _service.CreateAsync(child, null);
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+        Assert.That(result.Error, Is.EqualTo("too long"));
+        _caRepo.Verify(r => r.SaveAsync(child), Times.Never);
+    }
+
+    [Test]
+    public async Task CreateAsync_IssuanceSucceeds_SavesAndReturnsCa()
+    {
+        var parent = MockCa();
+        parent.Slug = "parent";
+        parent.CertificateSlug = "parent-cert";
+        _caRepo.Setup(r => r.GetAsync("parent")).ReturnsAsync(parent);
+        _certificateService
+            .Setup(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()))
+            .ReturnsAsync(Result<Certificate>.Ok(CreateCertificateMock()));
+
+        var child = MockCa();
+        child.Slug = "child";
+        child.ParentCaSlug = "parent";
+        child.KeyAlgorithm = Algorithm.EllipticCurve;
+        child.DistinguishedName.Country = "US";
+
+        var result = await _service.CreateAsync(child, null);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+        _caRepo.Verify(r => r.SaveAsync(child), Times.Once);
+    }
+
     private CertificateAuthority MockCa()
     {
         return new CertificateAuthority

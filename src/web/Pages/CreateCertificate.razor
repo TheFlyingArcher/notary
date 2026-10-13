@@ -1,5 +1,6 @@
 ﻿@page "/certificates/create"
 @attribute [Authorize(Roles = "NotaryAdmin,NotaryWriter")]
+@using Notary.Validity
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
     <MudText Typo="Typo.h4">Create Certificate</MudText>
@@ -38,9 +39,16 @@
             RequiredError="Please enter a name"></MudTextField>
         <MudTextField @bind-Value="@ViewModel.Subject.CommonName" Label="Common Name" Required="true"
             RequiredError="Certificates require a common name"></MudTextField>
-        <MudTextField @bind-Value="@ViewModel.ExpiryLength" Label="Expiration" Required="true"
-            Validation="@(new Func<int, IEnumerable<string>>(ValidateExpiration))"
-            HelperText="Enter the expiration in months"></MudTextField>
+        <MudSelect T="ValidityPeriod" @bind-Value="@ViewModel.SelectedPeriod" Label="Expiration" Required="true"
+            RequiredError="Select a validity period" ToStringFunc="@(p => p?.Format())"
+            HelperText="@ValidityHelperText" Disabled="@(!AnyValidityAllowed)">
+            @foreach (var option in ValidityOptions)
+            {
+                <MudSelectItem T="ValidityPeriod" Value="@option.Period" Disabled="@(!option.IsAllowed)">
+                    @option.Label@(option.IsRecommended ? " (recommended)" : string.Empty)@(option.IsAllowed ? string.Empty : $" - {option.DisabledReason}")
+                </MudSelectItem>
+            }
+        </MudSelect>
         <MudDivider Class="my-3" />
         <MudSelect T="string" Label="Extended Key Usages" MultiSelection="true"
             @bind-SelectedValues="ViewModel.SelectedExKeyUsages" @bind-Value="_selectedExKeyUsage">

@@ -1,4 +1,5 @@
 ﻿@page "/ca/create"
+@using Notary.Validity
 
 <MudContainer MaxWidth="MaxWidth.Large">
     @if (IsLoading)
@@ -35,9 +36,16 @@
         </MudSelect>
         <MudTextField @bind-Value="ViewModel.Name" Label="Name" Required="true"
             Validation="@(new Func<string, IEnumerable<string>>(ValidateName))"></MudTextField>
-        <MudTextField @bind-Value="ViewModel.LengthInMonths" Label="CA Validity"
-            HelperText="Enter the CA validity length in months e.g. 48"
-            Validation="@(new Func<int, IEnumerable<string>>(ValidateExpiration))"></MudTextField>
+        <MudSelect T="ValidityPeriod" @bind-Value="ViewModel.SelectedPeriod" Label="CA Validity" Required="true"
+            RequiredError="Select a validity period" ToStringFunc="@(p => p?.Format())"
+            HelperText="@ValidityHelperText" Disabled="@(!AnyValidityAllowed)">
+            @foreach (var option in ValidityOptions)
+            {
+                <MudSelectItem T="ValidityPeriod" Value="@option.Period" Disabled="@(!option.IsAllowed)">
+                    @option.Label@(option.IsRecommended ? " (recommended)" : string.Empty)@(option.IsAllowed ? string.Empty : $" - {option.DisabledReason}")
+                </MudSelectItem>
+            }
+        </MudSelect>
         <MudSwitch @bind-Value="ViewModel.IsIssuer" Label="Is Issuer"></MudSwitch>
         @if (IsCrlHostLoopback)
         {

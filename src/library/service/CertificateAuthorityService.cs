@@ -24,6 +24,13 @@ namespace Notary.Service
 
         public override async Task SaveAsync(CertificateAuthority entity, string updatedBySlug)
         {
+            var result = await CreateAsync(entity, updatedBySlug);
+            if (!result.IsSuccess)
+                throw new NotaryException(result.Error);
+        }
+
+        public async Task<Result<CertificateAuthority>> CreateAsync(CertificateAuthority entity, string updatedBySlug)
+        {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
 
@@ -73,11 +80,16 @@ namespace Notary.Service
                 Subject = entity.DistinguishedName
             };
 
-            var caCertificate = await CertificateService.IssueCertificateAsync(caRequest);
+            var issued = await CertificateService.IssueCertificateAsync(caRequest);
+            if (!issued.IsSuccess)
+                return Result<CertificateAuthority>.Fail(issued.Status, issued.Error);
+
             entity.IssuingDn = parentCa != null ? parentCa.DistinguishedName : null;
-            entity.CertificateSlug = caCertificate.Slug;
+            entity.CertificateSlug = issued.Value.Slug;
 
             await base.SaveAsync(entity, updatedBySlug);
+
+            return Result<CertificateAuthority>.Ok(entity);
         }
 
         public async Task<List<CaBrief>> GetCaListBrief()

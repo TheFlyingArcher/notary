@@ -1,0 +1,126 @@
+---
+run: run-specsmd-fire-528fef-001
+work_item: validity-period-policy
+intent: validity-period-dropdown
+generated: 2026-10-13T00:25:00Z
+mode: confirm
+---
+
+# Implementation Walkthrough: Shared validity period policy
+
+## Summary
+
+Added a UI-agnostic validity model to `Notary.Core`: a `ValidityPeriod` (months or days), per-role option lists with a recommended default, a formatter ("48 months (4 years)", "90 days"), and an evaluator that disables any option that would outlive the issuing CA. Nothing consumes it yet; the server-enforcement item and both dropdown items build on it.
+
+## Structure Overview
+
+`ValidityPolicy` is a static class holding three fixed lists (root, intermediate, leaf) and a recommended period per role. `Evaluate(role, now, issuerNotAfter)` maps the role's periods to `ValidityOption` records, each carrying its display label, whether it is recommended, whether it is allowed, and a reason when it is not. `ValidityPeriod` owns the date math (`AddTo`) and the display text (`Format`). `now` is passed in so the logic is deterministic and the UI can use the same instant it later submits with.
+
+## Files Changed
+
+### Created
+
+| File | Purpose |
+|------|---------|
+| `src/library/core/Validity/CertificateRole.cs` | Root / Intermediate / Leaf enum selecting the option list |
+| `src/library/core/Validity/ValidityPeriod.cs` | `ValidityUnit` enum and `ValidityPeriod` record with `AddTo` and `Format` |
+| `src/library/core/Validity/ValidityOption.cs` | Dropdown-bindable option record |
+| `src/library/core/Validity/ValidityPolicy.cs` | Per-role lists, recommended defaults, issuer-cap evaluation |
+| `src/test/ValidityPolicyTest.cs` | NUnit tests for all of the above |
+
+### Modified
+
+| File | Changes |
+|------|---------|
+| (none) | |
+
+## Domain Model
+
+### Value Objects
+
+| Value Object | Properties | Constraints |
+|--------------|------------|-------------|
+| `ValidityPeriod` | Amount, Unit (Months or Days) | Immutable positional record; equality by value |
+| `ValidityOption` | Period, Label, IsRecommended, IsAllowed, DisabledReason | DisabledReason is null when allowed |
+
+## Key Implementation Details
+
+### 1. Period lists
+
+| Role | Options | Recommended |
+|------|---------|-------------|
+| Root CA | 120, 180, 240 months | 240 |
+| Intermediate CA | 36, 60, 120 months | 60 |
+| Leaf | 30 days, 90 days, 6, 12, 13, 24 months | 12 months |
+
+### 2. Cap rule
+
+An option is allowed when `period.AddTo(now) <= issuerNotAfter`, so a period ending exactly at the issuer's expiry is allowed. A null issuer (self-signed root) allows everything. Disabled options carry the reason "Exceeds issuer expiry (yyyy-MM-dd)".
+
+### 3. Formatting
+
+Years are shown only for whole years: "12 months (1 year)", "48 months (4 years)", but "6 months" and "13 months". Singular forms are handled ("1 month", "1 day"). Formatting uses the invariant culture.
+
+## Security Considerations
+
+| Concern | Approach |
+|---------|----------|
+| Over-long or insecure validity | Dropdown lists exclude values like 120-month leaf certs; this item only supplies the lists |
+| UI-only enforcement | Not sufficient on its own; `validity-server-enforcement` adds the server-side check |
+
+## Decisions Made
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Where it lives | `Notary.Core`, namespace `Notary.Validity` | Shared by web and service layers without a web dependency |
+| `now` handling | Caller supplies it | Deterministic tests; UI and submit share one instant |
+| Option lists | Static arrays in `ValidityPolicy` | No config needed yet; easy to change in one place |
+
+## Deviations from Plan
+
+None
+
+## Dependencies Added
+
+| Package | Why Needed |
+|---------|------------|
+| (none) | |
+
+The FIRE scripts needed the npm package `yaml`, installed with `--no-save` into the gitignored `node_modules/`; it is a tooling dependency, not a project one.
+
+## How to Verify
+
+1. **Run the new tests**
+   ```bash
+   dotnet test ./src/test/ --filter "FullyQualifiedName~ValidityPolicyTest"
+   ```
+   Expected: all pass.
+
+2. **Run the full suite**
+   ```bash
+   dotnet test ./src/test/
+   ```
+   Expected: 87 passed, 0 failed.
+
+## Test Coverage
+
+- Tests added: 19 test cases in `ValidityPolicyTest`
+- Coverage: not measured
+- Status: passing
+
+## Ready for Review
+
+- [x] All acceptance criteria met
+- [x] Tests passing
+- [x] No critical issues
+- [x] Documentation updated (if applicable)
+- [x] Developer notes captured
+
+## Developer Notes
+
+- Use the same `now` for `Evaluate` and for the NotAfter you submit; otherwise an option shown as allowed could land a moment past the issuer's expiry. The server-side check is the backstop.
+- The leaf list includes 30 and 90 days, which conflicts with the old 12-month minimum in `CreateCertificate.razor.cs`; `leaf-validity-dropdown` removes that check.
+- `AddMonths` clamps to month end (31 Jan + 1 month = 28 Feb).
+
+---
+*Generated by specs.md - fabriqa.ai FIRE Flow Run run-specsmd-fire-528fef-001*
