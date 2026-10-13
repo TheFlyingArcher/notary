@@ -50,6 +50,9 @@ internal class FakeCertificateRepository : FakeRepository<Certificate>, ICertifi
 {
     public Task<List<Certificate>> GetCertificatesByCaAsync(string caSlug) =>
         Task.FromResult(Items.Values.Where(c => c.IssuingSlug == caSlug).Select(Clone).ToList());
+
+    public Task<List<Certificate>> GetSelfSignedAsync() =>
+        Task.FromResult(Items.Values.Where(c => !c.IsCaCertificate && string.IsNullOrEmpty(c.IssuingSlug)).Select(Clone).ToList());
 }
 
 internal class FakeCrlRepository : FakeRepository<CrlRecord>, ICrlRecordRepository

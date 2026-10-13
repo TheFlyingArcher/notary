@@ -12,13 +12,33 @@
     <AuthorizeView Roles="NotaryAdmin,NotaryWriter">
         <Authorized>
             <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled"
-                Href="/certificates/create">Create Certificate</MudButton>
+                Href="@CreateCertificateHref" Disabled="@(IsLoading || SelectedCa == null)">Create Certificate</MudButton>
+            <MudButton ButtonType="ButtonType.Button" Color="Color.Secondary" Variant="Variant.Outlined" Class="ml-2"
+                Href="/certificates/create-self-signed" Disabled="@IsLoading">Create Self-Signed Certificate</MudButton>
         </Authorized>
         <NotAuthorized>
             <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Disabled="true">
                 Create Certificate</MudButton>
+            <MudButton ButtonType="ButtonType.Button" Color="Color.Secondary" Variant="Variant.Outlined" Class="ml-2"
+                Disabled="true">Create Self-Signed Certificate</MudButton>
         </NotAuthorized>
     </AuthorizeView>
+</MudContainer>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-5">
+    @if (!IsLoading && caList.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-3">No certificate authorities can issue certificates yet.
+            Create one under Certificate Authorities; self-signed certificates are still listed below.</MudAlert>
+    }
+    <MudSelect T="string" Value="@selectedScope" ValueChanged="@OnScopeChangedAsync" Label="Issuing CA"
+        HelperText="Only certificates issued by the selected CA are listed" Disabled="@IsLoading">
+        <MudSelectItem T="string" Value="@SelfSignedScope">Self-signed</MudSelectItem>
+        @foreach (var ca in caList)
+        {
+            <MudSelectItem T="string" Value="@ca.Slug">@ca.Name</MudSelectItem>
+        }
+    </MudSelect>
 </MudContainer>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-5">
@@ -49,6 +69,9 @@
                     OnClick="@(()=>OnCertificateDownloadClick(context.Slug))" Size="Size.Small" />
             </MudTd>
         </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body1" Class="my-4">@EmptyMessage</MudText>
+        </NoRecordsContent>
         <LoadingContent>
             Please wait...
         </LoadingContent>

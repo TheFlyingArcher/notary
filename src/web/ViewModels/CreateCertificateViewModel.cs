@@ -7,13 +7,10 @@ namespace Notary.Web.ViewModels
 {
     public class CreateCertificateViewModel
     {
-        private string? _caSlug;
-
         public CreateCertificateViewModel()
         {
             Name = string.Empty;
             AdditionalSubjectExpanded = false;
-            CertificateAuthoritySlug = "self"; //Default to "self signed"
             Curve = EllipticCurve.P256;
             KeyAlgorithm = Algorithm.RSA;
             KeySize = 2048;
@@ -87,22 +84,6 @@ namespace Notary.Web.ViewModels
 
         public bool AdditionalSubjectExpanded { get; set; }
 
-        public string? CertificateAuthoritySlug
-        {
-            get
-            {
-                return _caSlug;
-            }
-            set
-            {
-                _caSlug = value;
-                if (OnCertificateAuthoritySlugChanged != null)
-                {
-                    OnCertificateAuthoritySlugChanged(value);
-                }
-            }
-        }
-
         public Dictionary<int, string> CertificateKeyUsages { get; }
 
         public EllipticCurve Curve { get; set; }
@@ -149,7 +130,5 @@ namespace Notary.Web.ViewModels
         {
             get;
         }
-
-        public event Func<string?, Task> OnCertificateAuthoritySlugChanged;
     }
 }

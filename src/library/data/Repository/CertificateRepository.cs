@@ -43,5 +43,18 @@ namespace Notary.Data.Repository
                 return certList.Select(x => Mapper.Map<Certificate>(x)).ToList();
             }
         }
+
+        public async Task<List<Certificate>> GetSelfSignedAsync()
+        {
+            var builder = Builders<CertificateModel>.Filter;
+            var filter = builder.Eq(c => c.IsCaCertificate, false)
+                & (builder.Eq(c => c.IssuingSlug, null) | builder.Eq(c => c.IssuingSlug, string.Empty));
+
+            using (var cursor = await Collection.FindAsync(filter))
+            {
+                var certList = await cursor.ToListAsync();
+                return certList.Select(x => Mapper.Map<Certificate>(x)).ToList();
+            }
+        }
     }
 }

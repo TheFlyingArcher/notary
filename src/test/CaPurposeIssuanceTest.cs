@@ -333,6 +333,23 @@ public class CaPurposeIssuanceTest
         };
     }
 
+    [Test]
+    public async Task SelfSignedLeaf_HasNoIssuer_IsNotACa_AndCarriesTheChosenUsages()
+    {
+        var request = LeafRequest(null, [CertificateKeyUsage.DigitalSignature], [KeyPurposeOids.ClientAuthentication]);
+
+        var result = await _certificates.IssueCertificateAsync(request);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+        Assert.That(string.IsNullOrEmpty(result.Value.IssuingSlug), Is.True);
+        Assert.That(result.Value.IsCaCertificate, Is.False);
+
+        var certificate = Parse(result.Value);
+        Assert.That(certificate.GetBasicConstraints(), Is.EqualTo(-1), "not a CA");
+        Assert.That(KeyUsageNames(certificate), Is.EquivalentTo(new[] { "DigitalSignature" }));
+        Assert.That(ExtendedKeyUsages(certificate), Is.EquivalentTo(new[] { KeyPurposeOids.ClientAuthentication }));
+    }
+
     [TestCase(CaPurpose.TlsSsl)]
     [TestCase(CaPurpose.UserLogin)]
     [TestCase(CaPurpose.Smime)]

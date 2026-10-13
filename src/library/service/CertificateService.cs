@@ -232,6 +232,13 @@ namespace Notary.Service
             return await repository.GetCertificatesByCaAsync(slug);
         }
 
+        public async Task<List<Certificate>> GetSelfSignedCertificatesAsync()
+        {
+            var repository = (ICertificateRepository)Repository;
+
+            return await repository.GetSelfSignedAsync();
+        }
+
         /// <summary>
         /// Add the Authority Key Identifier. According to http://www.alvestrand.no/objectid/2.5.29.35.html, this
         /// identifies the public key to be used to verify the signature on this certificate.

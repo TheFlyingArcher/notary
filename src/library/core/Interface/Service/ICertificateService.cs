@@ -29,8 +29,14 @@ namespace Notary.Interface.Service
         /// <summary>
         /// Get all certificates belonging to the CA
         /// </summary>
-        /// <param name="slug">The CA slug</param>
+        /// <param name="slug">The slug of the CA's certificate (the certificate's issuing slug)</param>
         /// <returns>List of certificates in the Certificate Authority</returns>
         Task<List<Certificate>> GetCertificatesByCaAsync(string slug);
+
+        /// <summary>
+        /// Get the self-signed, non-CA certificates
+        /// </summary>
+        /// <returns>List of certificates that have no issuing certificate</returns>
+        Task<List<Certificate>> GetSelfSignedCertificatesAsync();
     }
 }
