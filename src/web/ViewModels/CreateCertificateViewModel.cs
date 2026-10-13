@@ -52,14 +52,23 @@ namespace Notary.Web.ViewModels
 
 
 
-            // Default to a typical TLS/SSL certificate
+            ResetUsages();
+
+
+        }
+
+        /// <summary>
+        /// Return the usages to the defaults offered for a self-signed certificate: a typical TLS/SSL certificate
+        /// with no key usage chosen yet
+        /// </summary>
+        public void ResetUsages()
+        {
             SelectedExKeyUsages = new List<string>()
             {
                 "1.3.6.1.5.5.7.3.1",
                 "1.3.6.1.5.5.7.3.2"
             };
-
-
+            SelectedCertificateKeyUsage = new List<int>();
         }
 
         public void Reset()

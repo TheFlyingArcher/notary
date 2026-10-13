@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
+using Notary.Profiles;
 
 namespace Notary.Contract
 {
@@ -76,6 +80,25 @@ namespace Notary.Contract
         /// </summary>
         [JsonProperty("parentCaSlug", Required = Required.Always)]
         public string ParentCaSlug { get; set; }
+
+        /// <summary>
+        /// What the CA is for. Null on CAs created before purposes existed, which are treated as Custom.
+        /// </summary>
+        [JsonProperty("purpose", Required = Required.Default, NullValueHandling = NullValueHandling.Ignore)]
+        [JsonConverter(typeof(StringEnumConverter))]
+        public CaPurpose? Purpose { get; set; }
+
+        /// <summary>
+        /// The key usages chosen for a Custom CA; unused for other purposes
+        /// </summary>
+        [JsonProperty("customKu", Required = Required.Default, NullValueHandling = NullValueHandling.Ignore)]
+        public List<CertificateKeyUsage> CustomKeyUsages { get; set; }
+
+        /// <summary>
+        /// The extended key usage OIDs chosen for a Custom CA; unused for other purposes
+        /// </summary>
+        [JsonProperty("customEku", Required = Required.Default, NullValueHandling = NullValueHandling.Ignore)]
+        public List<string> CustomExtendedKeyUsages { get; set; }
 
         public override string[] SlugProperties()
         {

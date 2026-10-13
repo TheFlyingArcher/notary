@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using log4net;
@@ -8,6 +9,7 @@ using Notary.Configuration;
 using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
+using Notary.Profiles;
 
 namespace Notary.Service
 {
@@ -37,7 +39,9 @@ namespace Notary.Service
             if (entity.KeyAlgorithm == Algorithm.RSA && !entity.KeyLength.HasValue)
                 throw new ArgumentException("Must supply a key length if using RSA");
 
-            entity.DistinguishedName.Validate();
+            var nameCheck = entity.DistinguishedName.Check();
+            if (!nameCheck.IsSuccess)
+                return Result<CertificateAuthority>.Fail(nameCheck.Status, nameCheck.Error);
 
             CertificateAuthority parentCa = null;
             if (!string.IsNullOrEmpty(entity.ParentCaSlug))
@@ -46,36 +50,50 @@ namespace Notary.Service
                 if (parentCa == null)
                     throw new ArgumentNullException(nameof(parentCa));
 
+                var issuerCheck = CaProfileCatalog.CheckIssuer(parentCa, CaProfileCatalog.Resolve(entity));
+                if (!issuerCheck.IsSuccess)
+                    return Result<CertificateAuthority>.Fail(issuerCheck.Status, issuerCheck.Error);
+
                 entity.KeyCurve = parentCa.KeyCurve;
                 entity.KeyAlgorithm = parentCa.KeyAlgorithm;
                 entity.KeyLength = parentCa.KeyLength;
                 entity.ParentCaSlug = parentCa.Slug;
             }
 
+            // CAs created without a purpose keep the broad usages every CA had before purposes existed
+            bool legacyUsages = UsesLegacyUsages(entity);
+            var profile = CaProfileCatalog.Resolve(entity);
+
             var caRequest = new CertificateRequest
             {
-                CertificateKeyUsageFlags = new List<int>{
-                    (int)CertificateKeyUsage.CrlSign,
-                    (int)CertificateKeyUsage.KeyCertSign,
-                    (int)CertificateKeyUsage.DigitalSignature,
-                    (int)CertificateKeyUsage.KeyEncipherment,
-                    (int)CertificateKeyUsage.DataEncipherment
-                },
+                CertificateKeyUsageFlags = legacyUsages
+                    ? new List<int>
+                    {
+                        (int)CertificateKeyUsage.CrlSign,
+                        (int)CertificateKeyUsage.KeyCertSign,
+                        (int)CertificateKeyUsage.DigitalSignature,
+                        (int)CertificateKeyUsage.KeyEncipherment,
+                        (int)CertificateKeyUsage.DataEncipherment
+                    }
+                    : [.. profile.CaKeyUsages.Select(u => (int)u)],
                 Curve = entity.KeyCurve,
                 IsCaCertificate = true,
                 KeyAlgorithm = entity.KeyAlgorithm,
                 KeySize = entity.KeyLength,
-                ExtendedKeyUsages = new List<string>
-                {
-                    "1.3.6.1.5.5.7.3.3", // Code signing
-                    "1.3.6.1.5.5.7.3.1", // Server Authentication
-                    "1.3.6.1.5.5.7.3.2", // Client Authentication
-                    "1.3.6.1.4.1.311.20.2.2" //SMART Card Login
-                },
+                ExtendedKeyUsages = legacyUsages
+                    ? new List<string>
+                    {
+                        "1.3.6.1.5.5.7.3.3", // Code signing
+                        "1.3.6.1.5.5.7.3.1", // Server Authentication
+                        "1.3.6.1.5.5.7.3.2", // Client Authentication
+                        "1.3.6.1.4.1.311.20.2.2" //SMART Card Login
+                    }
+                    : [.. profile.CaExtendedKeyUsages],
                 Name = entity.Name,
                 NotAfter = entity.NotAfter,
                 NotBefore = entity.NotBefore,
                 ParentCertificateSlug = parentCa != null ? parentCa.CertificateSlug : null,
+                PathLengthConstraint = CaProfileCatalog.GetPathLength(entity.Purpose, parentCa != null),
                 RequestedBySlug = entity.CreatedBySlug,
                 Subject = entity.DistinguishedName
             };
@@ -90,6 +108,13 @@ namespace Notary.Service
             await base.SaveAsync(entity, updatedBySlug);
 
             return Result<CertificateAuthority>.Ok(entity);
+        }
+
+        private static bool UsesLegacyUsages(CertificateAuthority ca)
+        {
+            bool hasCustomUsages = ca.CustomKeyUsages is { Count: > 0 } || ca.CustomExtendedKeyUsages is { Count: > 0 };
+
+            return ca.Purpose is null || (ca.Purpose is CaPurpose.Custom && !hasCustomUsages);
         }
 
         public async Task<List<CaBrief>> GetCaListBrief()

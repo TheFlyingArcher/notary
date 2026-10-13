@@ -27,7 +27,24 @@ public class ModelMapProfile : Profile
             .ReverseMap()
             .ForMember(m => m.EncryptedPrivateKey, c => c.MapFrom(d => Encoding.Default.GetBytes(d.EncryptedPrivateKey)));
         CreateMap<Certificate, CertificateModel>().ReverseMap();
-        CreateMap<CertificateAuthority, CertificateAuthorityModel>().ReverseMap();
+        // AutoMapper turns null collections into empty ones; keep the Custom usages null when unset so
+        // legacy CAs stay distinguishable and no empty arrays are written to the database
+        CreateMap<CertificateAuthority, CertificateAuthorityModel>()
+            .AfterMap((c, m) =>
+            {
+                if (c.CustomKeyUsages is null)
+                    m.CustomKeyUsages = null;
+                if (c.CustomExtendedKeyUsages is null)
+                    m.CustomExtendedKeyUsages = null;
+            })
+            .ReverseMap()
+            .AfterMap((m, c) =>
+            {
+                if (m.CustomKeyUsages is null)
+                    c.CustomKeyUsages = null;
+                if (m.CustomExtendedKeyUsages is null)
+                    c.CustomExtendedKeyUsages = null;
+            });
         CreateMap<Revocation, RevocationModel>().ReverseMap();
         CreateMap<CrlRecord, CrlRecordModel>().ReverseMap();
     }

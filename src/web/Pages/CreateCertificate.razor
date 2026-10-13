@@ -30,7 +30,7 @@
             <MudSelectItem Value="@("self")">Self Signed Certificate</MudSelectItem>
             @foreach (var ca in caList)
             {
-                <MudSelectItem Value="@ca.Slug">@ca.Name</MudSelectItem>
+                <MudSelectItem Value="@ca.Slug">@CaLabel(ca)</MudSelectItem>
             }
         </MudSelect>
 
@@ -38,7 +38,8 @@
             Validation="@(new Func<string, IEnumerable<string>>(ValidateName))" Required="true"
             RequiredError="Please enter a name"></MudTextField>
         <MudTextField @bind-Value="@ViewModel.Subject.CommonName" Label="Common Name" Required="true"
-            RequiredError="Certificates require a common name"></MudTextField>
+            RequiredError="Certificates require a common name" HelperText="Up to 64 characters"
+            Validation="@(new Func<string, IEnumerable<string>>(ValidateCommonName))"></MudTextField>
         <MudSelect T="ValidityPeriod" @bind-Value="@ViewModel.SelectedPeriod" Label="Expiration" Required="true"
             RequiredError="Select a validity period" ToStringFunc="@(p => p?.Format())"
             HelperText="@ValidityHelperText" Disabled="@(!AnyValidityAllowed)">
@@ -50,22 +51,33 @@
             }
         </MudSelect>
         <MudDivider Class="my-3" />
-        <MudSelect T="string" Label="Extended Key Usages" MultiSelection="true"
-            @bind-SelectedValues="ViewModel.SelectedExKeyUsages" @bind-Value="_selectedExKeyUsage">
-            @foreach (var usage in ViewModel.ExtendedKeyUsages)
-            {
-                <MudSelectItem T="string" Value="usage.Key">@usage.Value</MudSelectItem>
-            }
-        </MudSelect>
-        <MudDivider Class="my-3" />
-        <MudSelect T="int" Label="Certificate Key Usages" MultiSelection="true" Required="true"
-            Error="@KeyUsageMissing" ErrorText="Select at least one key usage, e.g. Digital Signature"
-            @bind-SelectedValues="ViewModel.SelectedCertificateKeyUsage" @bind-Value="_selectedCertKeyUsage">
-            @foreach (var usage in ViewModel.CertificateKeyUsages)
-            {
-                <MudSelectItem T="int" Value="usage.Key">@usage.Value</MudSelectItem>
-            }
-        </MudSelect>
+        @if (IssuerProfile is { IssuesLeafCertificates: false })
+        {
+            <MudAlert Severity="Severity.Warning" Class="my-2">@UsageNote</MudAlert>
+        }
+        else if (UsagesLocked)
+        {
+            <MudAlert Severity="Severity.Info" Class="my-2">@UsageNote</MudAlert>
+        }
+        else
+        {
+            <MudSelect T="string" Label="Extended Key Usages" MultiSelection="true"
+                @bind-SelectedValues="ViewModel.SelectedExKeyUsages" @bind-Value="_selectedExKeyUsage">
+                @foreach (var usage in ViewModel.ExtendedKeyUsages)
+                {
+                    <MudSelectItem T="string" Value="usage.Key">@usage.Value</MudSelectItem>
+                }
+            </MudSelect>
+            <MudDivider Class="my-3" />
+            <MudSelect T="int" Label="Certificate Key Usages" MultiSelection="true" Required="true"
+                Error="@KeyUsageMissing" ErrorText="Select at least one key usage, e.g. Digital Signature"
+                @bind-SelectedValues="ViewModel.SelectedCertificateKeyUsage" @bind-Value="_selectedCertKeyUsage">
+                @foreach (var usage in ViewModel.CertificateKeyUsages)
+                {
+                    <MudSelectItem T="int" Value="usage.Key">@usage.Value</MudSelectItem>
+                }
+            </MudSelect>
+        }
         <MudDivider Class="my-3" />
         <MudLink OnClick="@(() => ViewModel.AdditionalSubjectExpanded = !ViewModel.AdditionalSubjectExpanded)">
             Additional Subject Properties</MudLink>

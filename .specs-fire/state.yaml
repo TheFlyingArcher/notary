@@ -13,7 +13,8 @@ workspace:
 intents:
   - id: validity-period-dropdown
     title: Certificate/CA validity period dropdown
-    status: in_progress
+    status: completed
+    completed_at: 2026-10-13T01:21:48.601Z
     work_items:
       - id: validity-period-policy
         title: Shared validity period policy
@@ -49,6 +50,76 @@ intents:
           - validity-period-policy
         run_id: run-specsmd-fire-528fef-004
         completed_at: 2026-10-13T01:21:48.591Z
+  - id: ca-purpose-profiles
+    title: Create certificate authorities by purpose
+    status: completed
+    completed_at: 2026-10-13T03:28:31.332Z
+    work_items:
+      - id: ca-purpose-profile-catalog
+        title: CA purpose profile catalog
+        status: completed
+        complexity: high
+        mode: validate
+        depends_on: []
+        run_id: run-specsmd-fire-528fef-005
+        completed_at: 2026-10-13T02:05:52.658Z
+      - id: ca-purpose-persistence
+        title: Persist CA purpose
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - ca-purpose-profile-catalog
+        run_id: run-specsmd-fire-528fef-006
+        completed_at: 2026-10-13T02:09:16.583Z
+      - id: ca-cert-from-profile
+        title: Issue CA certificates from the purpose profile
+        status: completed
+        complexity: high
+        mode: validate
+        depends_on:
+          - ca-purpose-profile-catalog
+          - ca-purpose-persistence
+        run_id: run-specsmd-fire-528fef-007
+        completed_at: 2026-10-13T02:14:38.185Z
+      - id: leaf-profile-enforcement
+        title: Enforce issuing CA profile on leaf certificates
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - ca-purpose-persistence
+        run_id: run-specsmd-fire-528fef-009
+        completed_at: 2026-10-13T03:12:11.468Z
+      - id: ca-purpose-selector-ui
+        title: Create CA purpose selector
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - ca-purpose-profile-catalog
+          - ca-purpose-persistence
+          - ca-cert-from-profile
+        run_id: run-specsmd-fire-528fef-008
+        completed_at: 2026-10-13T02:25:40.461Z
+      - id: custom-ca-usages-ui
+        title: Custom CA usage pickers
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - ca-purpose-selector-ui
+        run_id: run-specsmd-fire-528fef-011
+        completed_at: 2026-10-13T03:28:31.320Z
+      - id: leaf-profile-ui
+        title: Create Certificate follows the issuing CA profile
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - leaf-profile-enforcement
+        run_id: run-specsmd-fire-528fef-010
+        completed_at: 2026-10-13T03:19:32.883Z
 runs:
   active: []
   completed:
@@ -84,3 +155,59 @@ runs:
           mode: confirm
       started: 2026-10-13T01:20:10.340Z
       completed: 2026-10-13T01:21:48.591Z
+    - id: run-specsmd-fire-528fef-005
+      scope: single
+      work_items:
+        - id: ca-purpose-profile-catalog
+          intent: ca-purpose-profiles
+          mode: validate
+      started: 2026-10-13T02:02:21.251Z
+      completed: 2026-10-13T02:05:52.658Z
+    - id: run-specsmd-fire-528fef-006
+      scope: single
+      work_items:
+        - id: ca-purpose-persistence
+          intent: ca-purpose-profiles
+          mode: confirm
+      started: 2026-10-13T02:06:29.857Z
+      completed: 2026-10-13T02:09:16.583Z
+    - id: run-specsmd-fire-528fef-007
+      scope: single
+      work_items:
+        - id: ca-cert-from-profile
+          intent: ca-purpose-profiles
+          mode: validate
+      started: 2026-10-13T02:10:30.841Z
+      completed: 2026-10-13T02:14:38.185Z
+    - id: run-specsmd-fire-528fef-008
+      scope: single
+      work_items:
+        - id: ca-purpose-selector-ui
+          intent: ca-purpose-profiles
+          mode: confirm
+      started: 2026-10-13T02:21:55.706Z
+      completed: 2026-10-13T02:25:40.461Z
+    - id: run-specsmd-fire-528fef-009
+      scope: single
+      work_items:
+        - id: leaf-profile-enforcement
+          intent: ca-purpose-profiles
+          mode: confirm
+      started: 2026-10-13T02:44:28.493Z
+      completed: 2026-10-13T03:12:11.468Z
+    - id: run-specsmd-fire-528fef-010
+      scope: single
+      work_items:
+        - id: leaf-profile-ui
+          intent: ca-purpose-profiles
+          mode: confirm
+      started: 2026-10-13T03:13:31.526Z
+      completed: 2026-10-13T03:19:32.883Z
+    - id: run-specsmd-fire-528fef-011
+      scope: single
+      work_items:
+        - id: custom-ca-usages-ui
+          intent: ca-purpose-profiles
+          mode: confirm
+      started: 2026-10-13T03:23:57.985Z
+      completed: 2026-10-13T03:28:31.320Z

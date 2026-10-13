@@ -25,6 +25,7 @@ using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
 using Notary.Logging;
+using Notary.Profiles;
 using Notary.Validity;
 
 namespace Notary.Service
@@ -35,11 +36,13 @@ namespace Notary.Service
             NotaryConfiguration config,
             IAsymmetricKeyService keyService,
             ICertificateRepository repository,
+            ICertificateAuthorityRepository certificateAuthorityRepository,
             ICrlBaseUrlProvider crlBaseUrlProvider,
             ILog log) : base(repository, log)
         {
             Configuration = config;
             KeyService = keyService;
+            CertificateAuthorityRepository = certificateAuthorityRepository;
             CrlBaseUrlProvider = crlBaseUrlProvider;
         }
 
@@ -47,9 +50,16 @@ namespace Notary.Service
         {
             try
             {
-                request.Subject.Validate();
+                var subjectCheck = request.Subject.Check();
+                if (!subjectCheck.IsSuccess)
+                    return Result<Certificate>.Fail(subjectCheck.Status, subjectCheck.Error);
 
-                string issuerDn = null;
+                if (request.PathLengthConstraint is < 0)
+                    return Result<Certificate>.Fail(ResultStatus.Invalid, "The path length constraint cannot be negative.");
+
+                if (request.PathLengthConstraint.HasValue && !request.IsCaCertificate)
+                    return Result<Certificate>.Fail(ResultStatus.Invalid, "A path length constraint applies only to CA certificates.");
+
                 string crlEndpoint = null;
                 BigInteger issuerSn = null;
                 AsymmetricCipherKeyPair issuerKeyPair = null;
@@ -65,10 +75,28 @@ namespace Notary.Service
                     if (!validity.IsSuccess)
                         return Result<Certificate>.Fail(validity.Status, validity.Error);
 
+                    // A leaf must follow the purpose of the CA that issues it. A certificate with no CA record
+                    // behind it has no purpose and is unrestricted, as before.
+                    if (!request.IsCaCertificate)
+                    {
+                        var issuingCa = await CertificateAuthorityRepository.GetByCertificateSlugAsync(parentCert.Slug);
+                        if (issuingCa != null)
+                        {
+                            int requestedFlags = (request.CertificateKeyUsageFlags ?? []).Aggregate(0, (all, flag) => all | flag);
+                            var requestedKeyUsages = Enum.GetValues<CertificateKeyUsage>().Where(u => (requestedFlags & (int)u) != 0);
+
+                            var leafCheck = CaProfileCatalog.CheckLeaf(
+                                CaProfileCatalog.Resolve(issuingCa),
+                                requestedKeyUsages,
+                                request.ExtendedKeyUsages);
+                            if (!leafCheck.IsSuccess)
+                                return Result<Certificate>.Fail(leafCheck.Status, leafCheck.Error);
+                        }
+                    }
+
                     var cert = GetX509FromPem(parentCert.Data);
                     issuerKeyPair = await KeyService.GetKeyPairAsync(parentCert.KeySlug);
                     issuerSn = cert.SerialNumber;
-                    issuerDn = DistinguishedName.BuildDistinguishedName(parentCert.Subject);
                     crlEndpoint = BuildCrlEndpoint(parentCert.Slug);
                 }
                 var random = GetSecureRandom();
@@ -87,7 +115,7 @@ namespace Notary.Service
 
                 var certificateKeyPair = await GenerateKeyPair(newKey);
                 var serialNumber = GenerateSerialNumber(random);
-                var subject = DistinguishedName.BuildDistinguishedName(request.Subject);
+                var subject = ToX509Name(request.Subject);
                 var keyUsages = new List<DerObjectIdentifier>();
 
                 foreach (var ku in request.ExtendedKeyUsages)
@@ -110,11 +138,12 @@ namespace Notary.Service
                     subject,
                     certificateKeyPair,
                     serialNumber,
-                    parentCert == null ? DistinguishedName.BuildDistinguishedName(request.Subject) : DistinguishedName.BuildDistinguishedName(parentCert.Subject),
+                    parentCert == null ? subject : ToX509Name(parentCert.Subject),
                     request.NotAfter,
                     parentCert == null ? certificateKeyPair : issuerKeyPair,
                     issuerSn,
                     request.IsCaCertificate,
+                    request.PathLengthConstraint,
                     crlEndpoint,
                     certKeyUsages,
                     keyUsages.ToArray()
@@ -284,11 +313,17 @@ namespace Notary.Service
         /// </summary>
         /// <param name="certificateGenerator"></param>
         /// <param name="isCertificateAuthority"></param>
+        /// <param name="pathLengthConstraint">The maximum number of CAs that may follow this one in a chain; null for no limit</param>
         private void AddBasicConstraints(X509V3CertificateGenerator certificateGenerator,
-                                                bool isCertificateAuthority)
+                                                bool isCertificateAuthority,
+                                                int? pathLengthConstraint)
         {
+            var constraints = isCertificateAuthority && pathLengthConstraint.HasValue
+                ? new BasicConstraints(pathLengthConstraint.Value)
+                : new BasicConstraints(isCertificateAuthority);
+
             certificateGenerator.AddExtension(
-                X509Extensions.BasicConstraints.Id, true, new BasicConstraints(isCertificateAuthority));
+                X509Extensions.BasicConstraints.Id, true, constraints);
         }
 
         /// <summary>
@@ -345,14 +380,25 @@ namespace Notary.Service
             certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, sanExtension);
         }
 
+        /// <summary>
+        /// Build the certificate name from its attributes. This avoids writing the name as text and parsing it back,
+        /// which can alter values that contain punctuation.
+        /// </summary>
+        private static X509Name ToX509Name(DistinguishedName name)
+        {
+            var attributes = name.GetAttributes();
+
+            return new X509Name(
+                attributes.Select(a => new DerObjectIdentifier(a.Oid)).ToList(),
+                attributes.Select(a => a.Value).ToList());
+        }
+
         private X509Certificate GenerateCertificate(List<SubjectAlternativeName> sanList, SecureRandom random, Algorithm alg,
-            string subjectDn, AsymmetricCipherKeyPair subjectKeyPair, BigInteger subjectSn, string issuerDn, DateTime notAfter,
-            AsymmetricCipherKeyPair issuerKeyPair, BigInteger issuerSn, bool isCA, string crlEndpoint, int certificateKeyUsageFlags,
-            IEnumerable<DerObjectIdentifier> usages)
+            X509Name subject, AsymmetricCipherKeyPair subjectKeyPair, BigInteger subjectSn, X509Name issuer, DateTime notAfter,
+            AsymmetricCipherKeyPair issuerKeyPair, BigInteger issuerSn, bool isCA, int? pathLengthConstraint, string crlEndpoint,
+            int certificateKeyUsageFlags, IEnumerable<DerObjectIdentifier> usages)
         {
             var certGen = new X509V3CertificateGenerator();
-            var subject = new X509Name(subjectDn);
-            var issuer = new X509Name(issuerDn);
             var notBefore = DateTime.UtcNow;
             Asn1SignatureFactory signatureFactory = null;
             switch (alg)
@@ -374,7 +420,7 @@ namespace Notary.Service
 
             AddAuthorityKeyIdentifier(certGen, issuerKeyPair);
             AddSubjectKeyIdentifier(certGen, subjectKeyPair);
-            AddBasicConstraints(certGen, isCA);
+            AddBasicConstraints(certGen, isCA, pathLengthConstraint);
 
             // RFC 5280 requires at least one bit when the extension is present; an empty one is rejected by OpenSSL 3.x
             if (certificateKeyUsageFlags != 0)
@@ -425,6 +471,8 @@ namespace Notary.Service
         protected NotaryConfiguration Configuration { get; }
 
         protected IAsymmetricKeyService KeyService { get; }
+
+        protected ICertificateAuthorityRepository CertificateAuthorityRepository { get; }
 
         protected ICrlBaseUrlProvider CrlBaseUrlProvider { get; }
     }

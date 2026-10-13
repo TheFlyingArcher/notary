@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using Notary.Profiles;
 
 namespace Notary.Data.Model
 {
@@ -57,5 +60,17 @@ namespace Notary.Data.Model
 
         [BsonElement("parent_slug")]
         public string ParentCaSlug { get; set; }
+
+        /// <summary>
+        /// Stored by name so reordering the enum cannot change the meaning of existing documents
+        /// </summary>
+        [BsonElement("purpose"), BsonRepresentation(BsonType.String), BsonIgnoreIfNull]
+        public CaPurpose? Purpose { get; set; }
+
+        [BsonElement("custom_key_usages"), BsonIgnoreIfNull]
+        public List<string> CustomKeyUsages { get; set; }
+
+        [BsonElement("custom_ex_key_usages"), BsonIgnoreIfNull]
+        public List<string> CustomExtendedKeyUsages { get; set; }
     }
 }

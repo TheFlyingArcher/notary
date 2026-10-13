@@ -75,9 +75,6 @@ public class DistinguishedNameValidationTest
         Assert.That(ex.ParamName, Is.EqualTo(nameof(DistinguishedName.CommonName)));
     }
 
-    [TestCase("<script>alert('xss')</script>")]
-    [TestCase("CN=evil,O=attacker")]
-    [TestCase("../../etc/passwd")]
     [TestCase("test\ninjection")]
     public void Validate_CommonNameWithInvalidChars_Throws(string commonName)
     {
@@ -158,7 +155,7 @@ public class DistinguishedNameValidationTest
     [Test]
     public void Validate_StateProvinceWithInvalidChars_Throws()
     {
-        var dn = new DistinguishedName { CommonName = "Test CA", StateProvince = "State<>Province" };
+        var dn = new DistinguishedName { CommonName = "Test CA", StateProvince = "State\tProvince" };
         var ex = Assert.Throws<ArgumentException>(() => dn.Validate());
         Assert.That(ex.ParamName, Is.EqualTo(nameof(DistinguishedName.StateProvince)));
     }
@@ -166,7 +163,7 @@ public class DistinguishedNameValidationTest
     [Test]
     public void Validate_OrganizationalUnitWithInvalidChars_Throws()
     {
-        var dn = new DistinguishedName { CommonName = "Test CA", OrganizationalUnit = "IT;DROP TABLE" };
+        var dn = new DistinguishedName { CommonName = "Test CA", OrganizationalUnit = "IT\nDROP" };
         var ex = Assert.Throws<ArgumentException>(() => dn.Validate());
         Assert.That(ex.ParamName, Is.EqualTo(nameof(DistinguishedName.OrganizationalUnit)));
     }
@@ -178,6 +175,11 @@ public class DistinguishedNameValidationTest
     [TestCase("CA_Root")]
     [TestCase("admin@example.com")]
     [TestCase("Server Auth CA")]
+    // Punctuation is not a problem because values are escaped when the name is built; see DistinguishedNameEncodingTest
+    [TestCase("<script>alert('xss')</script>")]
+    [TestCase("CN=evil,O=attacker")]
+    [TestCase("../../etc/passwd")]
+    [TestCase("Acme, Inc. (Production)")]
     public void Validate_CommonNameWithAllowedSpecialChars_DoesNotThrow(string commonName)
     {
         var dn = new DistinguishedName { CommonName = commonName };

@@ -1,4 +1,5 @@
 ﻿@page "/ca/create"
+@using Notary.Profiles
 @using Notary.Validity
 
 <MudContainer MaxWidth="MaxWidth.Large">
@@ -31,9 +32,56 @@
             <MudSelectItem Value="@("nop")">No Parent</MudSelectItem>
             @foreach (var ca in ViewModel.CertificateAuthorities)
             {
-                <MudSelectItem Value="@ca.Slug">@ca.Name</MudSelectItem>
+                var canIssueCas = CaProfileCatalog.CheckCanIssueCas(ca).IsSuccess;
+                <MudSelectItem Value="@ca.Slug" Disabled="@(!canIssueCas)">
+                    @ParentLabel(ca)@(canIssueCas ? string.Empty : " - issues end-entity certificates only, not other CAs")
+                </MudSelectItem>
             }
         </MudSelect>
+        <MudSelect T="CaPurpose?" @bind-Value="ViewModel.SelectedPurpose" @bind-Value:after="OnPurposeChanged"
+            Label="CA Purpose" Required="true" RequiredError="Select what this CA is for"
+            ToStringFunc="@(p => p.HasValue ? CaProfileCatalog.Get(p).DisplayName : string.Empty)"
+            HelperText="One CA per purpose is the recommended practice" Placeholder="Please Select">
+            @foreach (var option in PurposeOptions)
+            {
+                <MudSelectItem T="CaPurpose?" Value="@((CaPurpose?)option.Profile.Purpose)" Disabled="@(!option.IsAllowed)">
+                    <b>@option.Profile.DisplayName</b>@(option.Profile.IsDiscouraged ? " (discouraged)" : string.Empty) - @option.Profile.Description@(option.IsAllowed ? string.Empty : $" [{option.DisabledReason}]")
+                </MudSelectItem>
+            }
+        </MudSelect>
+        @if (SelectedProfile != null)
+        {
+            <MudAlert Severity="@(SelectedProfile.IsDiscouraged ? Severity.Warning : Severity.Info)" Class="my-2">
+                @PurposeSummary
+            </MudAlert>
+        }
+        @if (ViewModel.SelectedPurpose == CaPurpose.Custom)
+        {
+            <MudText Typo="Typo.body2" Class="my-2">
+                Always included: @(string.Join(", ", AlwaysIncludedKeyUsages.Select(CaProfileCatalog.DescribeKeyUsage)))
+            </MudText>
+            <MudSelect T="CertificateKeyUsage" Label="Additional Key Usages" MultiSelection="true"
+                @bind-SelectedValues="ViewModel.SelectedCustomKeyUsages"
+                ToStringFunc="@(u => CaProfileCatalog.DescribeKeyUsage(u))"
+                HelperText="Optional. Most CAs need none of these.">
+                @foreach (var usage in OptionalKeyUsages)
+                {
+                    <MudSelectItem T="CertificateKeyUsage" Value="usage">@CaProfileCatalog.DescribeKeyUsage(usage)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="string" Label="Extended Key Usages" MultiSelection="true"
+                @bind-SelectedValues="ViewModel.SelectedCustomExtendedKeyUsages"
+                Error="@CustomUsagesMissing" ErrorText="@CustomUsagesMissingText"
+                HelperText="@CustomExtendedKeyUsageHelp">
+                @foreach (var usage in KeyPurposeOids.Known)
+                {
+                    bool permitted = IsExtendedKeyUsagePermitted(usage.Key);
+                    <MudSelectItem T="string" Value="usage.Key" Disabled="@(!permitted)">
+                        @usage.Value@(permitted ? string.Empty : $" - not allowed by the {ParentPurposeName} CA")
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        }
         <MudTextField @bind-Value="ViewModel.Name" Label="Name" Required="true"
             Validation="@(new Func<string, IEnumerable<string>>(ValidateName))"></MudTextField>
         <MudSelect T="ValidityPeriod" @bind-Value="ViewModel.SelectedPeriod" Label="CA Validity" Required="true"
@@ -46,7 +94,12 @@
                 </MudSelectItem>
             }
         </MudSelect>
-        <MudSwitch @bind-Value="ViewModel.IsIssuer" Label="Is Issuer"></MudSwitch>
+        <MudSwitch @bind-Value="ViewModel.IsIssuer" Label="Is Issuer"
+            Disabled="@(ViewModel.SelectedPurpose == CaPurpose.Root)"></MudSwitch>
+        @if (ViewModel.SelectedPurpose == CaPurpose.Root)
+        {
+            <MudText Typo="Typo.caption" Class="mb-2">A Root CA never issues certificates directly, so it is not offered as an issuer.</MudText>
+        }
         @if (IsCrlHostLoopback)
         {
             <MudAlert Severity="Severity.Warning" Class="my-2">
@@ -55,7 +108,8 @@
             </MudAlert>
         }
         <MudTextField @bind-Value="ViewModel.CommonName" Required="true" RequiredError="Please enter a CA Common Name"
-            HelperText="The Common Name for the CA certificate"></MudTextField>
+            HelperText="The Common Name for the CA certificate (up to 64 characters)"
+            Validation="@(new Func<string, IEnumerable<string>>(ValidateCommonName))"></MudTextField>
         <MudDivider Class="my-3" />
         <MudLink OnClick="@(() => ViewModel.AdditionalSubjectExpanded = !ViewModel.AdditionalSubjectExpanded)">
             Additional Properties</MudLink>

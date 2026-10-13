@@ -16,6 +16,13 @@ namespace Notary.Data.Repository
         {
         }
 
+        public async Task<CertificateAuthority> GetByCertificateSlugAsync(string certificateSlug)
+        {
+            var filter = Builders<CertificateAuthorityModel>.Filter.Eq(c => c.CertificateSlug, certificateSlug);
+
+            return await RunQuery(filter);
+        }
+
         public override async Task InitializeAsync()
         {
             var certSlugIndex = new CreateIndexModel<CertificateAuthorityModel>(Builders<CertificateAuthorityModel>.IndexKeys.Ascending(c => c.CertificateSlug));
