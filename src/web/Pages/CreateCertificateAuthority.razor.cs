@@ -1,5 +1,6 @@
 using C = Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Profiles;
 using Notary.Validity;
 using Notary.Web.ViewModels;
 
@@ -17,6 +18,7 @@ namespace Notary.Web.Pages
         private CreateCertificateAuthorityViewModel ViewModel { get; set; } = new();
         private bool IsLoading { get; set; } = false;
         private bool _formValid = false;
+        private bool _submitAttempted;
         private string[] _formErrors = { };
         private MudForm _mudForm;
 
@@ -61,6 +63,8 @@ namespace Notary.Web.Pages
                     ViewModel.Curve = EllipticCurve.P256;
                 }
 
+                RefreshPurpose();
+                RefreshCustomUsages();
                 RefreshValidity();
                 await InvokeAsync(StateHasChanged);
             };
@@ -77,10 +81,12 @@ namespace Notary.Web.Pages
 
         private async Task OnSubmitAsync()
         {
+            _submitAttempted = true;
             await _mudForm.Validate();
-            if (!_formValid)
+            if (!_formValid || CustomUsagesMissing)
                 return;
 
+            bool custom = ViewModel.SelectedPurpose == CaPurpose.Custom;
             DateTime now = DateTime.UtcNow;
             var ca = new C.CertificateAuthority
             {
@@ -94,6 +100,11 @@ namespace Notary.Web.Pages
                 NotAfter = ViewModel.SelectedPeriod.AddTo(now),
                 NotBefore = now,
                 ParentCaSlug = ViewModel.ParentCaSlug == "nop" ? null : ViewModel.ParentCaSlug,
+                Purpose = ViewModel.SelectedPurpose,
+                // The two fixed usages are always sent for Custom. Sending them is what marks this as a deliberate
+                // choice rather than a CA created without a purpose, which would get the old broad usages.
+                CustomKeyUsages = custom ? [.. AlwaysIncludedKeyUsages.Concat(ViewModel.SelectedCustomKeyUsages).Distinct()] : null,
+                CustomExtendedKeyUsages = custom ? [.. ViewModel.SelectedCustomExtendedKeyUsages.Distinct()] : null,
                 Updated = now,
                 DistinguishedName = new C.DistinguishedName
                 {
@@ -131,6 +142,99 @@ namespace Notary.Web.Pages
             ViewModel.SelectedCa = slug == string.Empty ? null : await CertificateAuthorityService.GetAsync(slug);
         }
 
+        // Every CA certificate carries these; a CA cannot sign certificates or publish revocations without them
+        private static readonly CertificateKeyUsage[] AlwaysIncludedKeyUsages =
+            [CertificateKeyUsage.KeyCertSign, CertificateKeyUsage.CrlSign];
+
+        private static readonly CertificateKeyUsage[] OptionalKeyUsages =
+        [
+            CertificateKeyUsage.DigitalSignature,
+            CertificateKeyUsage.NonRepudiation,
+            CertificateKeyUsage.KeyEncipherment,
+            CertificateKeyUsage.DataEncipherment,
+            CertificateKeyUsage.KeyAgreement,
+            CertificateKeyUsage.EncipherOnly,
+            CertificateKeyUsage.DecipherOnly
+        ];
+
+        // The chosen parent's profile; a parent that restricts extended key usages limits what a Custom child may carry
+        private CaProfile ParentProfile =>
+            ViewModel.SelectedCa == null ? null : CaProfileCatalog.Resolve(ViewModel.SelectedCa);
+
+        private bool ParentRestrictsUsages => ParentProfile?.RestrictsExtendedKeyUsages == true;
+
+        private string ParentPurposeName => ParentProfile?.DisplayName ?? string.Empty;
+
+        private bool IsExtendedKeyUsagePermitted(string oid) =>
+            !ParentRestrictsUsages || ParentProfile.CaExtendedKeyUsages.Contains(oid);
+
+        private bool CustomUsagesMissing =>
+            _submitAttempted && ViewModel.SelectedPurpose == CaPurpose.Custom && ParentRestrictsUsages
+            && ViewModel.SelectedCustomExtendedKeyUsages.Count == 0;
+
+        private string CustomUsagesMissingText =>
+            $"A Custom CA under a {ParentPurposeName} CA must list its extended key usages, within the parent's.";
+
+        private string CustomExtendedKeyUsageHelp => ParentRestrictsUsages
+            ? $"Required. Limited to what the {ParentPurposeName} CA allows."
+            : "Optional. Leave empty for no extended key usage restriction.";
+
+        // Drop chosen extended key usages that a newly chosen parent does not allow
+        private void RefreshCustomUsages()
+        {
+            ViewModel.SelectedCustomExtendedKeyUsages = [.. ViewModel.SelectedCustomExtendedKeyUsages.Where(IsExtendedKeyUsagePermitted)];
+        }
+
+        private IReadOnlyList<CaPurposeOption> PurposeOptions => CaProfileCatalog.EvaluateForParent(ViewModel.SelectedCa);
+
+        private CaProfile SelectedProfile =>
+            ViewModel.SelectedPurpose.HasValue ? CaProfileCatalog.Get(ViewModel.SelectedPurpose) : null;
+
+        private static string ParentLabel(C.CertificateAuthority ca) =>
+            $"{ca.Name} ({(ca.Purpose.HasValue ? CaProfileCatalog.Get(ca.Purpose).DisplayName : "Legacy")})";
+
+        // Root never issues certificates; every other purpose is expected to, so it defaults to an issuer
+        private void OnPurposeChanged()
+        {
+            ViewModel.IsIssuer = ViewModel.SelectedPurpose != CaPurpose.Root;
+        }
+
+        // Clear a purpose that the newly chosen parent cannot issue
+        private void RefreshPurpose()
+        {
+            if (!ViewModel.SelectedPurpose.HasValue)
+                return;
+
+            var option = PurposeOptions.FirstOrDefault(o => o.Profile.Purpose == ViewModel.SelectedPurpose);
+            if (option == null || !option.IsAllowed)
+                ViewModel.SelectedPurpose = null;
+        }
+
+        private string PurposeSummary
+        {
+            get
+            {
+                var profile = SelectedProfile;
+                if (profile == null)
+                    return string.Empty;
+
+                switch (profile.Purpose)
+                {
+                    case CaPurpose.Root:
+                        return "Signs intermediate CAs only. It does not issue certificates directly and carries no usage restriction.";
+                    case CaPurpose.Custom:
+                        return "Discouraged. The usages you choose below define this CA, and a mistake can weaken it or break trust chains. " +
+                            "Prefer one of the purposes above unless none of them fits.";
+                    default:
+                        string usages = string.Join(", ", profile.CaExtendedKeyUsages.Select(KeyPurposeOids.GetName));
+                        string reach = ViewModel.SelectedCa == null
+                            ? "As a standalone CA it can also issue CAs of the same purpose."
+                            : "Under a parent it issues end-entity certificates only, not other CAs.";
+                        return $"Certificates from this CA are limited to: {usages}. {reach}";
+                }
+            }
+        }
+
         // A self-signed root has no issuer to cap it; a parent CA caps the child at the parent's expiry
         private CertificateRole ValidityRole => ViewModel.SelectedCa == null ? CertificateRole.RootCa : CertificateRole.IntermediateCa;
 
@@ -152,6 +256,13 @@ namespace Notary.Web.Pages
                 return;
 
             ViewModel.SelectedPeriod = (allowed.FirstOrDefault(o => o.IsRecommended) ?? allowed.LastOrDefault())?.Period;
+        }
+
+        private IEnumerable<string> ValidateCommonName(string commonName)
+        {
+            var problem = C.DistinguishedName.CheckCommonName(commonName);
+            if (problem != null)
+                yield return problem;
         }
 
         private IEnumerable<string> ValidateName(string name)

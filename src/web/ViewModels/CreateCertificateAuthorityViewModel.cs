@@ -1,4 +1,5 @@
 ﻿using Notary.Contract;
+using Notary.Profiles;
 using Notary.Validity;
 
 using System.ComponentModel.DataAnnotations;
@@ -43,6 +44,19 @@ namespace Notary.Web.ViewModels
 
         [Required]
         public ValidityPeriod? SelectedPeriod { get; set; }
+
+        [Required]
+        public CaPurpose? SelectedPurpose { get; set; }
+
+        /// <summary>
+        /// The key usages chosen for a Custom CA, in addition to the certificate and CRL signing every CA has
+        /// </summary>
+        public IReadOnlyCollection<CertificateKeyUsage> SelectedCustomKeyUsages { get; set; } = new List<CertificateKeyUsage>();
+
+        /// <summary>
+        /// The extended key usage OIDs chosen for a Custom CA
+        /// </summary>
+        public IReadOnlyCollection<string> SelectedCustomExtendedKeyUsages { get; set; } = new List<string>();
 
         public string Locale { get; set; }
 

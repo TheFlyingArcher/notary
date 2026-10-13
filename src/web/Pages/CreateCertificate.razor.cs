@@ -5,6 +5,7 @@ using MudBlazor;
 using Notary;
 using C = Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Profiles;
 using Notary.Validity;
 using Notary.Web.ViewModels;
 using System.Text.RegularExpressions;
@@ -21,6 +22,7 @@ public partial class CreateCertificate : ComponentBase
     private string _selectedExKeyUsage = string.Empty;
     private bool success;
     private bool _submitAttempted;
+    private bool _usagesApplied;
     private string[] errors = { };
 
     protected override async Task OnInitializedAsync()
@@ -55,6 +57,7 @@ public partial class CreateCertificate : ComponentBase
                 ViewModel.Reset();
             }
 
+            RefreshUsages();
             RefreshValidity();
             await InvokeAsync(StateHasChanged);
         };
@@ -63,7 +66,8 @@ public partial class CreateCertificate : ComponentBase
         await Task.Run(async () =>
         {
             caList = await CertificateAuthorityService.GetAllAsync();
-            caList = caList.Where(ca => ca.IsIssuer);
+            // A CA that never issues leaf certificates (Root) is not offered here
+            caList = caList.Where(ca => ca.IsIssuer && CaProfileCatalog.Resolve(ca).IssuesLeafCertificates);
         });
 
         _isLoading = false;
@@ -186,6 +190,60 @@ public partial class CreateCertificate : ComponentBase
             return;
 
         ViewModel.SelectedPeriod = (allowed.FirstOrDefault(o => o.IsRecommended) ?? allowed.LastOrDefault())?.Period;
+    }
+
+    // The profile of the selected issuing CA; null for a self-signed certificate
+    private CaProfile? IssuerProfile => ViewModel.SelectedCa == null ? null : CaProfileCatalog.Resolve(ViewModel.SelectedCa);
+
+    // A purpose CA fixes the usages of what it issues, so they are applied instead of chosen
+    private bool UsagesLocked => IssuerProfile?.LocksLeafUsages == true;
+
+    private static string CaLabel(C.CertificateAuthority ca) =>
+        $"{ca.Name} ({(ca.Purpose.HasValue ? CaProfileCatalog.Get(ca.Purpose).DisplayName : "Legacy")})";
+
+    // Apply the issuing CA's usages, or put the editable defaults back when leaving a locked CA
+    private void RefreshUsages()
+    {
+        var profile = IssuerProfile;
+
+        if (profile is { LocksLeafUsages: true })
+        {
+            ViewModel.SelectedExKeyUsages = [.. profile.LeafExtendedKeyUsages];
+            ViewModel.SelectedCertificateKeyUsage = [.. profile.LeafKeyUsages.Select(u => (int)u)];
+            _usagesApplied = true;
+        }
+        else if (_usagesApplied)
+        {
+            ViewModel.ResetUsages();
+            _usagesApplied = false;
+        }
+    }
+
+    private string UsageNote
+    {
+        get
+        {
+            var profile = IssuerProfile;
+            if (profile == null)
+                return string.Empty;
+
+            if (!profile.IssuesLeafCertificates)
+                return $"A {profile.DisplayName} CA never issues certificates directly. Choose another CA.";
+
+            string keyUsages = string.Join(", ", profile.LeafKeyUsages.Select(u =>
+                ViewModel.CertificateKeyUsages.TryGetValue((int)u, out var name) ? name : u.ToString()));
+            string extendedKeyUsages = string.Join(", ", profile.LeafExtendedKeyUsages.Select(oid =>
+                ViewModel.ExtendedKeyUsages.TryGetValue(oid, out var name) ? name : KeyPurposeOids.GetName(oid)));
+
+            return $"Usages are set by the {profile.DisplayName} CA. Key usages: {keyUsages}. Extended key usages: {extendedKeyUsages}.";
+        }
+    }
+
+    private IEnumerable<string> ValidateCommonName(string commonName)
+    {
+        var problem = C.DistinguishedName.CheckCommonName(commonName);
+        if (problem != null)
+            yield return problem;
     }
 
     private IEnumerable<string> ValidateName(string name)

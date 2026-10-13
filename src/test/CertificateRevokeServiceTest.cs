@@ -39,7 +39,7 @@ public class CertificateRevokeServiceTest
         _revocationRepo = new FakeRevocationRepository();
         _crlRepo = new FakeCrlRepository();
 
-        _certificates = new CertificateService(config, _keys, (ICertificateRepository)_certificateRepo, baseUrlProvider.Object, log);
+        _certificates = new CertificateService(config, _keys, (ICertificateRepository)_certificateRepo, new FakeCertificateAuthorityRepository(), baseUrlProvider.Object, log);
         _service = new CertificateRevokeService(_revocationRepo, _crlRepo, _certificates, _keys, log, config);
     }
 
@@ -439,92 +439,6 @@ public class CertificateRevokeServiceTest
         var names = GeneralNames.GetInstance(points[0].DistributionPointName.Name).GetNames();
         return DerIA5String.GetInstance(names[0].Name).GetString();
     }
-
-    #region In-memory fakes
-
-    private class FakeRepository<T> : IRepository<T> where T : Entity
-    {
-        protected readonly Dictionary<string, T> Items = [];
-
-        public Task DeleteAsync(string slug, string updatedBySlug)
-        {
-            if (Items.TryGetValue(slug, out var item))
-                item.Active = false;
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteByIdAsync(string id, string updatedBySlug) => DeleteAsync(id, updatedBySlug);
-
-        public Task<T> GetAsync(string slug) => Task.FromResult(Items.TryGetValue(slug, out var item) ? Clone(item) : null);
-
-        public Task<List<T>> GetAllAsync() => Task.FromResult(Items.Values.Select(Clone).ToList());
-
-        public Task<T> GetByIdAsync(string id) => GetAsync(id);
-
-        public Task InitializeAsync() => Task.CompletedTask;
-
-        public Task SaveAsync(T entity)
-        {
-            if (string.IsNullOrEmpty(entity.Slug))
-                entity.Slug = entity.Slugify();
-
-            Items[entity.Slug] = Clone(entity);
-            return Task.CompletedTask;
-        }
-
-        // Mimic a database: callers get copies, so changes only persist through SaveAsync
-        protected static T Clone(T item) => (T)typeof(object)
-            .GetMethod("MemberwiseClone", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .Invoke(item, null)!;
-    }
-
-    private class FakeCertificateRepository : FakeRepository<Certificate>, ICertificateRepository
-    {
-        public Task<List<Certificate>> GetCertificatesByCaAsync(string caSlug) =>
-            Task.FromResult(Items.Values.Where(c => c.IssuingSlug == caSlug).Select(Clone).ToList());
-    }
-
-    private class FakeCrlRepository : FakeRepository<CrlRecord>, ICrlRecordRepository
-    {
-    }
-
-    private class FakeRevocationRepository : FakeRepository<Revocation>, IRevocationRepository
-    {
-        public Task<List<Revocation>> GetActiveByIssuerAsync(string issuerSlug) =>
-            Task.FromResult(Items.Values.Where(r => r.Active && r.IssuerSlug == issuerSlug).Select(Clone).ToList());
-
-        public Task<Revocation> GetActiveByCertificateAsync(string certificateSlug) =>
-            Task.FromResult(Items.Values.Where(r => r.Active && r.CertificateSlug == certificateSlug).Select(Clone).FirstOrDefault());
-    }
-
-    private class FakeKeyService : IAsymmetricKeyService
-    {
-        private readonly Dictionary<string, (AsymmetricKey Key, AsymmetricCipherKeyPair Pair)> _keys = [];
-
-        public Task SaveAsync(AsymmetricKey entity, string updatedBySlug)
-        {
-            var generator = new ECKeyPairGenerator();
-            generator.Init(new ECKeyGenerationParameters(SecObjectIdentifiers.SecP256r1, new SecureRandom()));
-
-            entity.Slug = Guid.NewGuid().ToString("N");
-            _keys[entity.Slug] = (entity, generator.GenerateKeyPair());
-            return Task.CompletedTask;
-        }
-
-        public Task<AsymmetricKey> GetAsync(string slug) => Task.FromResult(_keys.TryGetValue(slug, out var k) ? k.Key : null);
-
-        public Task<AsymmetricCipherKeyPair> GetKeyPairAsync(string slug) => Task.FromResult(_keys.TryGetValue(slug, out var k) ? k.Pair : null);
-
-        public Task<byte[]> GetPublicKey(string slug) => throw new NotSupportedException();
-
-        public Task DeleteAsync(string slug, string updatedBySlug) => throw new NotSupportedException();
-
-        public Task<List<AsymmetricKey>> GetAllAsync() => throw new NotSupportedException();
-
-        public Task InitializeAsync() => Task.CompletedTask;
-    }
-
-    #endregion
 }
 
 internal static class X509CrlTestExtensions

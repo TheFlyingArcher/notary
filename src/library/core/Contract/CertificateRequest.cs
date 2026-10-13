@@ -63,5 +63,12 @@ namespace Notary.Contract
         /// </summary>
         [JsonProperty("requestedBy", Required = Required.Always)]
         public string RequestedBySlug { get; set; }
+
+        /// <summary>
+        /// Get or set the basicConstraints path length for a CA certificate, e.g. 0 for a CA that may only issue
+        /// end-entity certificates. Null means no constraint. Only valid for CA certificates.
+        /// </summary>
+        [JsonProperty("pathLen", Required = Required.Default, NullValueHandling = NullValueHandling.Ignore)]
+        public int? PathLengthConstraint { get; set; }
     }
 }
