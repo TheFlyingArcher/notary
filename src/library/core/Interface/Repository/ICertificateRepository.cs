@@ -9,10 +9,16 @@ namespace Notary.Interface.Repository
     public interface ICertificateRepository : IRepository<Certificate>
     {
         /// <summary>
-        /// Get all the certificates that are a part of the CA.
+        /// Get all the certificates issued by the CA.
         /// </summary>
-        /// <param name="slug">The slug of the CA</param>
-        /// <returns>List of certificates in the CA</returns>
+        /// <param name="caSlug">The slug of the CA's certificate (the certificate's issuing slug)</param>
+        /// <returns>List of certificates issued by the CA</returns>
         Task<List<Certificate>> GetCertificatesByCaAsync(string caSlug);
+
+        /// <summary>
+        /// Get the self-signed, non-CA certificates (those with no issuing certificate).
+        /// </summary>
+        /// <returns>List of self-signed certificates</returns>
+        Task<List<Certificate>> GetSelfSignedAsync();
     }
 }

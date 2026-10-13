@@ -120,6 +120,55 @@ intents:
           - leaf-profile-enforcement
         run_id: run-specsmd-fire-528fef-010
         completed_at: 2026-10-13T03:19:32.883Z
+  - id: organize-certificates-by-ca
+    title: Organize certificates by issuing CA
+    status: pending
+    work_items:
+      - id: certificates-by-ca-listing
+        title: Scoped certificate listing by CA
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-01019e-001
+        completed_at: 2026-10-13T23:29:35.943Z
+      - id: certificates-ca-dropdown-ui
+        title: CA dropdown on the Certificates page
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - certificates-by-ca-listing
+        run_id: run-specsmd-fire-planner-01019e-002
+        completed_at: 2026-10-13T23:32:59.488Z
+      - id: create-certificate-scoped-to-ca
+        title: Create Certificate scoped to the selected CA
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - certificates-by-ca-listing
+        run_id: run-specsmd-fire-planner-01019e-003
+        completed_at: 2026-10-13T23:38:44.011Z
+      - id: self-signed-certificate-form
+        title: Self-signed certificate form
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-01019e-004
+        completed_at: 2026-10-13T23:44:23.381Z
+      - id: certificates-page-create-buttons
+        title: Create buttons on the Certificates page
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - certificates-ca-dropdown-ui
+          - create-certificate-scoped-to-ca
+          - self-signed-certificate-form
+        run_id: run-specsmd-fire-planner-01019e-005
+        completed_at: 2026-10-13T23:45:23.099Z
 runs:
   active: []
   completed:
@@ -211,3 +260,43 @@ runs:
           mode: confirm
       started: 2026-10-13T03:23:57.985Z
       completed: 2026-10-13T03:28:31.320Z
+    - id: run-specsmd-fire-planner-01019e-001
+      scope: single
+      work_items:
+        - id: certificates-by-ca-listing
+          intent: organize-certificates-by-ca
+          mode: confirm
+      started: 2026-10-13T23:26:38.109Z
+      completed: 2026-10-13T23:29:35.943Z
+    - id: run-specsmd-fire-planner-01019e-002
+      scope: single
+      work_items:
+        - id: certificates-ca-dropdown-ui
+          intent: organize-certificates-by-ca
+          mode: confirm
+      started: 2026-10-13T23:30:27.438Z
+      completed: 2026-10-13T23:32:59.488Z
+    - id: run-specsmd-fire-planner-01019e-003
+      scope: single
+      work_items:
+        - id: create-certificate-scoped-to-ca
+          intent: organize-certificates-by-ca
+          mode: confirm
+      started: 2026-10-13T23:37:17.775Z
+      completed: 2026-10-13T23:38:44.011Z
+    - id: run-specsmd-fire-planner-01019e-004
+      scope: single
+      work_items:
+        - id: self-signed-certificate-form
+          intent: organize-certificates-by-ca
+          mode: confirm
+      started: 2026-10-13T23:42:14.251Z
+      completed: 2026-10-13T23:44:23.381Z
+    - id: run-specsmd-fire-planner-01019e-005
+      scope: single
+      work_items:
+        - id: certificates-page-create-buttons
+          intent: organize-certificates-by-ca
+          mode: autopilot
+      started: 2026-10-13T23:44:55.002Z
+      completed: 2026-10-13T23:45:23.099Z

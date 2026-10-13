@@ -144,6 +144,26 @@ namespace Notary.Service
             return caListBrief;
         }
 
+        public async Task<List<CertificateAuthority>> GetLeafIssuingAuthoritiesAsync()
+        {
+            var issuers = new List<CertificateAuthority>();
+
+            foreach (var ca in await Repository.GetAllAsync())
+            {
+                if (!ca.IsIssuer || !CaProfileCatalog.Resolve(ca).IssuesLeafCertificates)
+                    continue;
+
+                // A CA whose certificate is revoked (or missing) can no longer issue
+                var certificate = await CertificateService.GetAsync(ca.CertificateSlug);
+                if (certificate == null || certificate.RevocationDate.HasValue)
+                    continue;
+
+                issuers.Add(ca);
+            }
+
+            return [.. issuers.OrderBy(ca => ca.Name, StringComparer.OrdinalIgnoreCase)];
+        }
+
         protected ICertificateService CertificateService { get; }
 
         protected NotaryConfiguration Configuration { get; }

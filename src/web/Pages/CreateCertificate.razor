@@ -1,6 +1,7 @@
 ﻿@page "/certificates/create"
 @attribute [Authorize(Roles = "NotaryAdmin,NotaryWriter")]
 @using Notary.Validity
+@using Notary.Web.Shared
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
     <MudText Typo="Typo.h4">Create Certificate</MudText>
@@ -24,22 +25,18 @@
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium" />
     }
+    @if (ViewModel.SelectedCa != null)
+    {
     <MudForm Model="@ViewModel" @ref="@form" @bind-IsValid="@success" @bind-Errors="@errors">
-        <MudSelect @bind-Value="@ViewModel.CertificateAuthoritySlug" Label="Select CA"
-            HelperText="Select a Certificate Authority" Placeholder="Please Select">
-            <MudSelectItem Value="@("self")">Self Signed Certificate</MudSelectItem>
-            @foreach (var ca in caList)
-            {
-                <MudSelectItem Value="@ca.Slug">@CaLabel(ca)</MudSelectItem>
-            }
-        </MudSelect>
+        <MudTextField Value="@(ViewModel.SelectedCa == null ? string.Empty : CaLabel(ViewModel.SelectedCa))"
+            Label="Issuing CA" ReadOnly="true" HelperText="Certificates are issued by the CA chosen on the Certificates page" />
 
         <MudTextField @bind-Value="@ViewModel.Name" Label="Name"
-            Validation="@(new Func<string, IEnumerable<string>>(ValidateName))" Required="true"
+            Validation="@(new Func<string, IEnumerable<string>>(CertificateFormRules.ValidateName))" Required="true"
             RequiredError="Please enter a name"></MudTextField>
         <MudTextField @bind-Value="@ViewModel.Subject.CommonName" Label="Common Name" Required="true"
             RequiredError="Certificates require a common name" HelperText="Up to 64 characters"
-            Validation="@(new Func<string, IEnumerable<string>>(ValidateCommonName))"></MudTextField>
+            Validation="@(new Func<string, IEnumerable<string>>(CertificateFormRules.ValidateCommonName))"></MudTextField>
         <MudSelect T="ValidityPeriod" @bind-Value="@ViewModel.SelectedPeriod" Label="Expiration" Required="true"
             RequiredError="Select a validity period" ToStringFunc="@(p => p?.Format())"
             HelperText="@ValidityHelperText" Disabled="@(!AnyValidityAllowed)">
@@ -51,11 +48,7 @@
             }
         </MudSelect>
         <MudDivider Class="my-3" />
-        @if (IssuerProfile is { IssuesLeafCertificates: false })
-        {
-            <MudAlert Severity="Severity.Warning" Class="my-2">@UsageNote</MudAlert>
-        }
-        else if (UsagesLocked)
+        @if (UsagesLocked)
         {
             <MudAlert Severity="Severity.Info" Class="my-2">@UsageNote</MudAlert>
         }
@@ -143,4 +136,5 @@
             </MudButton>
         </div>
     </MudForm>
+    }
 </MudContainer>

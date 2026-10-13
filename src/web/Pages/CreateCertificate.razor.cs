@@ -8,14 +8,12 @@ using Notary.Interface.Service;
 using Notary.Profiles;
 using Notary.Validity;
 using Notary.Web.ViewModels;
-using System.Text.RegularExpressions;
 using Notary.Web.Shared;
 
 namespace Notary.Web.Pages;
 
 public partial class CreateCertificate : ComponentBase
 {
-    private IEnumerable<C.CertificateAuthority> caList = new List<C.CertificateAuthority>();
     private MudForm form;
     private bool _isLoading = true;
     private int _selectedCertKeyUsage = 0;
@@ -27,74 +25,43 @@ public partial class CreateCertificate : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        ViewModel.OnCertificateAuthoritySlugChanged += async (c) =>
-        {
-            if (c != null && c != "self")
-            {
-                _isLoading = true;
-                await Task.Run(async () =>
-                {
-                    ViewModel.SelectedCa = await CertificateAuthorityService.GetAsync(c);
-                });
-                _isLoading = false;
-
-                ViewModel.Subject.Country = ViewModel.SelectedCa.DistinguishedName.Country;
-                ViewModel.Subject.Locale = ViewModel.SelectedCa.DistinguishedName.Locale;
-                ViewModel.Subject.Organization = ViewModel.SelectedCa.DistinguishedName.Organization;
-                ViewModel.Subject.OrganizationalUnit = ViewModel.SelectedCa.DistinguishedName.OrganizationalUnit;
-                ViewModel.Subject.StateProvince = ViewModel.SelectedCa.DistinguishedName.StateProvince;
-
-                ViewModel.KeyAlgorithm = ViewModel.SelectedCa.KeyAlgorithm;
-                if (ViewModel.SelectedCa.KeyAlgorithm == Algorithm.RSA && ViewModel.SelectedCa.KeyLength.HasValue)
-                    ViewModel.KeySize = ViewModel.SelectedCa.KeyLength.Value;
-                else if (ViewModel.SelectedCa.KeyAlgorithm == Algorithm.EllipticCurve && ViewModel.SelectedCa.KeyCurve.HasValue)
-                    ViewModel.Curve = ViewModel.SelectedCa.KeyCurve.Value;
-                else
-                    throw new InvalidCastException("Invalid values for either key size or key curve");
-            }
-            else
-            {
-                ViewModel.Reset();
-            }
-
-            RefreshUsages();
-            RefreshValidity();
-            await InvokeAsync(StateHasChanged);
-        };
-
         _isLoading = true;
-        await Task.Run(async () =>
+
+        // Only a CA that can currently issue leaf certificates is eligible (not revoked, not a Root)
+        var eligible = await CertificateAuthorityService.GetLeafIssuingAuthoritiesAsync();
+        var ca = string.IsNullOrEmpty(CaSlug) ? null : eligible.FirstOrDefault(c => c.Slug == CaSlug);
+
+        if (ca == null)
         {
-            caList = await CertificateAuthorityService.GetAllAsync();
-            // A CA that never issues leaf certificates (Root) is not offered here
-            caList = caList.Where(ca => ca.IsIssuer && CaProfileCatalog.Resolve(ca).IssuesLeafCertificates);
-        });
+            Snackbar.Add("Select a certificate authority that can issue certificates first.", Severity.Warning);
+            NavigationManager.NavigateTo("certificates");
+            return;
+        }
 
+        ApplyCa(ca);
         _isLoading = false;
-
-        RefreshValidity();
     }
 
-    private async Task OnCaListChange(string slug)
+    private void ApplyCa(C.CertificateAuthority ca)
     {
-        if (slug == null)
-            return;
+        ViewModel.SelectedCa = ca;
 
-        _isLoading = true;
-        ViewModel.CertificateAuthoritySlug = slug;
+        ViewModel.Subject.Country = ca.DistinguishedName.Country;
+        ViewModel.Subject.Locale = ca.DistinguishedName.Locale;
+        ViewModel.Subject.Organization = ca.DistinguishedName.Organization;
+        ViewModel.Subject.OrganizationalUnit = ca.DistinguishedName.OrganizationalUnit;
+        ViewModel.Subject.StateProvince = ca.DistinguishedName.StateProvince;
 
-        if (slug == "self")
-        {
-            ViewModel.SelectedCa = null;
-        }
+        ViewModel.KeyAlgorithm = ca.KeyAlgorithm;
+        if (ca.KeyAlgorithm == Algorithm.RSA && ca.KeyLength.HasValue)
+            ViewModel.KeySize = ca.KeyLength.Value;
+        else if (ca.KeyAlgorithm == Algorithm.EllipticCurve && ca.KeyCurve.HasValue)
+            ViewModel.Curve = ca.KeyCurve.Value;
         else
-        {
-            await Task.Run(async () =>
-            {
-                ViewModel.SelectedCa = await CertificateAuthorityService.GetAsync(slug);
-            });
-        }
-        _isLoading = false;
+            throw new InvalidCastException("Invalid values for either key size or key curve");
+
+        RefreshUsages();
+        RefreshValidity();
     }
 
     private async Task OnSanDialogOpenClick()
@@ -192,7 +159,7 @@ public partial class CreateCertificate : ComponentBase
         ViewModel.SelectedPeriod = (allowed.FirstOrDefault(o => o.IsRecommended) ?? allowed.LastOrDefault())?.Period;
     }
 
-    // The profile of the selected issuing CA; null for a self-signed certificate
+    // The profile of the issuing CA
     private CaProfile? IssuerProfile => ViewModel.SelectedCa == null ? null : CaProfileCatalog.Resolve(ViewModel.SelectedCa);
 
     // A purpose CA fixes the usages of what it issues, so they are applied instead of chosen
@@ -239,26 +206,8 @@ public partial class CreateCertificate : ComponentBase
         }
     }
 
-    private IEnumerable<string> ValidateCommonName(string commonName)
-    {
-        var problem = C.DistinguishedName.CheckCommonName(commonName);
-        if (problem != null)
-            yield return problem;
-    }
-
-    private IEnumerable<string> ValidateName(string name)
-    {
-        if (string.IsNullOrEmpty(name) || string.IsNullOrWhiteSpace(name))
-        {
-            yield return "Please enter a certificate name";
-        }
-
-        var regex = new Regex("[a-zA-Z0-9\\-]");
-        if (!regex.IsMatch(name))
-        {
-            yield return "Name can only contain alphanumerics and dashes";
-        }
-    }
+    [SupplyParameterFromQuery(Name = "ca")]
+    public string CaSlug { get; set; }
 
     [Inject]
     public ICertificateService CertificateService { get; set; }

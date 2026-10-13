@@ -16,6 +16,13 @@ namespace Notary.Interface.Service
         Task<List<CaBrief>> GetCaListBrief();
 
         /// <summary>
+        /// Get the certificate authorities that can issue leaf certificates: issuers whose purpose profile
+        /// allows leaf certificates and whose CA certificate is not revoked.
+        /// </summary>
+        /// <returns>The matching certificate authorities, ordered by name</returns>
+        Task<List<CertificateAuthority>> GetLeafIssuingAuthoritiesAsync();
+
+        /// <summary>
         /// Create a certificate authority and its certificate
         /// </summary>
         /// <param name="entity">The certificate authority to create</param>

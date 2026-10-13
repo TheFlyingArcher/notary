@@ -1,0 +1,125 @@
+@page "/certificates/create-self-signed"
+@attribute [Authorize(Roles = "NotaryAdmin,NotaryWriter")]
+@using Notary.Validity
+@using Notary.Web.Shared
+
+<PageTitle>Create Self-Signed Certificate</PageTitle>
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudText Typo="Typo.h4">Create Self-Signed Certificate</MudText>
+    <MudDivider Class="mb-3" />
+    @if (errors.Length > 0)
+    {
+        <MudItem xs="12" sm="5">
+            <MudPaper Class="pa-4 mud-height-full">
+                <MudText Typo="Typo.subtitle2">@($"Errors ({errors.Length})")</MudText>
+                @foreach (var error in errors)
+                {
+                    <MudText Color="@Color.Error">
+                        @error
+                    </MudText>
+                }
+            </MudPaper>
+        </MudItem>
+        <MudDivider Class="mb-3" />
+    }
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium" />
+    }
+    <MudAlert Severity="Severity.Info" Class="mb-3">A self-signed certificate is signed by its own key and has no issuing CA.
+        To issue from a CA, use Create Certificate on the Certificates page.</MudAlert>
+    <MudForm Model="@ViewModel" @ref="@form" @bind-IsValid="@success" @bind-Errors="@errors">
+        <MudTextField @bind-Value="@ViewModel.Name" Label="Name"
+            Validation="@(new Func<string, IEnumerable<string>>(CertificateFormRules.ValidateName))" Required="true"
+            RequiredError="Please enter a name"></MudTextField>
+        <MudTextField @bind-Value="@ViewModel.Subject.CommonName" Label="Common Name" Required="true"
+            RequiredError="Certificates require a common name" HelperText="Up to 64 characters"
+            Validation="@(new Func<string, IEnumerable<string>>(CertificateFormRules.ValidateCommonName))"></MudTextField>
+        <MudSelect T="ValidityPeriod" @bind-Value="@ViewModel.SelectedPeriod" Label="Expiration" Required="true"
+            RequiredError="Select a validity period" ToStringFunc="@(p => p?.Format())"
+            HelperText="Choose how long the certificate is valid.">
+            @foreach (var option in ValidityOptions)
+            {
+                <MudSelectItem T="ValidityPeriod" Value="@option.Period" Disabled="@(!option.IsAllowed)">
+                    @option.Label@(option.IsRecommended ? " (recommended)" : string.Empty)@(option.IsAllowed ? string.Empty : $" - {option.DisabledReason}")
+                </MudSelectItem>
+            }
+        </MudSelect>
+        <MudDivider Class="my-3" />
+        <MudSelect T="string" Label="Extended Key Usages" MultiSelection="true"
+            @bind-SelectedValues="ViewModel.SelectedExKeyUsages" @bind-Value="_selectedExKeyUsage">
+            @foreach (var usage in ViewModel.ExtendedKeyUsages)
+            {
+                <MudSelectItem T="string" Value="usage.Key">@usage.Value</MudSelectItem>
+            }
+        </MudSelect>
+        <MudDivider Class="my-3" />
+        <MudSelect T="int" Label="Certificate Key Usages" MultiSelection="true" Required="true"
+            Error="@KeyUsageMissing" ErrorText="Select at least one key usage, e.g. Digital Signature"
+            @bind-SelectedValues="ViewModel.SelectedCertificateKeyUsage" @bind-Value="_selectedCertKeyUsage">
+            @foreach (var usage in ViewModel.CertificateKeyUsages)
+            {
+                <MudSelectItem T="int" Value="usage.Key">@usage.Value</MudSelectItem>
+            }
+        </MudSelect>
+        <MudDivider Class="my-3" />
+        <MudLink OnClick="@(() => ViewModel.AdditionalSubjectExpanded = !ViewModel.AdditionalSubjectExpanded)">
+            Additional Subject Properties</MudLink>
+        <MudCollapse Expanded="ViewModel.AdditionalSubjectExpanded">
+            <MudTextField @bind-Value="@ViewModel.Subject.Country" Label="Country"></MudTextField>
+            <MudTextField @bind-Value="@ViewModel.Subject.Locale" Label="Locale"></MudTextField>
+            <MudTextField @bind-Value="@ViewModel.Subject.Organization" Label="Organization"></MudTextField>
+            <MudTextField @bind-Value="@ViewModel.Subject.OrganizationalUnit" Label="Org Unit"></MudTextField>
+            <MudTextField @bind-Value="@ViewModel.Subject.StateProvince" Label="State"></MudTextField>
+        </MudCollapse>
+        <MudDivider Class="my-3" />
+        <MudLink OnClick="OnSanDialogOpenClick">Subject Alternative Names</MudLink>
+        <MudGrid Spacing="1" Class="my-2">
+            @foreach (var san in ViewModel.SubjectAlternativeNames)
+            {
+                <MudItem xs="4">
+                    @san.Name
+                </MudItem>
+                <MudItem xs="4">
+                    @san.Kind
+                </MudItem>
+                <MudItem xs="4">
+                    <MudLink Color="Color.Error" OnClick="@(()=>OnSanDialogDeleteClick(san))" Typo="Typo.inherit">
+                        <i class="fa-sharp fa-solid fa-trash"></i>
+                    </MudLink>
+                </MudItem>
+            }
+        </MudGrid>
+        <MudDivider Class="my-3" />
+        <MudLink OnClick="@(()=>ViewModel.KeyAlgorithmExpanded=!ViewModel.KeyAlgorithmExpanded)">Private Key Algorithm
+        </MudLink>
+        <MudCollapse Expanded="ViewModel.KeyAlgorithmExpanded">
+            <MudRadioGroup @bind-Value="@ViewModel.KeyAlgorithm">
+                <MudRadio Value="@Algorithm.RSA">RSA</MudRadio>
+                <MudRadio Value="@Algorithm.EllipticCurve">Elliptic Curve</MudRadio>
+            </MudRadioGroup>
+            <MudDivider />
+            @if (ViewModel.KeyAlgorithm == Algorithm.RSA)
+            {
+                <MudRadioGroup @bind-Value="@ViewModel.KeySize" T="int">
+                    <MudRadio Value="@(2048)">2048 bit</MudRadio>
+                    <MudRadio Value="@(3072)">3072 bit</MudRadio>
+                    <MudRadio Value="@(4096)">4096 bit</MudRadio>
+                </MudRadioGroup>
+            }
+            else if (ViewModel.KeyAlgorithm == Algorithm.EllipticCurve)
+            {
+                <MudRadioGroup @bind-Value="@ViewModel.Curve" T="EllipticCurve">
+                    <MudRadio Value="@(EllipticCurve.P256)">P256</MudRadio>
+                    <MudRadio Value="@(EllipticCurve.P384)">P384</MudRadio>
+                    <MudRadio Value="@(EllipticCurve.P521)">P521</MudRadio>
+                    <MudRadio Value="@(EllipticCurve.P256K)">P256K</MudRadio>
+                </MudRadioGroup>
+            }
+        </MudCollapse>
+        <div class="d-flex align-center justify-space-between">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="OnSubmitAsync">Submit
+            </MudButton>
+        </div>
+    </MudForm>
+</MudContainer>
