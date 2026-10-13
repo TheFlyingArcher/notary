@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
 using Notary.Contract;
+using Notary.Validity;
 
 namespace Notary.Web.ViewModels
 {
@@ -98,10 +99,10 @@ namespace Notary.Web.ViewModels
         public EllipticCurve Curve { get; set; }
 
         /// <summary>
-        /// Get or set the expiration length in hours.
+        /// Get or set the selected validity period.
         /// </summary>
         [Required]
-        public int ExpiryLength { get; set; }
+        public ValidityPeriod? SelectedPeriod { get; set; }
 
         public Dictionary<string, string> ExtendedKeyUsages { get; }
 

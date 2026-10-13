@@ -25,6 +25,7 @@ using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
 using Notary.Logging;
+using Notary.Validity;
 
 namespace Notary.Service
 {
@@ -42,7 +43,7 @@ namespace Notary.Service
             CrlBaseUrlProvider = crlBaseUrlProvider;
         }
 
-        public async Task<Certificate> IssueCertificateAsync(CertificateRequest request)
+        public async Task<Result<Certificate>> IssueCertificateAsync(CertificateRequest request)
         {
             try
             {
@@ -59,6 +60,10 @@ namespace Notary.Service
                     parentCert = await GetAsync(request.ParentCertificateSlug);
                     if (parentCert == null)
                         throw new InvalidOperationException("Given certificate was not found");
+
+                    var validity = ValidityPolicy.CheckWithinIssuer(request.NotBefore, request.NotAfter, parentCert.NotBefore, parentCert.NotAfter);
+                    if (!validity.IsSuccess)
+                        return Result<Certificate>.Fail(validity.Status, validity.Error);
 
                     var cert = GetX509FromPem(parentCert.Data);
                     issuerKeyPair = await KeyService.GetKeyPairAsync(parentCert.KeySlug);
@@ -140,7 +145,7 @@ namespace Notary.Service
 
                 await SaveAsync(certificate, request.RequestedBySlug);
 
-                return certificate;
+                return Result<Certificate>.Ok(certificate);
             }
             catch (Exception ex)
             {

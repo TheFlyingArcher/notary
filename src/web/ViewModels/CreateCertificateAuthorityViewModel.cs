@@ -1,4 +1,5 @@
 ﻿using Notary.Contract;
+using Notary.Validity;
 
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.Serialization;
@@ -41,7 +42,7 @@ namespace Notary.Web.ViewModels
         public Algorithm KeyType { get; set; }
 
         [Required]
-        public int LengthInMonths { get; set; }
+        public ValidityPeriod? SelectedPeriod { get; set; }
 
         public string Locale { get; set; }
 

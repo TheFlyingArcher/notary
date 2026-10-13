@@ -304,11 +304,89 @@ public class CertificateRevokeServiceTest
         Assert.That((await _service.GetCrlAsync(noCrlSign.Slug)).Status, Is.EqualTo(ResultStatus.Invalid));
     }
 
+    [Test]
+    public async Task IssueCertificate_OutlivesItsIssuer_ReturnsInvalidAndSavesNothing()
+    {
+        var root = await IssueAsync("root", isCa: true);
+        int before = (await _certificateRepo.GetAllAsync()).Count;
+
+        var result = await TryIssueAsync("leaf", parent: root, notAfter: root.NotAfter.AddDays(1));
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+        Assert.That(result.Error, Does.Contain("issuing CA's expiry"));
+        Assert.That((await _certificateRepo.GetAllAsync()).Count, Is.EqualTo(before));
+    }
+
+    [Test]
+    public async Task IssueCertificate_ExpiringExactlyWithItsIssuer_Succeeds()
+    {
+        var root = await IssueAsync("root", isCa: true);
+
+        var result = await TryIssueAsync("leaf", parent: root, notAfter: root.NotAfter);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+    }
+
+    [Test]
+    public async Task IssueCertificate_ChildCaOutlivesParent_ReturnsInvalid()
+    {
+        var root = await IssueAsync("root", isCa: true);
+
+        var result = await TryIssueAsync("intermediate", isCa: true, parent: root, notAfter: root.NotAfter.AddMonths(1));
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+    }
+
+    [Test]
+    public async Task IssueCertificate_StartsBeforeItsIssuer_ReturnsInvalid()
+    {
+        var root = await IssueAsync("root", isCa: true);
+
+        var result = await _certificates.IssueCertificateAsync(new CertificateRequest
+        {
+            CertificateKeyUsageFlags = [(int)CertificateKeyUsage.DigitalSignature],
+            Curve = EllipticCurve.P256,
+            ExtendedKeyUsages = [],
+            IsCaCertificate = false,
+            KeyAlgorithm = Algorithm.EllipticCurve,
+            Name = "early",
+            NotAfter = root.NotAfter,
+            NotBefore = root.NotBefore.AddDays(-1),
+            ParentCertificateSlug = root.Slug,
+            RequestedBySlug = "tester",
+            Subject = new DistinguishedName { CommonName = "early" },
+            SubjectAlternativeNames = []
+        });
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+        Assert.That(result.Error, Does.Contain("begin before"));
+    }
+
+    [Test]
+    public async Task IssueCertificate_SelfSignedRoot_HasNoIssuerCap()
+    {
+        var result = await TryIssueAsync("root", isCa: true, notAfter: DateTime.UtcNow.AddYears(20));
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+    }
+
     private async Task<Certificate> IssueAsync(
         string name,
         bool isCa = false,
         Certificate parent = null,
         int? keyUsage = null)
+    {
+        var result = await TryIssueAsync(name, isCa, parent, keyUsage);
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+        return result.Value;
+    }
+
+    private async Task<Result<Certificate>> TryIssueAsync(
+        string name,
+        bool isCa = false,
+        Certificate parent = null,
+        int? keyUsage = null,
+        DateTime? notAfter = null)
     {
         var usage = keyUsage ?? (isCa
             ? (int)(CertificateKeyUsage.KeyCertSign | CertificateKeyUsage.CrlSign)
@@ -322,7 +400,7 @@ public class CertificateRevokeServiceTest
             IsCaCertificate = isCa,
             KeyAlgorithm = Algorithm.EllipticCurve,
             Name = name,
-            NotAfter = DateTime.UtcNow.AddYears(1),
+            NotAfter = notAfter ?? parent?.NotAfter ?? DateTime.UtcNow.AddYears(1),
             NotBefore = DateTime.UtcNow.AddMinutes(-5),
             ParentCertificateSlug = parent?.Slug,
             RequestedBySlug = "tester",

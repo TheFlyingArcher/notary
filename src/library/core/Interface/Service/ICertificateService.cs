@@ -14,9 +14,9 @@ namespace Notary.Interface.Service
         /// <summary>
         /// Creates new certificate
         /// </summary>
-        /// <param name="certificate"></param>
-        /// <returns></returns>
-        Task<Certificate> IssueCertificateAsync(CertificateRequest request);
+        /// <param name="request">The certificate request</param>
+        /// <returns>The issued certificate, or an Invalid result if its validity falls outside the issuing CA's</returns>
+        Task<Result<Certificate>> IssueCertificateAsync(CertificateRequest request);
 
         /// <summary>
         /// Request a certificate from the CA in various formats

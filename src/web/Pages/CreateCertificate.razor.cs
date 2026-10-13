@@ -5,6 +5,7 @@ using MudBlazor;
 using Notary;
 using C = Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Validity;
 using Notary.Web.ViewModels;
 using System.Text.RegularExpressions;
 using Notary.Web.Shared;
@@ -53,6 +54,9 @@ public partial class CreateCertificate : ComponentBase
             {
                 ViewModel.Reset();
             }
+
+            RefreshValidity();
+            await InvokeAsync(StateHasChanged);
         };
 
         _isLoading = true;
@@ -63,6 +67,8 @@ public partial class CreateCertificate : ComponentBase
         });
 
         _isLoading = false;
+
+        RefreshValidity();
     }
 
     private async Task OnCaListChange(string slug)
@@ -127,8 +133,7 @@ public partial class CreateCertificate : ComponentBase
             return;
 
         DateTime notBefore = DateTime.UtcNow;
-        DateTime notAfter = DateTime.UtcNow.AddMonths(ViewModel.ExpiryLength);
-        TimeSpan ts = notAfter - notBefore;
+        DateTime notAfter = ViewModel.SelectedPeriod.AddTo(notBefore);
         var request = new C.CertificateRequest
         {
             CertificateKeyUsageFlags = ViewModel.SelectedCertificateKeyUsage,
@@ -150,34 +155,37 @@ public partial class CreateCertificate : ComponentBase
         request.ParentCertificateSlug = ViewModel.SelectedCa != null ? ViewModel.SelectedCa.CertificateSlug : null;
 
         _isLoading = true;
-        await Task.Run(async () => await CertificateService.IssueCertificateAsync(request));
+        var result = await Task.Run(async () => await CertificateService.IssueCertificateAsync(request));
         _isLoading = false;
+
+        if (!result.IsSuccess)
+        {
+            Snackbar.Add(result.Error, Severity.Error);
+            return;
+        }
+
         NavigationManager.NavigateTo("certificates");
     }
 
-    private IEnumerable<string> ValidateExpiration(int months)
+    // A self-signed certificate has no issuer to cap it; an issuing CA caps the certificate at the CA's expiry
+    private IReadOnlyList<ValidityOption> ValidityOptions =>
+        ValidityPolicy.Evaluate(CertificateRole.Leaf, DateTime.UtcNow, ViewModel.SelectedCa?.NotAfter);
+
+    private bool AnyValidityAllowed => ValidityOptions.Any(o => o.IsAllowed);
+
+    private string ValidityHelperText => AnyValidityAllowed
+        ? "Choose how long the certificate is valid. It cannot outlive its issuing CA."
+        : "No validity period fits within the issuing CA's remaining lifetime.";
+
+    // Keep the current choice if it is still allowed, otherwise fall back to the recommended or longest allowed period
+    private void RefreshValidity()
     {
-        if (months == 0)
-        {
-            yield return "Please enter a value";
-        }
+        var allowed = ValidityOptions.Where(o => o.IsAllowed).ToList();
 
-        if (months > 0 && months < 12)
-        {
-            yield return "Please enter greater than 12 months";
-        }
+        if (ViewModel.SelectedPeriod != null && allowed.Any(o => o.Period == ViewModel.SelectedPeriod))
+            return;
 
-        if (ViewModel.SelectedCa != null)
-        {
-            DateTime notBefore = ViewModel.SelectedCa.NotBefore;
-            DateTime notAfterCa = ViewModel.SelectedCa.NotAfter;
-            DateTime notAfterCert = DateTime.UtcNow.AddMonths(months);
-
-            if (notAfterCa < notAfterCert)
-            {
-                yield return "Certificate validity cannot be longer than the CA validity.";
-            }
-        }
+        ViewModel.SelectedPeriod = (allowed.FirstOrDefault(o => o.IsRecommended) ?? allowed.LastOrDefault())?.Period;
     }
 
     private IEnumerable<string> ValidateName(string name)
@@ -202,6 +210,9 @@ public partial class CreateCertificate : ComponentBase
 
     [Inject]
     public IDialogService DialogService { get; set; }
+
+    [Inject]
+    public ISnackbar Snackbar { get; set; }
 
     [Inject]
     public NavigationManager NavigationManager { get; set; }

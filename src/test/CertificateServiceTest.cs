@@ -34,7 +34,7 @@ public class CertificateServiceTest
 
         _caService.Setup(s => s.GetAsync(It.IsAny<string>())).ReturnsAsync(MockCa());
 
-        _service.Setup(s => s.IssueCertificateAsync(_request)).ReturnsAsync(_certificate);
+        _service.Setup(s => s.IssueCertificateAsync(_request)).ReturnsAsync(Result<Certificate>.Ok(_certificate));
     }
 
     [Test]
@@ -42,9 +42,10 @@ public class CertificateServiceTest
     {
         var mock = _service.Object;
 
-        var certificate = await mock.IssueCertificateAsync(_request);
+        var result = await mock.IssueCertificateAsync(_request);
 
-        Assert.That(certificate, Is.Not.EqualTo(null));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Value, Is.Not.EqualTo(null));
     }
 
     private static Certificate CreateCertificateMock()

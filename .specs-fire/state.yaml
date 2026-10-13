@@ -1,19 +1,86 @@
 project:
-  name: "notary"
+  name: notary
   description: "PKI application for a Raspberry Pi server farm: API plus Blazor web UI"
-  created: "2026-10-12T00:00:00Z"
-  fire_version: "0.1.8"
-
+  created: 2026-10-12T00:00:00Z
+  fire_version: 0.1.8
 workspace:
   type: brownfield
   structure: monolith
   autonomy_bias: balanced
   run_scope_preference: single
   run_scope_history: []
-  scanned_at: "2026-10-12T00:00:00Z"
-
-intents: []
-
+  scanned_at: 2026-10-12T00:00:00Z
+intents:
+  - id: validity-period-dropdown
+    title: Certificate/CA validity period dropdown
+    status: in_progress
+    work_items:
+      - id: validity-period-policy
+        title: Shared validity period policy
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-528fef-001
+        completed_at: 2026-10-13T00:06:38.978Z
+      - id: validity-server-enforcement
+        title: Server-side issuer validity enforcement
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-528fef-002
+        completed_at: 2026-10-13T01:12:52.559Z
+      - id: ca-validity-dropdown
+        title: CA validity dropdown
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - validity-period-policy
+        run_id: run-specsmd-fire-528fef-003
+        completed_at: 2026-10-13T01:17:56.095Z
+      - id: leaf-validity-dropdown
+        title: Leaf certificate validity dropdown
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - validity-period-policy
+        run_id: run-specsmd-fire-528fef-004
+        completed_at: 2026-10-13T01:21:48.591Z
 runs:
   active: []
-  completed: []
+  completed:
+    - id: run-specsmd-fire-528fef-001
+      scope: single
+      work_items:
+        - id: validity-period-policy
+          intent: validity-period-dropdown
+          mode: confirm
+      started: 2026-10-13T00:03:39.503Z
+      completed: 2026-10-13T00:06:38.978Z
+    - id: run-specsmd-fire-528fef-002
+      scope: single
+      work_items:
+        - id: validity-server-enforcement
+          intent: validity-period-dropdown
+          mode: confirm
+      started: 2026-10-13T00:10:14.935Z
+      completed: 2026-10-13T01:12:52.559Z
+    - id: run-specsmd-fire-528fef-003
+      scope: single
+      work_items:
+        - id: ca-validity-dropdown
+          intent: validity-period-dropdown
+          mode: confirm
+      started: 2026-10-13T01:15:41.546Z
+      completed: 2026-10-13T01:17:56.095Z
+    - id: run-specsmd-fire-528fef-004
+      scope: single
+      work_items:
+        - id: leaf-validity-dropdown
+          intent: validity-period-dropdown
+          mode: confirm
+      started: 2026-10-13T01:20:10.340Z
+      completed: 2026-10-13T01:21:48.591Z
