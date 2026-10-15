@@ -122,7 +122,8 @@ intents:
         completed_at: 2026-10-13T03:19:32.883Z
   - id: organize-certificates-by-ca
     title: Organize certificates by issuing CA
-    status: pending
+    status: completed
+    completed_at: 2026-10-13T23:45:23.110Z
     work_items:
       - id: certificates-by-ca-listing
         title: Scoped certificate listing by CA
@@ -169,6 +170,46 @@ intents:
           - self-signed-certificate-form
         run_id: run-specsmd-fire-planner-01019e-005
         completed_at: 2026-10-13T23:45:23.099Z
+  - id: hierarchical-ca-ordering
+    title: Hierarchical ordering of CAs
+    status: in_progress
+    work_items:
+      - id: ca-hierarchy-ordering
+        title: CA hierarchy ordering
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specs-md-fire-planner-fad6e4-001
+        completed_at: 2026-10-14T23:32:46.906Z
+      - id: create-root-ca-form
+        title: Create Root CA form
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specs-md-fire-planner-fad6e4-001
+        completed_at: 2026-10-14T23:32:46.906Z
+      - id: create-intermediate-ca-under-parent
+        title: Create intermediate CA under a parent
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - create-root-ca-form
+        run_id: run-specs-md-fire-planner-fad6e4-001
+        completed_at: 2026-10-14T23:32:46.906Z
+      - id: hierarchical-ca-table
+        title: Hierarchical CA table
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - ca-hierarchy-ordering
+          - create-root-ca-form
+          - create-intermediate-ca-under-parent
+        run_id: run-specs-md-fire-planner-fad6e4-001
+        completed_at: 2026-10-14T23:32:46.906Z
 runs:
   active: []
   completed:
@@ -300,3 +341,20 @@ runs:
           mode: autopilot
       started: 2026-10-13T23:44:55.002Z
       completed: 2026-10-13T23:45:23.099Z
+    - id: run-specs-md-fire-planner-fad6e4-001
+      scope: wide
+      work_items:
+        - id: ca-hierarchy-ordering
+          intent: hierarchical-ca-ordering
+          mode: confirm
+        - id: create-root-ca-form
+          intent: hierarchical-ca-ordering
+          mode: confirm
+        - id: create-intermediate-ca-under-parent
+          intent: hierarchical-ca-ordering
+          mode: confirm
+        - id: hierarchical-ca-table
+          intent: hierarchical-ca-ordering
+          mode: confirm
+      started: 2026-10-14T23:25:44.316Z
+      completed: 2026-10-14T23:32:46.906Z

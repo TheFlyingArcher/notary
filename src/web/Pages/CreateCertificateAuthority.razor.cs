@@ -76,6 +76,30 @@ namespace Notary.Web.Pages
             });
             IsLoading = false;
 
+            if (IsIntermediateMode)
+            {
+                _parentCa = ViewModel.CertificateAuthorities.FirstOrDefault(ca => ca.Slug == Parent);
+                if (_parentCa == null)
+                {
+                    _parentError = "The parent certificate authority was not found.";
+                }
+                else if (!CaProfileCatalog.CheckCanIssueCas(_parentCa).IsSuccess)
+                {
+                    _parentError = $"{_parentCa.Name} issues end-entity certificates only, so it cannot be the parent of another CA.";
+                }
+                else
+                {
+                    ViewModel.ParentCaSlug = _parentCa.Slug;
+                }
+            }
+            else if (IsRootMode)
+            {
+                // A Root CA is self-signed and always has the Root purpose, so neither is offered as a choice
+                ViewModel.ParentCaSlug = "nop";
+                ViewModel.SelectedPurpose = CaPurpose.Root;
+                OnPurposeChanged();
+            }
+
             RefreshValidity();
         }
 
@@ -185,7 +209,9 @@ namespace Notary.Web.Pages
             ViewModel.SelectedCustomExtendedKeyUsages = [.. ViewModel.SelectedCustomExtendedKeyUsages.Where(IsExtendedKeyUsagePermitted)];
         }
 
-        private IReadOnlyList<CaPurposeOption> PurposeOptions => CaProfileCatalog.EvaluateForParent(ViewModel.SelectedCa);
+        // An intermediate CA is never a Root, so that option is not offered
+        private IReadOnlyList<CaPurposeOption> PurposeOptions =>
+            [.. CaProfileCatalog.EvaluateForParent(ViewModel.SelectedCa).Where(o => !IsIntermediateMode || o.Profile.Purpose != CaPurpose.Root)];
 
         private CaProfile SelectedProfile =>
             ViewModel.SelectedPurpose.HasValue ? CaProfileCatalog.Get(ViewModel.SelectedPurpose) : null;
@@ -285,6 +311,22 @@ namespace Notary.Web.Pages
             && Uri.TryCreate(CrlBaseUrl, UriKind.Absolute, out var uri) && uri.IsLoopback;
 
         private string CrlBaseUrl => CrlBaseUrlProvider.GetCrlBaseUrl();
+
+        [SupplyParameterFromQuery(Name = "root")]
+        public bool Root { get; set; }
+
+        [SupplyParameterFromQuery(Name = "parent")]
+        public string Parent { get; set; }
+
+        private C.CertificateAuthority _parentCa;
+        private string _parentError;
+
+        // Root wins when both are given, since a root has no parent
+        private bool IsRootMode => Root;
+
+        private bool IsIntermediateMode => !Root && !string.IsNullOrEmpty(Parent);
+
+        private string PageTitle => IsRootMode ? "Create Root CA" : IsIntermediateMode ? "Create Intermediate CA" : "Create Certificate Authority";
 
         [Inject]
         public ICrlBaseUrlProvider CrlBaseUrlProvider { get; set; }

@@ -4,12 +4,12 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-5">
     <AuthorizeView Roles="NotaryAdmin">
         <Authorized>
-            <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Href="/ca/create">
-                Create Certificate Authority</MudButton>
+            <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Href="/ca/create?root=true">
+                Create Root CA</MudButton>
         </Authorized>
         <NotAuthorized>
             <MudButton ButtonType="ButtonType.Button" Color="Color.Primary" Variant="Variant.Filled" Disabled="true">
-                Create Certificate Authority</MudButton>
+                Create Root CA</MudButton>
         </NotAuthorized>
     </AuthorizeView>
 </MudContainer>
@@ -17,7 +17,7 @@
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-5">
     @if (CaList.Count > 0)
     {
-        <MudTable Items="@CaList" Breakpoint="Breakpoint.Sm" Loading="@_isLoading">
+        <MudTable Items="@CaRows" Breakpoint="Breakpoint.Sm" Loading="@_isLoading">
             <HeaderContent>
                 <MudTh>Name</MudTh>
                 <MudTh>Created</MudTh>
@@ -26,16 +26,35 @@
                 <MudTh>&nbsp;</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Name">@context.Name</MudTd>
-                <MudTd DataLabel="Created">@context.Created</MudTd>
-                <MudTd DataLabel="NotAfter">@context.NotAfter</MudTd>
-                <MudTd DataLabel="KeyType">@context.KeyAlgorithm</MudTd>
+                <MudTd DataLabel="Name">
+                    <div class="d-flex align-center" style="padding-left: @(context.Depth * 24)px">
+                        @if (PurposeIcon(context) is { } icon)
+                        {
+                            <MudTooltip Text="@PurposeName(context.Authority)">
+                                <MudIcon Icon="@icon" Size="Size.Small" Class="mr-2" />
+                            </MudTooltip>
+                        }
+                        @context.Authority.Name
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Created">@context.Authority.Created</MudTd>
+                <MudTd DataLabel="NotAfter">@context.Authority.NotAfter</MudTd>
+                <MudTd DataLabel="KeyType">@context.Authority.KeyAlgorithm</MudTd>
                 <MudTh>
                     <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Search" Size="Size.Small"
-                        Href="@string.Format("certificate?slug={0}", context.CertificateSlug)" />
+                        Href="@string.Format("certificate?slug={0}", context.Authority.CertificateSlug)" />
                     &nbsp;
                     <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small"
-                        OnClick="@(()=>OnCertificateDownloadClick(context.CertificateSlug))" />
+                        OnClick="@(()=>OnCertificateDownloadClick(context.Authority.CertificateSlug))" />
+                    <AuthorizeView Roles="NotaryAdmin" Context="authState">
+                        @if (CanAddIntermediate(context.Authority))
+                        {
+                            <MudTooltip Text="Add intermediate CA">
+                                <MudFab Color="Color.Success" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" Class="ml-2"
+                                    Href="@($"/ca/create?parent={Uri.EscapeDataString(context.Authority.Slug)}")" />
+                            </MudTooltip>
+                        }
+                    </AuthorizeView>
                 </MudTh>
             </RowTemplate>
         </MudTable>
@@ -43,7 +62,7 @@
     else
     {
         <MudAlert Severity="Severity.Info">
-            Looks like no certificate authorities have been created. Create one by clicking "Create Certificate Authority".
+            Looks like no certificate authorities have been created. Create one by clicking "Create Root CA".
         </MudAlert>
     }
 </MudContainer>
