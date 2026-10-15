@@ -7,7 +7,7 @@
     {
         <MudProgressLinear Indeterminate="true" Color="Color.Primary" Striped="true" Size="Size.Medium" />
     }
-    <MudText Typo="Typo.h4">Create Certificate Authority</MudText>
+    <MudText Typo="Typo.h4">@PageTitle</MudText>
     <MudDivider Class="mb-3" />
     @if (_formErrors.Length > 0)
     {
@@ -25,7 +25,21 @@
         <MudDivider Class="mb-3" />
     }
 
+    @if (_parentError != null)
+    {
+        <MudAlert Severity="Severity.Error" Class="my-2">
+            @_parentError <MudLink Href="/ca">Back to certificate authorities</MudLink>
+        </MudAlert>
+    }
+    else
+    {
     <MudForm @ref="_mudForm" Model="ViewModel" @bind-IsValid="_formValid" @bind-Errors="_formErrors">
+        @if (IsIntermediateMode && (ViewModel.SelectedCa ?? _parentCa) is { } issuingCa)
+        {
+            <MudText Typo="Typo.subtitle1" Class="mb-2">Issuing CA: @ParentLabel(issuingCa)</MudText>
+        }
+        @if (!IsRootMode && !IsIntermediateMode)
+        {
         <MudSelect @bind-Value="@ViewModel.ParentCaSlug" Required="true"
             RequiredError="Select a parent CA or select No Parent" Label="Select Parent CA"
             HelperText="Select a Certificate Authority" Placeholder="Please Select">
@@ -38,6 +52,9 @@
                 </MudSelectItem>
             }
         </MudSelect>
+        }
+        @if (!IsRootMode)
+        {
         <MudSelect T="CaPurpose?" @bind-Value="ViewModel.SelectedPurpose" @bind-Value:after="OnPurposeChanged"
             Label="CA Purpose" Required="true" RequiredError="Select what this CA is for"
             ToStringFunc="@(p => p.HasValue ? CaProfileCatalog.Get(p).DisplayName : string.Empty)"
@@ -49,6 +66,7 @@
                 </MudSelectItem>
             }
         </MudSelect>
+        }
         @if (SelectedProfile != null)
         {
             <MudAlert Severity="@(SelectedProfile.IsDiscouraged ? Severity.Warning : Severity.Info)" Class="my-2">
@@ -157,4 +175,5 @@
             </MudButton>
         </div>
     </MudForm>
+    }
 </MudContainer>
