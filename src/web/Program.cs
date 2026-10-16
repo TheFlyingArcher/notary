@@ -16,6 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
+// log4net has no configuration file, so without this every log call in the application is discarded.
+// This sends everything to the console, where the host (Visual Studio, Docker, systemd) collects it.
+log4net.Config.BasicConfigurator.Configure(LogManager.GetRepository(typeof(Program).Assembly));
+
 var config = new NotaryConfiguration();
 SetEnvironmentVariables(config);
 config.Validate();
