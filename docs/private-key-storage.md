@@ -58,6 +58,10 @@ Could not migrate stored private key '<slug>': ...
 - Migration time grows with the number of keys: each migrated key costs two PBKDF2 runs (about 0.6 s on a fast desktop, longer on a Raspberry Pi). Keys already in the current format cost nothing, so only the first start after the upgrade is slow.
 - Use the same `NOTARY_APP_KEY` that earlier releases ran with. Plaintext keys never used it, so any valid value works for them, but from the migration onward that value is required to read them.
 
+## Rolling back
+
+The migration is one way. After it runs, older releases cannot read the stored keys: they fail with a decryption error such as `pad block corrupted` when issuing a certificate or building a CRL, which looks like a wrong `NOTARY_APP_KEY` but is not. If you need to go back to an older release, restore a database backup taken before the upgrade (and then treat that backup as holding unprotected keys, as above) rather than pointing the older release at the migrated database.
+
 ## Not covered
 
 - Per-key passphrases, hardware security modules or a cloud KMS.
