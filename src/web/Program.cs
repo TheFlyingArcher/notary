@@ -16,6 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
+// log4net has no configuration file, so without this every log call in the application is discarded.
+// This sends everything to the console, where the host (Visual Studio, Docker, systemd) collects it.
+log4net.Config.BasicConfigurator.Configure(LogManager.GetRepository(typeof(Program).Assembly));
+
 var config = new NotaryConfiguration();
 SetEnvironmentVariables(config);
 config.Validate();
@@ -66,6 +70,14 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
 var app = builder.Build();
+
+// Bring any plaintext or older-format private keys up to the current encryption before serving requests.
+// A key that cannot be migrated is logged and left as is; it will fail to load rather than be used unprotected.
+using (var scope = app.Services.CreateScope())
+{
+    var keyService = scope.ServiceProvider.GetRequiredService<IAsymmetricKeyService>();
+    await keyService.MigrateStoredKeysAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

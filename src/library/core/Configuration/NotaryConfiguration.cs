@@ -29,11 +29,24 @@ namespace Notary.Configuration
         }
 
         /// <summary>
+        /// The shortest <see cref="ApplicationKey"/> that is accepted
+        /// </summary>
+        public const int MinimumApplicationKeyLength = 16;
+
+        /// <summary>
         /// Validate the configuration, failing fast on values that would otherwise surface as runtime defects
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when a configured value is invalid</exception>
         public void Validate()
         {
+            // The application key protects every stored private key, so the app must not start without a usable one.
+            // The value itself is never included in the message.
+            if (string.IsNullOrWhiteSpace(ApplicationKey) || ApplicationKey.Length < MinimumApplicationKeyLength)
+            {
+                throw new InvalidOperationException(
+                    $"NOTARY_APP_KEY must be set to a secret of at least {MinimumApplicationKeyLength} characters; it protects the stored private keys.");
+            }
+
             // The CRL endpoint is optional; when set it must be an absolute http(s) URL
             if (!string.IsNullOrWhiteSpace(CrlEndpoint)
                 && (!Uri.TryCreate(CrlEndpoint, UriKind.Absolute, out var uri)

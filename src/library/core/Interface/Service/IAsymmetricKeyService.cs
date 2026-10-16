@@ -22,5 +22,13 @@ namespace Notary.Interface.Service
         /// <param name="slug"></param>
         /// <returns></returns>
         Task<byte[]> GetPublicKey(string slug);
+
+        /// <summary>
+        /// Re-encrypt every stored private key that is plaintext or uses an older encryption format. Keys already
+        /// in the current format are skipped, so this is safe to run on every start. A key that cannot be migrated
+        /// is left unchanged and counted as failed.
+        /// </summary>
+        /// <returns>How many keys were migrated, already current, and failed</returns>
+        Task<KeyMigrationResult> MigrateStoredKeysAsync();
     }
 }

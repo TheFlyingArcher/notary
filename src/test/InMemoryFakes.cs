@@ -88,6 +88,8 @@ internal class FakeKeyService : IAsymmetricKeyService
 
     public Task<byte[]> GetPublicKey(string slug) => throw new NotSupportedException();
 
+    public Task<KeyMigrationResult> MigrateStoredKeysAsync() => throw new NotSupportedException();
+
     public Task DeleteAsync(string slug, string updatedBySlug) => throw new NotSupportedException();
 
     public Task<List<AsymmetricKey>> GetAllAsync() => throw new NotSupportedException();
