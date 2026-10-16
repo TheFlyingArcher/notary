@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using System.IO;
+using System.Text;
 
 using log4net;
 
@@ -12,21 +13,39 @@ using Notary.Configuration;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Asn1.Pkcs;
-using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.Crypto.Generators;
-using Org.BouncyCastle.Crypto.Operators;
+using Org.BouncyCastle.Crypto.Modes;
+using Org.BouncyCastle.Crypto.Paddings;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Math.EC;
-using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509;
+using Org.BouncyCastle.Utilities.IO.Pem;
 
 namespace Notary.Service
 {
     public class AsymmetricKeyService : CryptographicEntityService<AsymmetricKey>, IAsymmetricKeyService
     {
+        /// <summary>
+        /// The PEM label of a PKCS #8 EncryptedPrivateKeyInfo
+        /// </summary>
+        public const string EncryptedKeyPemType = "ENCRYPTED PRIVATE KEY";
+
+        // OWASP's 2023 recommendation for PBKDF2-HMAC-SHA256; well above the NIST SP 800-132 minimums
+        private const int PbkdfIterationCount = 600_000;
+        private const int SaltSize = 16;
+        private const int AesBlockSize = 16;
+        private const int AesKeyBits = 256;
+
+        // Bounds applied to stored values so a tampered row cannot make a load run for ages
+        private const int MinAcceptedSaltSize = 8;
+        private const int MaxAcceptedIterationCount = 10_000_000;
+
         public AsymmetricKeyService(
             IAsymmetricKeyRepository repository,
             ILog log,
@@ -54,9 +73,56 @@ namespace Notary.Service
                 return null;
 
             var keyPair = LoadKeyPair(key.EncryptedPrivateKey, Configuration.ApplicationKey, key.KeyAlgorithm);
-            var publicKey = WriteKey(keyPair.Public);
 
-            return publicKey;
+            // The public key is not secret; return its DER SubjectPublicKeyInfo
+            return SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(keyPair.Public).GetDerEncoded();
+        }
+
+        public async Task<KeyMigrationResult> MigrateStoredKeysAsync()
+        {
+            var password = Configuration.ApplicationKey;
+            if (string.IsNullOrEmpty(password))
+                throw new InvalidOperationException("The application key (NOTARY_APP_KEY) is required to migrate private keys.");
+
+            var random = GetSecureRandom();
+            int migrated = 0, alreadyEncrypted = 0, failed = 0;
+
+            foreach (var key in await Repository.GetAllAsync())
+            {
+                try
+                {
+                    if (IsCurrentFormat(key.EncryptedPrivateKey))
+                    {
+                        alreadyEncrypted++;
+                        continue;
+                    }
+
+                    var privateKey = ReadLegacyKey(key.EncryptedPrivateKey, password);
+                    var upgraded = WriteEncryptedKey(privateKey, password, random);
+
+                    // Never replace a readable row with one that is not: prove the new value gives back the same key
+                    if (!ReadEncryptedKey(upgraded, password).Equals(privateKey))
+                        throw new InvalidOperationException("The re-encrypted key did not match the original.");
+
+                    key.EncryptedPrivateKey = upgraded;
+                    key.Updated = DateTime.UtcNow;
+                    key.UpdatedBySlug = "key-migration";
+                    await Repository.SaveAsync(key);
+                    migrated++;
+                }
+                catch (Exception ex)
+                {
+                    // The slug identifies the row; nothing about the key itself is logged
+                    failed++;
+                    Logger.Error($"Could not migrate stored private key '{key.Slug}': {ex.GetType().Name}: {ex.Message}");
+                }
+            }
+
+            Logger.Info($"Private key migration: {migrated} migrated, {alreadyEncrypted} already encrypted, {failed} failed.");
+            if (migrated > 0)
+                Logger.Warn("Private keys were re-encrypted. Database backups taken before this point may still hold the previous, weaker or unencrypted form.");
+
+            return new KeyMigrationResult(migrated, alreadyEncrypted, failed);
         }
 
         public async override Task SaveAsync(AsymmetricKey entity, string updatedBySlug)
@@ -69,7 +135,7 @@ namespace Notary.Service
             {
                 var random = GetSecureRandom();
                 var keyPair = GenerateKeyPair(random, entity.KeyAlgorithm, entity.KeyCurve, entity.KeyLength);
-                byte[] encryptedPrivateKey = WriteKey(keyPair.Private, random, Configuration.ApplicationKey);
+                byte[] encryptedPrivateKey = WriteEncryptedKey(keyPair.Private, Configuration.ApplicationKey, random);
                 entity.EncryptedPrivateKey = encryptedPrivateKey;
             }
 
@@ -107,68 +173,38 @@ namespace Notary.Service
 
         private AsymmetricCipherKeyPair LoadKeyPair(byte[] encryptedPrivateKey, string encryptionKey, Algorithm algorithm)
         {
-            using (var mem = new MemoryStream(encryptedPrivateKey))
+            var privateKey = ReadEncryptedKey(encryptedPrivateKey, encryptionKey);
+
+            if (algorithm == Algorithm.RSA)
             {
-                using (TextReader tr = new StreamReader(mem))
-                {
-                    PemReader pr = new PemReader(tr, new PasswordFinder(encryptionKey));
-                    var pemObject = pr.ReadObject();
-
-                    if (algorithm == Algorithm.RSA)
-                    {
-                        var privateKey = (RsaPrivateCrtKeyParameters)pemObject;
-                        var publicKey = new RsaKeyParameters(false, privateKey.Modulus, privateKey.PublicExponent);
-                        var keyPair = new AsymmetricCipherKeyPair(publicKey, privateKey);
-
-                        return keyPair;
-                    }
-                    else if (algorithm == Algorithm.EllipticCurve)
-                    {
-                        return LoadEcKeyPair(pemObject);
-                    }
-                }
+                var rsaPrivateKey = (RsaPrivateCrtKeyParameters)privateKey;
+                var publicKey = new RsaKeyParameters(false, rsaPrivateKey.Modulus, rsaPrivateKey.PublicExponent);
+                return new AsymmetricCipherKeyPair(publicKey, rsaPrivateKey);
             }
 
-            throw new InvalidOperationException("This should never have occured in public AsymmetricCipherKeyPair LoadKeyPair(filePath, encryptionKey, algorithm)");
+            if (algorithm == Algorithm.EllipticCurve)
+                return LoadEcKeyPair(privateKey);
+
+            throw new InvalidOperationException($"Unsupported key algorithm {algorithm}.");
         }
 
         /// <summary>
-        /// Load an Elliptic Curve key pair from a PEM object.
-        /// Handles proper extraction of public key from the EC private key parameters.
-        /// Supports EC keys in PKCS#8 format with full parameter information.
+        /// Load an Elliptic Curve key pair from a decrypted private key.
         /// </summary>
-        /// <param name="pemObject">The PEM object containing the EC private key</param>
+        /// <param name="pemObject">The decrypted EC private key</param>
         /// <returns>An asymmetric key pair with both public and private EC keys</returns>
         private AsymmetricCipherKeyPair LoadEcKeyPair(object pemObject)
         {
             try
             {
-                // In BouncyCastle, EC private keys are typically represented as ECPrivateKeyParameters
-                // which may contain the public key point if fully encoded
-                if (pemObject is ECKeyParameters ecKeyParams)
+                if (pemObject is ECPrivateKeyParameters ecPrivateKey)
                 {
-                    // Handle the key based on whether it's private or public
-                    if (ecKeyParams is ECPrivateKeyParameters ecPrivateKey)
-                    {
-                        // Extract or derive the public key point
-                        ECPublicKeyParameters ecPublicKey = DeriveEcPublicKey(ecPrivateKey);
-                        var keyPair = new AsymmetricCipherKeyPair(ecPublicKey, ecPrivateKey);
-                        return keyPair;
-                    }
-                }
-
-                // Fallback: Try to cast directly to ECPrivateKeyParameters
-                var privateKeyParams = pemObject as ECPrivateKeyParameters;
-                if (privateKeyParams != null)
-                {
-                    ECPublicKeyParameters ecPublicKey = DeriveEcPublicKey(privateKeyParams);
-                    var keyPair = new AsymmetricCipherKeyPair(ecPublicKey, privateKeyParams);
-                    return keyPair;
+                    ECPublicKeyParameters ecPublicKey = DeriveEcPublicKey(ecPrivateKey);
+                    return new AsymmetricCipherKeyPair(ecPublicKey, ecPrivateKey);
                 }
 
                 throw new InvalidOperationException(
-                    $"Expected EC key parameter type but got {pemObject?.GetType().Name ?? "null"}. " +
-                    "Ensure the key is in PKCS#8 format for EC keys.");
+                    $"Expected EC key parameter type but got {pemObject?.GetType().Name ?? "null"}.");
             }
             catch (InvalidOperationException)
             {
@@ -177,16 +213,12 @@ namespace Notary.Service
             catch (Exception ex)
             {
                 Logger.Error($"Failed to load EC key pair: {ex.Message}", ex);
-                throw new InvalidOperationException(
-                    "Failed to deserialize EC private key. Ensure the key is properly encrypted with the correct password " +
-                    "and in PKCS#8 format.", ex);
+                throw new InvalidOperationException("Failed to deserialize EC private key.", ex);
             }
         }
 
         /// <summary>
-        /// Derive the public key point from an EC private key.
-        /// If the private key already contains the public key point (Q parameter), use it directly.
-        /// Otherwise, compute it from the private key scalar and curve parameters: Q = d*G
+        /// Derive the public key point from an EC private key: Q = d*G
         /// </summary>
         /// <param name="ecPrivateKey">The EC private key parameters</param>
         /// <returns>The corresponding public key parameters</returns>
@@ -194,39 +226,10 @@ namespace Notary.Service
         {
             try
             {
-                // Get the domain parameters (curve, base point G, order n, cofactor h)
                 var domainParams = ecPrivateKey.Parameters;
+                var publicKeyPoint = domainParams.G.Multiply(ecPrivateKey.D);
 
-                // Try to get the public key point if it was included in the private key
-                ECPoint publicKeyPoint = null;
-
-                // Check if this is a key that includes the public point
-                // (Some implementations include it for efficiency)
-                if (ecPrivateKey.GetType().Name == "ECPrivateKeyParameters" && 
-                    ecPrivateKey.GetType().GetProperty("Q") != null)
-                {
-                    try
-                    {
-                        var qProperty = ecPrivateKey.GetType().GetProperty("Q");
-                        publicKeyPoint = qProperty?.GetValue(ecPrivateKey) as ECPoint;
-                    }
-                    catch
-                    {
-                        // Property doesn't exist or can't be accessed, will compute below
-                    }
-                }
-
-                // If public key point wasn't included, compute it: Q = d*G
-                if (publicKeyPoint == null)
-                {
-                    var privateKeyD = ecPrivateKey.D;
-                    var basePoint = domainParams.G;
-                    publicKeyPoint = basePoint.Multiply(privateKeyD);
-                }
-
-                // Create and return the public key parameters
-                var ecPublicKey = new ECPublicKeyParameters(publicKeyPoint, domainParams);
-                return ecPublicKey;
+                return new ECPublicKeyParameters(publicKeyPoint, domainParams);
             }
             catch (Exception ex)
             {
@@ -237,98 +240,192 @@ namespace Notary.Service
         }
 
         /// <summary>
-        /// Write a key to PKCS #8 format with AES-256 encryption and PBKDF2 key derivation.
-        /// Uses NIST-recommended security parameters: AES-256-CBC for encryption and 100,000 iterations for PBKDF2.
+        /// Write a private key as a PKCS #8 EncryptedPrivateKeyInfo (RFC 5958) in PEM form, protected with
+        /// PBES2 (RFC 8018): PBKDF2-HMAC-SHA256 key derivation and AES-256-CBC encryption.
+        /// The key is never written unencrypted; a missing passphrase is an error.
         /// </summary>
-        /// <param name="key">The asymmetric key to encrypt</param>
-        /// <param name="encryptionRandom">A secure random for password encryption</param>
-        /// <param name="pkPassword">Password to encrypt the private key</param>
-        /// <returns>PKCS#8 encrypted key in PEM format</returns>
-        private byte[] WriteKey(AsymmetricKeyParameter key, SecureRandom encryptionRandom = null, string pkPassword = null)
+        /// <param name="key">The private key to protect</param>
+        /// <param name="password">The passphrase</param>
+        /// <param name="random">A secure random used for the salt and IV</param>
+        /// <returns>The "ENCRYPTED PRIVATE KEY" PEM, as ASCII bytes</returns>
+        private byte[] WriteEncryptedKey(AsymmetricKeyParameter key, string password, SecureRandom random)
         {
-            byte[] keyBytes = null;
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            if (!key.IsPrivate)
+                throw new ArgumentException("A private key is required.", nameof(key));
+            if (string.IsNullOrEmpty(password))
+                throw new InvalidOperationException("The application key (NOTARY_APP_KEY) is required to protect private keys.");
 
-            if (encryptionRandom != null && pkPassword != null)
-            {
-                // Use PBES2 with PBKDF2-SHA256 and AES-256-CBC
-                // This is compliant with NIST SP 800-132 and RFC 5958
-                keyBytes = WriteKeyWithPbes2Aes256(key, pkPassword, encryptionRandom);
-            }
-            else
-            {
-                // Write unencrypted key to PKCS#8 format
-                var generator = new Pkcs8Generator(key);
-                var pemObject = generator.Generate();
-                using (var fs = new MemoryStream())
-                {
-                    using (var tw = new StreamWriter(fs))
-                    {
-                        PemWriter pemWriter = new(tw);
-                        pemWriter.WriteObject(pemObject);
-                    }
-                    keyBytes = fs.ToArray();
-                }
-            }
+            var salt = new byte[SaltSize];
+            random.NextBytes(salt);
+            var iv = new byte[AesBlockSize];
+            random.NextBytes(iv);
 
-            return keyBytes;
+            var aesKey = DeriveAesKey(password, salt, PbkdfIterationCount);
+            var cipher = new PaddedBufferedBlockCipher(new CbcBlockCipher(new AesEngine()));
+            cipher.Init(true, new ParametersWithIV(new KeyParameter(aesKey), iv));
+            var encryptedData = cipher.DoFinal(PrivateKeyInfoFactory.CreatePrivateKeyInfo(key).GetEncoded());
+
+            var prf = new AlgorithmIdentifier(PkcsObjectIdentifiers.IdHmacWithSha256, DerNull.Instance);
+            var pbes2 = new PbeS2Parameters(
+                new KeyDerivationFunc(PkcsObjectIdentifiers.IdPbkdf2, new Pbkdf2Params(salt, PbkdfIterationCount, AesKeyBits / 8, prf)),
+                new EncryptionScheme(NistObjectIdentifiers.IdAes256Cbc, new DerOctetString(iv)));
+            var encryptedKeyInfo = new EncryptedPrivateKeyInfo(
+                new AlgorithmIdentifier(PkcsObjectIdentifiers.IdPbeS2, pbes2), encryptedData);
+
+            using var writer = new StringWriter();
+            var pemWriter = new PemWriter(writer);
+            pemWriter.WriteObject(new PemObject(EncryptedKeyPemType, encryptedKeyInfo.GetEncoded()));
+
+            var pem = writer.ToString();
+            if (!pem.StartsWith($"-----BEGIN {EncryptedKeyPemType}-----", StringComparison.Ordinal))
+                throw new InvalidOperationException("The private key was not encrypted; refusing to store it.");
+
+            return Encoding.ASCII.GetBytes(pem);
         }
 
         /// <summary>
-        /// Encrypt a key using PBES2 (PKCS#5 v2.0) with PBKDF2-SHA256 for key derivation
-        /// and AES-256-CBC for encryption. This meets NIST SP 800-132 and RFC 5958 standards.
-        /// Iteration count set to 100,000 (NIST minimum for password-based encryption).
+        /// Read a key written by <see cref="WriteEncryptedKey"/>. Only PBES2 with PBKDF2-HMAC-SHA256 and
+        /// AES-256-CBC is accepted, and plaintext keys are refused.
         /// </summary>
-        private byte[] WriteKeyWithPbes2Aes256(AsymmetricKeyParameter key, string password, SecureRandom random)
+        /// <exception cref="InvalidOperationException">The data is not an encrypted key, uses another algorithm,
+        /// or could not be decrypted with the given passphrase</exception>
+        private AsymmetricKeyParameter ReadEncryptedKey(byte[] pemBytes, string password)
         {
-            // NIST SP 800-132 recommends minimum 100,000 iterations for PBKDF2 with SHA-256
-            const int iterationCount = 100000;
+            if (pemBytes == null || pemBytes.Length == 0)
+                throw new InvalidOperationException("The stored private key is empty.");
+            if (string.IsNullOrEmpty(password))
+                throw new InvalidOperationException("The application key (NOTARY_APP_KEY) is required to read private keys.");
 
             try
             {
-                // BouncyCastle Pkcs8Generator now supports modern encryption with the iteration count property
-                // When set to 100,000+ iterations, it uses PBES2 with AES encryption
-                var generator = new Pkcs8Generator(key)
+                PemObject pemObject;
+                using (var reader = new StreamReader(new MemoryStream(pemBytes), Encoding.ASCII))
                 {
-                    Password = password.ToCharArray(),
-                    SecureRandom = random,
-                    IterationCount = iterationCount // 100,000 iterations per NIST SP 800-132
-                };
-
-                var pemObject = generator.Generate();
-                using (var fs = new MemoryStream())
-                {
-                    using (var tw = new StreamWriter(fs))
-                    {
-                        PemWriter pemWriter = new(tw);
-                        pemWriter.WriteObject(pemObject);
-                    }
-                    return fs.ToArray();
+                    pemObject = new PemReader(reader).ReadPemObject();
                 }
+
+                if (pemObject == null || pemObject.Type != EncryptedKeyPemType)
+                    throw new InvalidOperationException(
+                        $"The stored private key is not an {EncryptedKeyPemType}; plaintext keys are not accepted.");
+
+                var keyInfo = EncryptedPrivateKeyInfo.GetInstance(Asn1Object.FromByteArray(pemObject.Content));
+                if (!PkcsObjectIdentifiers.IdPbeS2.Equals(keyInfo.EncryptionAlgorithm.Algorithm))
+                    throw new InvalidOperationException("The stored private key does not use PBES2.");
+
+                var pbes2 = PbeS2Parameters.GetInstance(keyInfo.EncryptionAlgorithm.Parameters);
+                var kdf = pbes2.KeyDerivationFunc;
+                var scheme = pbes2.EncryptionScheme;
+                if (!PkcsObjectIdentifiers.IdPbkdf2.Equals(kdf.Algorithm)
+                    || !NistObjectIdentifiers.IdAes256Cbc.Equals(scheme.Algorithm))
+                    throw new InvalidOperationException("The stored private key does not use PBKDF2 with AES-256-CBC.");
+
+                var pbkdf2 = Pbkdf2Params.GetInstance(kdf.Parameters);
+                if (!PkcsObjectIdentifiers.IdHmacWithSha256.Equals(pbkdf2.Prf.Algorithm))
+                    throw new InvalidOperationException("The stored private key does not use PBKDF2-HMAC-SHA256.");
+
+                var salt = pbkdf2.GetSalt();
+                var iterations = pbkdf2.IterationCount;
+                if (salt.Length < MinAcceptedSaltSize
+                    || iterations.BitLength > 31 || iterations.IntValue < 1 || iterations.IntValue > MaxAcceptedIterationCount)
+                    throw new InvalidOperationException("The stored private key has unacceptable key derivation parameters.");
+
+                var iv = Asn1OctetString.GetInstance(scheme.Parameters).GetOctets();
+                if (iv.Length != AesBlockSize)
+                    throw new InvalidOperationException("The stored private key has an invalid IV.");
+
+                var aesKey = DeriveAesKey(password, salt, iterations.IntValue);
+                var cipher = new PaddedBufferedBlockCipher(new CbcBlockCipher(new AesEngine()));
+                cipher.Init(false, new ParametersWithIV(new KeyParameter(aesKey), iv));
+                var plain = cipher.DoFinal(keyInfo.GetEncryptedData());
+
+                return PrivateKeyFactory.CreateKey(plain);
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                Logger.Error($"Error encrypting key with PBES2-AES256: {ex.Message}. Falling back to legacy encryption.", ex);
-
-                // Fallback: Use whatever the default Pkcs8Generator uses with 100,000 iterations
-                // This still provides significant security improvement over the original 32 iterations
-                var generator = new Pkcs8Generator(key)
-                {
-                    Password = password.ToCharArray(),
-                    SecureRandom = random,
-                    IterationCount = iterationCount
-                };
-
-                var pemObject = generator.Generate();
-                using (var fs = new MemoryStream())
-                {
-                    using (var tw = new StreamWriter(fs))
-                    {
-                        PemWriter pemWriter = new(tw);
-                        pemWriter.WriteObject(pemObject);
-                    }
-                    return fs.ToArray();
-                }
+                // A wrong passphrase and corrupt data are indistinguishable; say nothing about the key itself
+                Logger.Error($"Failed to decrypt a stored private key: {ex.GetType().Name}");
+                throw new InvalidOperationException(
+                    "The private key could not be decrypted. Check that NOTARY_APP_KEY matches the value used when the key was created.", ex);
             }
+        }
+
+        /// <summary>
+        /// Whether the stored value is already an <see cref="EncryptedKeyPemType"/> in the format
+        /// <see cref="WriteEncryptedKey"/> produces. Nothing is decrypted.
+        /// </summary>
+        private static bool IsCurrentFormat(byte[] pemBytes)
+        {
+            if (pemBytes == null || pemBytes.Length == 0)
+                return false;
+
+            try
+            {
+                PemObject pemObject;
+                using (var reader = new StreamReader(new MemoryStream(pemBytes), Encoding.ASCII))
+                {
+                    pemObject = new PemReader(reader).ReadPemObject();
+                }
+
+                if (pemObject == null || pemObject.Type != EncryptedKeyPemType)
+                    return false;
+
+                var keyInfo = EncryptedPrivateKeyInfo.GetInstance(Asn1Object.FromByteArray(pemObject.Content));
+                if (!PkcsObjectIdentifiers.IdPbeS2.Equals(keyInfo.EncryptionAlgorithm.Algorithm))
+                    return false;
+
+                var pbes2 = PbeS2Parameters.GetInstance(keyInfo.EncryptionAlgorithm.Parameters);
+                return PkcsObjectIdentifiers.IdPbkdf2.Equals(pbes2.KeyDerivationFunc.Algorithm)
+                    && NistObjectIdentifiers.IdAes256Cbc.Equals(pbes2.EncryptionScheme.Algorithm)
+                    && PkcsObjectIdentifiers.IdHmacWithSha256.Equals(
+                        Pbkdf2Params.GetInstance(pbes2.KeyDerivationFunc.Parameters).Prf.Algorithm);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Read a key stored by an earlier version: a plaintext PKCS #8 key, or one encrypted with the old
+        /// PBES1 3DES scheme. Used only by the migration; normal loading goes through <see cref="ReadEncryptedKey"/>.
+        /// </summary>
+        private static AsymmetricKeyParameter ReadLegacyKey(byte[] pemBytes, string password)
+        {
+            if (pemBytes == null || pemBytes.Length == 0)
+                throw new InvalidOperationException("The stored private key is empty.");
+
+            using var reader = new StreamReader(new MemoryStream(pemBytes), Encoding.ASCII);
+            var pemObject = new Org.BouncyCastle.OpenSsl.PemReader(reader, new LegacyPasswordFinder(password)).ReadObject();
+
+            var key = pemObject switch
+            {
+                AsymmetricCipherKeyPair pair => pair.Private,
+                AsymmetricKeyParameter parameter => parameter,
+                _ => null
+            };
+
+            if (key == null || !key.IsPrivate)
+                throw new InvalidOperationException("The stored value is not a private key.");
+
+            return key;
+        }
+
+        private sealed class LegacyPasswordFinder(string password) : Org.BouncyCastle.OpenSsl.IPasswordFinder
+        {
+            public char[] GetPassword() => password.ToCharArray();
+        }
+
+        private static byte[] DeriveAesKey(string password, byte[] salt, int iterationCount)
+        {
+            var generator = new Pkcs5S2ParametersGenerator(new Sha256Digest());
+            generator.Init(Encoding.UTF8.GetBytes(password), salt, iterationCount);
+            return ((KeyParameter)generator.GenerateDerivedParameters("AES256", AesKeyBits)).GetKey();
         }
 
         protected NotaryConfiguration Configuration { get; }

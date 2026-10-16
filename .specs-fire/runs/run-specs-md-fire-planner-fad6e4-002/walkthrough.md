@@ -1,0 +1,115 @@
+---
+run: run-specs-md-fire-planner-fad6e4-002
+work_item: pbes2-key-encryption
+intent: encrypt-stored-private-keys
+generated: 2026-10-16T00:00:00Z
+mode: validate
+---
+
+# Implementation Walkthrough: PBES2 AES-256 private key encryption
+
+## Summary
+
+Stored private keys are now real PKCS #8 `ENCRYPTED PRIVATE KEY` blobs. `Pkcs8Generator` in BouncyCastle 2.2.1 ignored the password when given no algorithm, so keys were stored as plaintext `PRIVATE KEY`. The writer now builds the `EncryptedPrivateKeyInfo` itself: PBES2 with PBKDF2-HMAC-SHA256 (600,000 iterations, 16-byte random salt) and AES-256-CBC (random IV). Loading with the wrong passphrase, corrupted data, or a plaintext key throws. OpenSSL 3.5 decrypts the output.
+
+This item changes the format only. Existing plaintext rows in a database cannot be loaded until `plaintext-key-migration` is done, so the two must ship together.
+
+## Structure Overview
+
+Everything is in `AsymmetricKeyService`: `WriteEncryptedKey` (save path), `ReadEncryptedKey` (load path) and a shared `DeriveAesKey`. `LoadKeyPair` decrypts and then builds the RSA or EC key pair as before.
+
+## Files Changed
+
+### Created
+
+| File | Purpose |
+|------|---------|
+| `src/test/AsymmetricKeyServiceTest.cs` | 17 tests: format, PBES2 parameters, round trips (RSA, P-256/384/521), wrong passphrase, corruption, missing passphrase, plaintext refused, randomness, load timing |
+
+### Modified
+
+| File | Changes |
+|------|---------|
+| `src/library/service/AsymmetricKeyService.cs` | PBES2 writer and reader; removed the `Pkcs8Generator` path, the unencrypted branch and the catch-and-retry fallback; `GetPublicKey` returns SubjectPublicKeyInfo DER; EC loader simplified (dead reflection removed) |
+| `src/library/service/PasswordFinder.cs` | Deleted (no longer used) |
+
+## Key Implementation Details
+
+### 1. Writer
+
+`WriteEncryptedKey` throws if the passphrase is null or empty, so a missing `NOTARY_APP_KEY` can no longer produce a plaintext key. It checks that its own output begins with `-----BEGIN ENCRYPTED PRIVATE KEY-----`.
+
+### 2. Reader
+
+`ReadEncryptedKey` accepts only PBES2 / PBKDF2-HMAC-SHA256 / AES-256-CBC, rejects salts under 8 bytes and iteration counts above 10,000,000, and uses the stored salt, iteration count and IV. A wrong passphrase fails the CBC padding check (about 255 times in 256) or the PKCS #8 parse; both give the same `InvalidOperationException`, which names no key material.
+
+### 3. Hard-coded values
+
+The iteration count is a constant, but the reader honors the stored value, so it can be lowered later without stranding keys.
+
+## Security Considerations
+
+| Concern | Approach |
+|---------|----------|
+| Keys at rest | AES-256-CBC under a PBKDF2-derived key; fresh salt and IV per key |
+| Missing passphrase | Writer and reader both throw; nothing is stored |
+| Plaintext rows | Loader refuses them; migration is the next work item |
+| Tampered rows | Iteration and salt bounds stop a malicious row from stalling a load |
+| Integrity | CBC has no authentication tag; tampering is caught by padding and ASN.1 parsing, not a MAC. PBES2 with AES-CBC is the standard PKCS #8 form and what OpenSSL reads |
+
+## Performance Considerations
+
+| Requirement | Implementation |
+|-------------|----------------|
+| Load cost | 275 ms per load on the dev machine at 600,000 iterations; expect roughly 1-1.5 s on a Raspberry Pi (estimate). Keys are loaded per issuance and per CRL, not per request |
+
+## Decisions Made
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Hand-built PBES2 on BC 2.2.1 | Yes, no package upgrade | Verified by probe and OpenSSL interop |
+| Iterations | 600,000 | Approved at the plan checkpoint |
+| Migration-only plaintext loader | Not added here | It belongs with `plaintext-key-migration`, which is its only user |
+
+## Deviations from Plan
+
+The plan listed an internal `LoadPlaintextForMigration` method; it was left out because nothing uses it yet and the migration item will add it with its tests.
+
+## Dependencies Added
+
+(none)
+
+## How to Verify
+
+1. **Run the tests**
+   ```bash
+   dotnet test ./src/test/
+   ```
+   Expected: 335 passed.
+
+2. **Check the format with OpenSSL** (use a throwaway passphrase and a key from a test environment, never a real one)
+   ```bash
+   openssl pkey -in key.pem -passin pass:<NOTARY_APP_KEY used when the key was created> -noout -text
+   ```
+   Expected: prints the key; a wrong passphrase prints an error.
+
+## Test Coverage
+
+- Tests added: 17
+- Coverage: not measured
+- Status: passing (335/335)
+
+## Ready for Review
+
+- [x] All acceptance criteria met
+- [x] Tests passing
+- [x] No critical issues
+- [ ] Documentation updated (`key-encryption-docs`)
+- [x] Developer notes captured
+
+## Developer Notes
+
+Do not release this item on its own: existing deployments would be unable to load their current keys. Issues #43 (named curves) and #47 (EC key loading cleanup) touch the same file; the loader here already dropped the reflection code mentioned in #47.
+
+---
+*Generated by specs.md - fabriqa.ai FIRE Flow Run run-specs-md-fire-planner-fad6e4-002*

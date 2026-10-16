@@ -210,6 +210,45 @@ intents:
           - create-intermediate-ca-under-parent
         run_id: run-specs-md-fire-planner-fad6e4-001
         completed_at: 2026-10-14T23:32:46.906Z
+  - id: encrypt-stored-private-keys
+    title: Encrypt stored private keys
+    status: in_progress
+    work_items:
+      - id: pbes2-key-encryption
+        title: PBES2 AES-256 private key encryption
+        status: completed
+        complexity: high
+        mode: validate
+        depends_on: []
+        run_id: run-specs-md-fire-planner-fad6e4-002
+        completed_at: 2026-10-16T00:07:44.491Z
+      - id: app-key-validation
+        title: Validate NOTARY_APP_KEY at startup
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specs-md-fire-planner-fad6e4-003
+        completed_at: 2026-10-16T00:16:49.384Z
+      - id: plaintext-key-migration
+        title: Re-encrypt existing plaintext keys at startup
+        status: completed
+        complexity: high
+        mode: validate
+        depends_on:
+          - pbes2-key-encryption
+          - app-key-validation
+        run_id: run-specs-md-fire-planner-fad6e4-004
+        completed_at: 2026-10-16T00:21:18.470Z
+      - id: key-encryption-docs
+        title: Document the key storage exposure and fix
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - plaintext-key-migration
+        run_id: run-specs-md-fire-planner-fad6e4-005
+        completed_at: 2026-10-16T00:23:18.146Z
 runs:
   active: []
   completed:
@@ -358,3 +397,35 @@ runs:
           mode: confirm
       started: 2026-10-14T23:25:44.316Z
       completed: 2026-10-14T23:32:46.906Z
+    - id: run-specs-md-fire-planner-fad6e4-002
+      scope: single
+      work_items:
+        - id: pbes2-key-encryption
+          intent: encrypt-stored-private-keys
+          mode: validate
+      started: 2026-10-15T23:44:58.583Z
+      completed: 2026-10-16T00:07:44.491Z
+    - id: run-specs-md-fire-planner-fad6e4-003
+      scope: single
+      work_items:
+        - id: app-key-validation
+          intent: encrypt-stored-private-keys
+          mode: confirm
+      started: 2026-10-16T00:15:21.254Z
+      completed: 2026-10-16T00:16:49.384Z
+    - id: run-specs-md-fire-planner-fad6e4-004
+      scope: single
+      work_items:
+        - id: plaintext-key-migration
+          intent: encrypt-stored-private-keys
+          mode: validate
+      started: 2026-10-16T00:17:42.747Z
+      completed: 2026-10-16T00:21:18.470Z
+    - id: run-specs-md-fire-planner-fad6e4-005
+      scope: single
+      work_items:
+        - id: key-encryption-docs
+          intent: encrypt-stored-private-keys
+          mode: autopilot
+      started: 2026-10-16T00:22:00.262Z
+      completed: 2026-10-16T00:23:18.146Z

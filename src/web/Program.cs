@@ -67,6 +67,14 @@ builder.Services.AddServerSideBlazor();
 
 var app = builder.Build();
 
+// Bring any plaintext or older-format private keys up to the current encryption before serving requests.
+// A key that cannot be migrated is logged and left as is; it will fail to load rather than be used unprotected.
+using (var scope = app.Services.CreateScope())
+{
+    var keyService = scope.ServiceProvider.GetRequiredService<IAsymmetricKeyService>();
+    await keyService.MigrateStoredKeysAsync();
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
