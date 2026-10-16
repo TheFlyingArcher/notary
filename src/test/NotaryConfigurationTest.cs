@@ -62,7 +62,7 @@ public class NotaryConfigurationTest
     [Test]
     public void ValidateDoesNotEchoTheApplicationKey()
     {
-        var config = new NotaryConfiguration { ApplicationKey = "too-short-secret" [..10] };
+        var config = new NotaryConfiguration { ApplicationKey = "too-short-secret"[..10] };
 
         var ex = Assert.Throws<InvalidOperationException>(config.Validate);
         Assert.That(ex.Message, Does.Not.Contain("too-short-"));
