@@ -13,6 +13,7 @@ using Notary.Configuration;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
@@ -155,11 +156,12 @@ namespace Notary.Service
             }
             else if (algorithm == Algorithm.EllipticCurve)
             {
-                var strCurve = curve.Value.ToString().Insert(1, "-");
-                var ecp = NistNamedCurves.GetByName(strCurve); //TODO: Refactor
+                if (!curve.HasValue)
+                {
+                    throw new ArgumentException("A curve is required for Elliptic Curve keys.", nameof(curve));
+                }
 
-                var fpCurve = (FpCurve)ecp.Curve;
-                var domain = new ECDomainParameters(fpCurve, ecp.G, ecp.N, ecp.H);
+                var domain = new ECDomainParameters(SecNamedCurves.GetByOid(GetCurveOid(curve.Value)));
 
                 var keyGenerationParameters = new ECKeyGenerationParameters(domain, random);
                 var ecGenerator = new ECKeyPairGenerator();
@@ -169,6 +171,17 @@ namespace Notary.Service
             }
 
             return keyPair;
+        }
+
+        private static DerObjectIdentifier GetCurveOid(EllipticCurve curve)
+        {
+            return curve switch
+            {
+                EllipticCurve.P256 => SecObjectIdentifiers.SecP256r1,
+                EllipticCurve.P384 => SecObjectIdentifiers.SecP384r1,
+                EllipticCurve.P521 => SecObjectIdentifiers.SecP521r1,
+                _ => throw new NotSupportedException($"The elliptic curve '{curve}' is not supported.")
+            };
         }
 
         private AsymmetricCipherKeyPair LoadKeyPair(byte[] encryptedPrivateKey, string encryptionKey, Algorithm algorithm)

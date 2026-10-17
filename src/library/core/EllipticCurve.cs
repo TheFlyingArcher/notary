@@ -28,12 +28,6 @@ namespace Notary
         /// The P-521 curve
         /// </summary>
         [EnumMember]
-        P521,
-
-        /// <summary>
-        /// The P-256K curve
-        /// </summary>
-        [EnumMember]
-        P256K
+        P521
     }
 }
