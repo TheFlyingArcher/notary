@@ -70,6 +70,27 @@ public class AsymmetricKeyServiceTest
         yield return new TestCaseData(Algorithm.EllipticCurve, EllipticCurve.P521, null).SetName("P-521");
     }
 
+    [TestCaseSource(nameof(AllEllipticCurves))]
+    public async Task Save_GeneratesAKeyForEveryEllipticCurve(EllipticCurve curve)
+    {
+        var key = await CreateKeyAsync(CreateService(), Algorithm.EllipticCurve, curve);
+
+        Assert.That(AsText(key), Does.StartWith("-----BEGIN ENCRYPTED PRIVATE KEY-----"));
+    }
+
+    [Test]
+    public void Save_UnknownEllipticCurve_FailsWithClearError()
+    {
+        var service = CreateService();
+
+        var ex = Assert.ThrowsAsync<NotSupportedException>(
+            async () => await CreateKeyAsync(service, Algorithm.EllipticCurve, (EllipticCurve)999));
+
+        Assert.That(ex!.Message, Does.Contain("not supported"));
+    }
+
+    private static IEnumerable<EllipticCurve> AllEllipticCurves() => Enum.GetValues<EllipticCurve>();
+
     [TestCaseSource(nameof(AllKeyTypes))]
     public async Task Save_StoresKeyAsEncryptedPrivateKey(Algorithm algorithm, EllipticCurve? curve, int? length)
     {
