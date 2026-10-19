@@ -12,6 +12,10 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="9.3.0" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="log4net" Version="3.3.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
     <PackageReference Include="BouncyCastle.NetCore" Version="2.2.1" />

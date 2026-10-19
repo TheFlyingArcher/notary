@@ -1,0 +1,57 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to deploy (e.g. 1.1.49). Leave blank for latest."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Raspberry Pi
+    runs-on: ubuntu-latest
+    env:
+      INPUT_TAG: ${{ inputs.tag }}
+      PI_TARGET: ${{ vars.PI_USER }}@${{ vars.PI_HOST }}
+      PI_DEPLOY_PATH: ${{ vars.PI_DEPLOY_PATH }}
+    steps:
+      - name: Resolve Tag
+        id: tag
+        run: |
+          TAG="${INPUT_TAG#v}"
+          TAG="${TAG:-latest}"
+          if [[ ! "$TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
+            echo "Invalid tag: $TAG" >&2
+            exit 1
+          fi
+          echo "value=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Connect to Tailnet
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.PI_SSH_PRIVATE_KEY }}
+          PI_HOST: ${{ vars.PI_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$PI_HOST" >> ~/.ssh/known_hosts
+      - name: Pull and Restart Notary
+        env:
+          NOTARY_TAG: ${{ steps.tag.outputs.value }}
+        run: |
+          ssh "$PI_TARGET" "cd '$PI_DEPLOY_PATH' && export NOTARY_TAG='$NOTARY_TAG' && docker compose pull && docker compose up -d --remove-orphans && docker image prune -f"

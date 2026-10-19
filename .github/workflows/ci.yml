@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Build and Quality Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          dotnet-quality: "ga"
+      - name: Restore NuGet Packages
+        run: dotnet restore src/Notary.sln --nologo -v q
+      - name: Build Notary
+        run: dotnet build src/Notary.sln -c Release --no-restore --nologo -v q
+      - name: Test Notary with Coverage Gate
+        # Fails the build when any test fails or line coverage drops below the threshold.
+        # The threshold is a ratchet: raise it toward 70 as coverage improves.
+        run: >
+          dotnet test src/test/Notary.Test.csproj -c Release --no-build --nologo -v q
+          -p:CollectCoverage=true
+          -p:CoverletOutputFormat=cobertura
+          -p:CoverletOutput=./coverage/
+          "-p:Include=[Notary*]*"
+          "-p:Exclude=[Notary.Test]*"
+          -p:Threshold=65
+          -p:ThresholdType=line
+          -p:ThresholdStat=total
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: src/test/coverage/
+          if-no-files-found: ignore
+
+  release:
+    name: Tag and Publish Image
+    # Runs only after a PR merges (push to main) and the quality gates pass.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [quality]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ vars.NOTARY_MAJOR_VERSION }}.${{ vars.NOTARY_MINOR_VERSION }}.${{ github.run_number }}
+      IMAGE: ${{ secrets.DOCKER_HUB_USER }}/notary-web
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Create Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
+      - name: Setup Docker QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Authenticate Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Build and Push Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./src/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ env.VERSION }}
+            ${{ env.IMAGE }}:latest
