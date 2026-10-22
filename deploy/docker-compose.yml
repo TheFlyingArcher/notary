@@ -1,0 +1,67 @@
+# Notary production stack for the Raspberry Pi.
+#
+# Copy this file and .env.example (renamed to .env) into PI_DEPLOY_PATH (e.g. /opt/notary).
+# The Deploy workflow runs `docker compose pull && docker compose up -d` there with NOTARY_TAG exported,
+# so the tag it passes overrides any NOTARY_TAG in .env.
+
+services:
+  notary-web:
+    image: ${DOCKER_HUB_USER:?Set DOCKER_HUB_USER in .env}/notary-web:${NOTARY_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      # The aspnet base image listens on 8080 by default; stated here so it is explicit.
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_ENVIRONMENT: Production
+
+      # Required. Passphrase protecting every stored private key (16+ characters).
+      # Never change it on a deployment that already has keys. See docs/private-key-storage.md.
+      NOTARY_APP_KEY: ${NOTARY_APP_KEY:?Set NOTARY_APP_KEY in .env}
+
+      # Database (MongoDB). Host is a MongoDB URL. The user is authenticated against the "admin" database.
+      NOTARY_DB_HOST: mongodb://mongo:27017
+      NOTARY_DB_NAME: ${NOTARY_DB_NAME:-notary}
+      NOTARY_DB_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in .env}
+      NOTARY_DB_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env}
+
+      # Auth0 sign-in (OpenID Connect). All three are required to log in.
+      NOTARY_OPENID_DOMAIN: ${NOTARY_OPENID_DOMAIN:?Set NOTARY_OPENID_DOMAIN in .env}
+      NOTARY_OPENID_CLIENTID: ${NOTARY_OPENID_CLIENTID:?Set NOTARY_OPENID_CLIENTID in .env}
+      NOTARY_OPENID_CLIENTSECRET: ${NOTARY_OPENID_CLIENTSECRET:?Set NOTARY_OPENID_CLIENTSECRET in .env}
+
+      # Optional. Public base address used in the CRL distribution points of issued certificates,
+      # e.g. https://pki.example.com. When blank, the address the request arrived at is used.
+      NOTARY_CRL_ENDPOINT: ${NOTARY_CRL_ENDPOINT:-}
+    ports:
+      # Published on the host for the NGINX reverse proxy (see #50). Bind to loopback if NGINX runs on the Pi itself.
+      - "127.0.0.1:8080:8080"
+    networks:
+      - notary
+
+  mongo:
+    # The official image only runs on arm64 for 5.0+ with ARMv8.2-A (Raspberry Pi 5). On a Pi 4, see docs/ci-cd.md.
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      # Creates the root user in the "admin" database on first start, which is where Notary authenticates.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env}
+    volumes:
+      - notary-db:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - notary
+    # No ports published: only notary-web on the internal network can reach the database.
+
+volumes:
+  notary-db:
+
+networks:
+  notary:
