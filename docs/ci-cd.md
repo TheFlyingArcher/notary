@@ -67,7 +67,7 @@ Assumes `tailscaled` is already running and logged in on the Pi.
    5. Copy the contents of the private file `notary-deploy` into the `PI_SSH_PRIVATE_KEY` secret (next step), then delete both local key files.
 5. **Add to GitHub** (Settings > Secrets and variables > Actions):
    - Secrets: `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `PI_SSH_PRIVATE_KEY` (contents of `notary-deploy`)
-   - Variables: `PI_HOST` (MagicDNS name or tailnet IP), `PI_USER`, `PI_DEPLOY_PATH` (directory holding the compose file)
+   - Variables: `PI_HOST` (the Pi's Tailscale MagicDNS name or `100.x` tailnet IP, **not** a LAN address, since the runner reaches the Pi only through the tailnet), `PI_USER`, `PI_DEPLOY_PATH` (directory holding the compose file)
 
 ### Pi-side compose file
 
