@@ -44,7 +44,27 @@ Assumes `tailscaled` is already running and logged in on the Pi.
    ```
    Merge these into your existing policy rather than replacing it.
 3. **Create an OAuth client** (Settings > Trust credentials > Credential > OAuth, scope `auth_keys` write, tag `tag:ci`). Copy the client ID and secret.
-4. **Create a deploy SSH key** on your machine: `ssh-keygen -t ed25519 -f notary-deploy -N ""`. Append `notary-deploy.pub` to `~/.ssh/authorized_keys` of the deploy user on the Pi, then delete the local copy of the public key and keep the private key only in the GitHub secret.
+4. **Create a dedicated deploy user and SSH key.**
+   1. On the Pi, create a user for deployments only (no password, no sudo) and a directory for the compose file:
+      ```bash
+      sudo adduser --disabled-password --gecos "" notary-deploy
+      sudo usermod -aG docker notary-deploy
+      sudo mkdir -p /opt/notary
+      sudo chown notary-deploy:notary-deploy /opt/notary
+      ```
+      `docker` group membership is effectively root on the Pi. A dedicated user keeps the CI key away from your personal account and files. Use `PI_USER=notary-deploy` and `PI_DEPLOY_PATH=/opt/notary` below.
+   2. On your machine, generate a key pair:
+      ```bash
+      ssh-keygen -t ed25519 -f notary-deploy -N "" -C "github-actions-notary"
+      ```
+   3. On the Pi, install the public key (paste the contents of `notary-deploy.pub`):
+      ```bash
+      sudo -u notary-deploy mkdir -p -m 700 /home/notary-deploy/.ssh
+      echo "<contents of notary-deploy.pub>" | sudo -u notary-deploy tee -a /home/notary-deploy/.ssh/authorized_keys
+      sudo chmod 600 /home/notary-deploy/.ssh/authorized_keys
+      ```
+   4. Test from a machine on your tailnet: `ssh -i notary-deploy notary-deploy@<PI_HOST> "docker ps"`.
+   5. Copy the contents of the private file `notary-deploy` into the `PI_SSH_PRIVATE_KEY` secret (next step), then delete both local key files.
 5. **Add to GitHub** (Settings > Secrets and variables > Actions):
    - Secrets: `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `PI_SSH_PRIVATE_KEY` (contents of `notary-deploy`)
    - Variables: `PI_HOST` (MagicDNS name or tailnet IP), `PI_USER`, `PI_DEPLOY_PATH` (directory holding the compose file)
