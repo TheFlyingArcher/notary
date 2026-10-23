@@ -9,6 +9,7 @@ using Notary.Configuration;
 using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
+using Notary.Security;
 using Notary.Profiles;
 
 namespace Notary.Service
@@ -24,6 +25,16 @@ namespace Notary.Service
             Configuration = config;
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateAuthorityList)]
+        public override Task<List<CertificateAuthority>> GetAllAsync() => base.GetAllAsync();
+
+        [NotaryAuthorize(NotaryOperation.CertificateAuthorityGet)]
+        public override Task<CertificateAuthority> GetAsync(string slug) => base.GetAsync(slug);
+
+        [NotaryAuthorize(NotaryOperation.CertificateAuthorityRevoke)]
+        public override Task DeleteAsync(string slug, string updatedBySlug) => base.DeleteAsync(slug, updatedBySlug);
+
+        [NotaryAuthorize(NotaryOperation.CertificateAuthorityCreate)]
         public override async Task SaveAsync(CertificateAuthority entity, string updatedBySlug)
         {
             var result = await CreateAsync(entity, updatedBySlug);
@@ -31,6 +42,7 @@ namespace Notary.Service
                 throw new NotaryException(result.Error);
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateAuthorityCreate)]
         public async Task<Result<CertificateAuthority>> CreateAsync(CertificateAuthority entity, string updatedBySlug)
         {
             if (entity == null)
@@ -117,6 +129,7 @@ namespace Notary.Service
             return ca.Purpose is null || (ca.Purpose is CaPurpose.Custom && !hasCustomUsages);
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateAuthorityList)]
         public async Task<List<CaBrief>> GetCaListBrief()
         {
             var caList = await ((ICertificateAuthorityRepository)Repository).GetAllAsync();
@@ -144,6 +157,7 @@ namespace Notary.Service
             return caListBrief;
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateAuthorityList)]
         public async Task<List<CertificateAuthority>> GetLeafIssuingAuthoritiesAsync()
         {
             var issuers = new List<CertificateAuthority>();

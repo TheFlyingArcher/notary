@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using MudBlazor.Services;
 using Notary.Configuration;
 using Notary.Interface.Service;
+using Notary.Security;
 using Notary.Service;
 using Notary.Web.Services;
 
@@ -30,6 +31,8 @@ builder.Host.ConfigureContainer<ContainerBuilder>(c =>
     c.Register(r => LogManager.GetLogger(typeof(Program))).As<ILog>().SingleInstance();
     c.RegisterType<WebCrlBaseUrlProvider>().As<ICrlBaseUrlProvider>().InstancePerLifetimeScope();
     RegisterModules.Register(c);
+    // After the modules, so it replaces their default of having no user
+    c.RegisterType<WebNotaryUserContext>().As<INotaryUserContext>().InstancePerLifetimeScope();
 });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -96,6 +99,19 @@ app.UseRouting();
 app.UseForwardedHeaders();
 
 app.UseRateLimiter();
+
+// A service denies a user it does not authorize; report that to an HTTP caller as 401
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next(context);
+    }
+    catch (NotaryAuthorizationException ex) when (!context.Response.HasStarted)
+    {
+        context.Response.StatusCode = ex.StatusCode;
+    }
+});
 
 app.UseAuthentication();
 

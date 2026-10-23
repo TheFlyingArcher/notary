@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.IO;
 using System.Text;
@@ -8,6 +9,7 @@ using log4net;
 using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
+using Notary.Security;
 using Notary.Configuration;
 
 using Org.BouncyCastle.Asn1;
@@ -57,6 +59,16 @@ namespace Notary.Service
             Configuration = configuration;
         }
 
+        [NotaryAuthorize(NotaryOperation.AsymmetricKeyList)]
+        public override Task<List<AsymmetricKey>> GetAllAsync() => base.GetAllAsync();
+
+        [NotaryAuthorize(NotaryOperation.AsymmetricKeyGet)]
+        public override Task<AsymmetricKey> GetAsync(string slug) => base.GetAsync(slug);
+
+        [NotaryAuthorize(NotaryOperation.AsymmetricKeyDelete)]
+        public override Task DeleteAsync(string slug, string updatedBySlug) => base.DeleteAsync(slug, updatedBySlug);
+
+        [NotaryAuthorize(NotaryOperation.AsymmetricKeyGet)]
         public async Task<AsymmetricCipherKeyPair> GetKeyPairAsync(string slug)
         {
             var key = await GetAsync(slug);
@@ -67,6 +79,7 @@ namespace Notary.Service
             return keyPair;
         }
 
+        [NotaryAuthorize(NotaryOperation.AsymmetricKeyGet)]
         public async Task<byte[]> GetPublicKey(string slug)
         {
             var key = await GetAsync(slug);
@@ -79,6 +92,7 @@ namespace Notary.Service
             return SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(keyPair.Public).GetDerEncoded();
         }
 
+        [NotaryAuthorize(NotaryOperation.None, allowAnonymous: true)]
         public async Task<KeyMigrationResult> MigrateStoredKeysAsync()
         {
             var password = Configuration.ApplicationKey;
@@ -126,6 +140,7 @@ namespace Notary.Service
             return new KeyMigrationResult(migrated, alreadyEncrypted, failed);
         }
 
+        [NotaryAuthorize(NotaryOperation.AsymmetricKeyCreate)]
         public async override Task SaveAsync(AsymmetricKey entity, string updatedBySlug)
         {
             if (entity == null)

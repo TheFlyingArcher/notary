@@ -24,6 +24,7 @@ using Notary.Configuration;
 using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
+using Notary.Security;
 using Notary.Logging;
 using Notary.Profiles;
 using Notary.Validity;
@@ -46,6 +47,19 @@ namespace Notary.Service
             CrlBaseUrlProvider = crlBaseUrlProvider;
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateList)]
+        public override Task<List<Certificate>> GetAllAsync() => base.GetAllAsync();
+
+        [NotaryAuthorize(NotaryOperation.CertificateGet)]
+        public override Task<Certificate> GetAsync(string slug) => base.GetAsync(slug);
+
+        [NotaryAuthorize(NotaryOperation.CertificateRevoke)]
+        public override Task DeleteAsync(string slug, string updatedBySlug) => base.DeleteAsync(slug, updatedBySlug);
+
+        [NotaryAuthorize(NotaryOperation.CertificateCreate)]
+        public override Task SaveAsync(Certificate entity, string updatedBySlug) => base.SaveAsync(entity, updatedBySlug);
+
+        [NotaryAuthorize(NotaryOperation.CertificateCreate)]
         public async Task<Result<Certificate>> IssueCertificateAsync(CertificateRequest request)
         {
             try
@@ -182,6 +196,7 @@ namespace Notary.Service
             }
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateDownload)]
         public async Task<byte[]> RequestCertificateAsync(string slug, CertificateFormat format, string privateKeyPassword)
         {
             var certificate = await GetAsync(slug);
@@ -225,6 +240,7 @@ namespace Notary.Service
             return certificateBinary;
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateList)]
         public async Task<List<Certificate>> GetCertificatesByCaAsync(string slug)
         {
             var repository = (ICertificateRepository)Repository;
@@ -232,6 +248,7 @@ namespace Notary.Service
             return await repository.GetCertificatesByCaAsync(slug);
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateList)]
         public async Task<List<Certificate>> GetSelfSignedCertificatesAsync()
         {
             var repository = (ICertificateRepository)Repository;

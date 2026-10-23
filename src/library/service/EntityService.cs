@@ -7,6 +7,7 @@ using log4net;
 using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
+using Notary.Security;
 
 namespace Notary.Service
 {
@@ -46,6 +47,7 @@ namespace Notary.Service
             await Repository.SaveAsync(entity);
         }
 
+        [NotaryAuthorize(NotaryOperation.None, allowAnonymous: true)]
         public async virtual Task InitializeAsync()
         {
             await Repository.InitializeAsync();
