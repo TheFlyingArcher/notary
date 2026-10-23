@@ -249,6 +249,57 @@ intents:
           - plaintext-key-migration
         run_id: run-specs-md-fire-planner-fad6e4-005
         completed_at: 2026-10-16T00:23:18.146Z
+  - id: role-based-authorization
+    title: Role-based authorization on service methods
+    status: completed
+    completed_at: 2026-10-23T00:43:14Z
+    work_items:
+      - id: authorization-model
+        title: Roles, operations and permission map
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-3d8043-001
+        completed_at: 2026-10-23T00:43:14Z
+      - id: authorization-interceptor
+        title: Authorization interceptor and user context
+        status: completed
+        complexity: high
+        mode: validate
+        depends_on:
+          - authorization-model
+        run_id: run-specsmd-fire-planner-3d8043-001
+        completed_at: 2026-10-23T00:43:14Z
+      - id: service-method-authorization
+        title: Declare operations on service methods
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - authorization-model
+          - authorization-interceptor
+        run_id: run-specsmd-fire-planner-3d8043-001
+        completed_at: 2026-10-23T00:43:14Z
+      - id: web-user-context-401
+        title: Web user context and HTTP 401
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - authorization-interceptor
+        run_id: run-specsmd-fire-planner-3d8043-001
+        completed_at: 2026-10-23T00:43:14Z
+      - id: authorization-docs-tests
+        title: Authorization tests and docs
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - service-method-authorization
+          - web-user-context-401
+        run_id: run-specsmd-fire-planner-3d8043-001
+        completed_at: 2026-10-23T00:43:14Z
 runs:
   active: []
   completed:
@@ -429,3 +480,23 @@ runs:
           mode: autopilot
       started: 2026-10-16T00:22:00.262Z
       completed: 2026-10-16T00:23:18.146Z
+    - id: run-specsmd-fire-planner-3d8043-001
+      scope: wide
+      work_items:
+        - id: authorization-model
+          intent: role-based-authorization
+          mode: confirm
+        - id: authorization-interceptor
+          intent: role-based-authorization
+          mode: validate
+        - id: service-method-authorization
+          intent: role-based-authorization
+          mode: confirm
+        - id: web-user-context-401
+          intent: role-based-authorization
+          mode: confirm
+        - id: authorization-docs-tests
+          intent: role-based-authorization
+          mode: confirm
+      started: 2026-10-23T00:00:00Z
+      completed: 2026-10-23T00:43:14Z
