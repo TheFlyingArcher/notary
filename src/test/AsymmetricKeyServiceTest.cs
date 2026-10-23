@@ -10,6 +10,8 @@ using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Nist;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto.Operators;
+using Org.BouncyCastle.Math.EC;
 using Org.BouncyCastle.X509;
 
 namespace Notary.Test;
@@ -250,5 +252,77 @@ public class AsymmetricKeyServiceTest
         var perLoadMs = stopwatch.Elapsed.TotalMilliseconds / loads;
         TestContext.Out.WriteLine($"PBES2 key load at 600,000 iterations: {perLoadMs:F0} ms per load");
         Assert.That(perLoadMs, Is.LessThan(5000));
+    }
+
+    [TestCaseSource(nameof(AllEllipticCurves))]
+    public async Task LoadedPublicKey_MatchesSelfSignedCertificateSubjectPublicKeyInfo(EllipticCurve curve)
+    {
+        var service = CreateService();
+        var key = await CreateKeyAsync(service, Algorithm.EllipticCurve, curve);
+        var keyPair = await service.GetKeyPairAsync(key.Slug);
+
+        var subject = new X509Name("CN=ec key load test");
+        var generator = new X509V3CertificateGenerator();
+        generator.SetSerialNumber(BigInteger.One);
+        generator.SetIssuerDN(subject);
+        generator.SetSubjectDN(subject);
+        generator.SetNotBefore(DateTime.UtcNow.AddMinutes(-1));
+        generator.SetNotAfter(DateTime.UtcNow.AddDays(1));
+        generator.SetPublicKey(keyPair!.Public);
+        var certificate = generator.Generate(new Asn1SignatureFactory("SHA256withECDSA", keyPair.Private));
+
+        var certificateSpki = certificate.CertificateStructure.SubjectPublicKeyInfo.GetDerEncoded();
+        Assert.Multiple(() =>
+        {
+            Assert.That(certificateSpki, Is.EqualTo(service.GetPublicKey(key.Slug).Result));
+            Assert.That(
+                certificateSpki,
+                Is.EqualTo(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(keyPair.Public).GetDerEncoded()));
+            Assert.DoesNotThrow(() => certificate.Verify(certificate.GetPublicKey()));
+        });
+    }
+
+    private static IEnumerable<string> NistCurveNames() => ["P-256", "P-384", "P-521"];
+
+    private static ECDomainParameters NistDomain(string name) => new(NistNamedCurves.GetByName(name));
+
+    [TestCaseSource(nameof(NistCurveNames))]
+    public void ValidateEcPublicPoint_PointOnCurve_Passes(string curveName)
+    {
+        var domain = NistDomain(curveName);
+        var point = domain.G.Multiply(BigInteger.ValueOf(12345)).Normalize();
+
+        Assert.DoesNotThrow(() => AsymmetricKeyService.ValidateEcPublicPoint(point, domain));
+    }
+
+    [TestCaseSource(nameof(NistCurveNames))]
+    public void ValidateEcPublicPoint_PointAtInfinity_Throws(string curveName)
+    {
+        var domain = NistDomain(curveName);
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => AsymmetricKeyService.ValidateEcPublicPoint(domain.Curve.Infinity, domain));
+
+        Assert.That(ex!.Message, Does.Contain("infinity"));
+    }
+
+    [TestCaseSource(nameof(NistCurveNames))]
+    public void ValidateEcPublicPoint_PointNotOnCurve_Throws(string curveName)
+    {
+        var domain = NistDomain(curveName);
+        var g = domain.G.Normalize();
+        var offCurve = domain.Curve.CreatePoint(g.AffineXCoord.ToBigInteger(), g.AffineYCoord.ToBigInteger().Add(BigInteger.One));
+
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => AsymmetricKeyService.ValidateEcPublicPoint(offCurve, domain));
+
+        Assert.That(ex!.Message, Does.Contain("not on the curve"));
+    }
+
+    [Test]
+    public void ValidateEcPublicPoint_NullPoint_Throws()
+    {
+        Assert.Throws<InvalidOperationException>(
+            () => AsymmetricKeyService.ValidateEcPublicPoint(null!, NistDomain("P-256")));
     }
 }
