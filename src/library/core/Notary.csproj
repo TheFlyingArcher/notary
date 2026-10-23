@@ -32,12 +32,12 @@
 
   <ItemGroup>
     <None Remove="Security\" />
-    <None Remove="IOC\Interceptor\" />
+    <None Remove="Security\Interceptor\" />
     <None Remove="Castle.Core" />
     <None Remove="Autofac.Extras.DynamicProxy" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Security\" />
-    <Folder Include="IOC\Interceptor\" />
+    <Folder Include="Security\Interceptor\" />
   </ItemGroup>
 </Project>

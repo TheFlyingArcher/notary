@@ -8,6 +8,7 @@ using Notary.Configuration;
 using Notary.Contract;
 using Notary.Interface.Repository;
 using Notary.Interface.Service;
+using Notary.Security;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Operators;
@@ -47,6 +48,19 @@ namespace Notary.Service
             KeyService = keyService;
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateList)]
+        public override Task<List<Revocation>> GetAllAsync() => base.GetAllAsync();
+
+        [NotaryAuthorize(NotaryOperation.CertificateGet)]
+        public override Task<Revocation> GetAsync(string slug) => base.GetAsync(slug);
+
+        [NotaryAuthorize(NotaryOperation.CertificateRevoke)]
+        public override Task DeleteAsync(string slug, string updatedBySlug) => base.DeleteAsync(slug, updatedBySlug);
+
+        [NotaryAuthorize(NotaryOperation.CertificateRevoke)]
+        public override Task SaveAsync(Revocation entity, string updatedBySlug) => base.SaveAsync(entity, updatedBySlug);
+
+        [NotaryAuthorize(NotaryOperation.None, allowAnonymous: true)]
         public async Task<Result<CrlDocument>> GetCrlAsync(string caSlug, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(caSlug))
@@ -67,6 +81,7 @@ namespace Notary.Service
             }
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateList)]
         public async Task<List<Revocation>> GetRevocations()
         {
             var revocations = await Repository.GetAllAsync();
@@ -74,11 +89,13 @@ namespace Notary.Service
             return revocations.Where(r => r.Active).ToList();
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateGet)]
         public async Task<Revocation> GetRevocationAsync(string certificateSlug)
         {
             return await _revocationRepository.GetActiveByCertificateAsync(certificateSlug);
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateRevoke)]
         public async Task<Result<int>> RevokeCertificateAsync(
             string slug,
             RevocationReason reason,
@@ -140,6 +157,7 @@ namespace Notary.Service
                 : Result<int>.Fail(ResultStatus.Failed, $"{revoked} certificate(s) revoked; failed to revoke: {string.Join(", ", failed)}");
         }
 
+        [NotaryAuthorize(NotaryOperation.CertificateRevoke)]
         public async Task<Result> ReinstateCertificateAsync(string slug, string userSlug, CancellationToken cancellationToken = default)
         {
             var certificate = await CertificateService.GetAsync(slug);
