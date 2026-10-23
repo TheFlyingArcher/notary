@@ -217,54 +217,44 @@ namespace Notary.Service
         }
 
         /// <summary>
-        /// Load an Elliptic Curve key pair from a decrypted private key.
+        /// Load an Elliptic Curve key pair from a decrypted private key. The public point is derived
+        /// (Q = d*G) and then validated against the curve.
         /// </summary>
-        /// <param name="pemObject">The decrypted EC private key</param>
+        /// <param name="privateKey">The decrypted private key</param>
         /// <returns>An asymmetric key pair with both public and private EC keys</returns>
-        private AsymmetricCipherKeyPair LoadEcKeyPair(object pemObject)
+        /// <exception cref="InvalidOperationException">The key is not an EC key, or is not valid for its curve</exception>
+        private static AsymmetricCipherKeyPair LoadEcKeyPair(AsymmetricKeyParameter privateKey)
         {
-            try
-            {
-                if (pemObject is ECPrivateKeyParameters ecPrivateKey)
-                {
-                    ECPublicKeyParameters ecPublicKey = DeriveEcPublicKey(ecPrivateKey);
-                    return new AsymmetricCipherKeyPair(ecPublicKey, ecPrivateKey);
-                }
-
+            if (privateKey is not ECPrivateKeyParameters ecPrivateKey)
                 throw new InvalidOperationException(
-                    $"Expected EC key parameter type but got {pemObject?.GetType().Name ?? "null"}.");
-            }
-            catch (InvalidOperationException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to load EC key pair: {ex.Message}", ex);
-                throw new InvalidOperationException("Failed to deserialize EC private key.", ex);
-            }
+                    $"The stored key is not an EC private key (found {privateKey?.GetType().Name ?? "null"}).");
+
+            var domain = ecPrivateKey.Parameters;
+            if (ecPrivateKey.D.SignValue <= 0 || ecPrivateKey.D.CompareTo(domain.N) >= 0)
+                throw new InvalidOperationException("The stored EC private key is not valid for its curve: the private scalar is out of range.");
+
+            var publicPoint = domain.G.Multiply(ecPrivateKey.D).Normalize();
+            ValidateEcPublicPoint(publicPoint, domain);
+
+            return new AsymmetricCipherKeyPair(new ECPublicKeyParameters(publicPoint, domain), ecPrivateKey);
         }
 
         /// <summary>
-        /// Derive the public key point from an EC private key: Q = d*G
+        /// Check that a public point is a usable point of the curve: finite, on the curve and of the
+        /// curve's prime order (n*Q is the point at infinity).
         /// </summary>
-        /// <param name="ecPrivateKey">The EC private key parameters</param>
-        /// <returns>The corresponding public key parameters</returns>
-        private ECPublicKeyParameters DeriveEcPublicKey(ECPrivateKeyParameters ecPrivateKey)
+        /// <exception cref="InvalidOperationException">The point is not valid for the curve</exception>
+        internal static void ValidateEcPublicPoint(ECPoint point, ECDomainParameters domain)
         {
-            try
-            {
-                var domainParams = ecPrivateKey.Parameters;
-                var publicKeyPoint = domainParams.G.Multiply(ecPrivateKey.D);
+            if (point == null || point.IsInfinity)
+                throw new InvalidOperationException("The EC public point is the point at infinity.");
 
-                return new ECPublicKeyParameters(publicKeyPoint, domainParams);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to derive EC public key from private key: {ex.Message}", ex);
-                throw new InvalidOperationException(
-                    "Failed to derive public key from EC private key. The key may be corrupted or in an unsupported format.", ex);
-            }
+            point = point.Normalize();
+            if (!point.IsValid())
+                throw new InvalidOperationException("The EC public point is not on the curve.");
+
+            if (!point.Multiply(domain.N).IsInfinity)
+                throw new InvalidOperationException("The EC public point does not have the order of the curve.");
         }
 
         /// <summary>

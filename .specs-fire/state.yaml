@@ -300,6 +300,28 @@ intents:
           - web-user-context-401
         run_id: run-specsmd-fire-planner-3d8043-001
         completed_at: 2026-10-23T00:43:14Z
+  - id: clean-up-ec-key-loading
+    title: Clean up and test EC key loading
+    status: completed
+    completed_at: 2026-10-23T01:09:53.259Z
+    work_items:
+      - id: ec-key-load-validation
+        title: Simplify EC key loading and validate the public point
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-role-based-authorization-398ceb-001
+        completed_at: 2026-10-23T01:06:45.008Z
+      - id: ec-key-load-tests
+        title: Tests for EC key loading and public key matching
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - ec-key-load-validation
+        run_id: run-role-based-authorization-398ceb-002
+        completed_at: 2026-10-23T01:09:53.259Z
 runs:
   active: []
   completed:
@@ -500,3 +522,19 @@ runs:
           mode: confirm
       started: 2026-10-23T00:00:00Z
       completed: 2026-10-23T00:43:14Z
+    - id: run-role-based-authorization-398ceb-001
+      scope: single
+      work_items:
+        - id: ec-key-load-validation
+          intent: clean-up-ec-key-loading
+          mode: confirm
+      started: 2026-10-23T01:04:03.844Z
+      completed: 2026-10-23T01:06:45.008Z
+    - id: run-role-based-authorization-398ceb-002
+      scope: single
+      work_items:
+        - id: ec-key-load-tests
+          intent: clean-up-ec-key-loading
+          mode: confirm
+      started: 2026-10-23T01:07:23.471Z
+      completed: 2026-10-23T01:09:53.259Z
