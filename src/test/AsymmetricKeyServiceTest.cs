@@ -282,6 +282,120 @@ public class AsymmetricKeyServiceTest
         });
     }
 
+    private static bool HasNamedCurve(byte[] subjectPublicKeyInfo, out DerObjectIdentifier? oid)
+    {
+        var parameters = Org.BouncyCastle.Asn1.X9.X962Parameters.GetInstance(
+            Org.BouncyCastle.Asn1.X509.SubjectPublicKeyInfo.GetInstance(subjectPublicKeyInfo).AlgorithmID.Parameters);
+        oid = parameters.IsNamedCurve ? (DerObjectIdentifier)parameters.Parameters : null;
+        return parameters.IsNamedCurve;
+    }
+
+    // Store a key the way earlier versions did: the curve is written into the PKCS #8 as explicit parameters
+    private async Task<(AsymmetricKey Key, ECPrivateKeyParameters Private)> StoreExplicitParameterKeyAsync(
+        DerObjectIdentifier curveOid)
+    {
+        var x9 = Org.BouncyCastle.Asn1.Sec.SecNamedCurves.GetByOid(curveOid);
+        var generator = new ECKeyPairGenerator();
+        generator.Init(new ECKeyGenerationParameters(new ECDomainParameters(x9), new SecureRandom()));
+        var privateKey = (ECPrivateKeyParameters)generator.GenerateKeyPair().Private;
+
+        var key = await CreateKeyAsync(CreateService(), Algorithm.EllipticCurve, EllipticCurve.P256);
+        var write = typeof(AsymmetricKeyService).GetMethod(
+            "WriteEncryptedKey", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        key.EncryptedPrivateKey = (byte[])write.Invoke(CreateService(), [privateKey, AppKey, new SecureRandom()])!;
+        await _repository.SaveAsync(key);
+        return (key, privateKey);
+    }
+
+    [TestCaseSource(nameof(AllEllipticCurves))]
+    public async Task GeneratedKey_PublicKeyUsesANamedCurve(EllipticCurve curve)
+    {
+        var service = CreateService();
+        var key = await CreateKeyAsync(service, Algorithm.EllipticCurve, curve);
+        var expected = curve switch
+        {
+            EllipticCurve.P384 => Org.BouncyCastle.Asn1.Sec.SecObjectIdentifiers.SecP384r1,
+            EllipticCurve.P521 => Org.BouncyCastle.Asn1.Sec.SecObjectIdentifiers.SecP521r1,
+            _ => Org.BouncyCastle.Asn1.Sec.SecObjectIdentifiers.SecP256r1
+        };
+
+        var der = await service.GetPublicKey(key.Slug);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(HasNamedCurve(der, out var oid), Is.True, "explicit curve parameters were written");
+            Assert.That(oid, Is.EqualTo(expected));
+        });
+    }
+
+    [TestCaseSource(nameof(AllEllipticCurves))]
+    public async Task GeneratedKey_StoredPrivateKeyUsesANamedCurve(EllipticCurve curve)
+    {
+        var service = CreateService();
+        var key = await CreateKeyAsync(service, Algorithm.EllipticCurve, curve);
+
+        var keyPair = await service.GetKeyPairAsync(key.Slug);
+
+        Assert.That(((ECPrivateKeyParameters)keyPair!.Private).Parameters, Is.InstanceOf<ECNamedDomainParameters>());
+    }
+
+    private static IEnumerable<DerObjectIdentifier> SupportedCurveOids()
+    {
+        yield return Org.BouncyCastle.Asn1.Sec.SecObjectIdentifiers.SecP256r1;
+        yield return Org.BouncyCastle.Asn1.Sec.SecObjectIdentifiers.SecP384r1;
+        yield return Org.BouncyCastle.Asn1.Sec.SecObjectIdentifiers.SecP521r1;
+    }
+
+    [TestCaseSource(nameof(SupportedCurveOids))]
+    public async Task Load_KeyStoredWithExplicitParameters_IsNormalizedToTheNamedCurve(DerObjectIdentifier curveOid)
+    {
+        var (key, original) = await StoreExplicitParameterKeyAsync(curveOid);
+
+        var service = CreateService();
+        var keyPair = await service.GetKeyPairAsync(key.Slug);
+        var der = await service.GetPublicKey(key.Slug);
+
+        var expectedPoint = original.Parameters.G.Multiply(original.D).Normalize();
+        Assert.Multiple(() =>
+        {
+            Assert.That(((ECPrivateKeyParameters)keyPair!.Private).Parameters, Is.InstanceOf<ECNamedDomainParameters>());
+            Assert.That(((ECPrivateKeyParameters)keyPair.Private).D, Is.EqualTo(original.D));
+            Assert.That(((ECPublicKeyParameters)keyPair.Public).Q, Is.EqualTo(expectedPoint));
+            Assert.That(HasNamedCurve(der, out var oid), Is.True);
+            Assert.That(oid, Is.EqualTo(curveOid));
+        });
+    }
+
+    [Test]
+    public async Task Load_KeyStoredWithExplicitParameters_YieldsCertificateWithANamedCurve()
+    {
+        var (key, _) = await StoreExplicitParameterKeyAsync(Org.BouncyCastle.Asn1.Sec.SecObjectIdentifiers.SecP384r1);
+        var keyPair = await CreateService().GetKeyPairAsync(key.Slug);
+
+        var subject = new X509Name("CN=named curve test");
+        var generator = new X509V3CertificateGenerator();
+        generator.SetSerialNumber(BigInteger.One);
+        generator.SetIssuerDN(subject);
+        generator.SetSubjectDN(subject);
+        generator.SetNotBefore(DateTime.UtcNow.AddMinutes(-1));
+        generator.SetNotAfter(DateTime.UtcNow.AddDays(1));
+        generator.SetPublicKey(keyPair!.Public);
+        var certificate = generator.Generate(new Asn1SignatureFactory("SHA384withECDSA", keyPair.Private));
+
+        var spki = certificate.CertificateStructure.SubjectPublicKeyInfo.GetDerEncoded();
+        Assert.That(HasNamedCurve(spki, out _), Is.True);
+    }
+
+    [Test]
+    public async Task Load_KeyStoredWithAnUnsupportedCurve_IsRejected()
+    {
+        var (key, _) = await StoreExplicitParameterKeyAsync(Org.BouncyCastle.Asn1.Sec.SecObjectIdentifiers.SecP256k1);
+
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(async () => await CreateService().GetKeyPairAsync(key.Slug));
+
+        Assert.That(ex!.Message, Does.Contain("not supported"));
+    }
+
     private static IEnumerable<string> NistCurveNames() => ["P-256", "P-384", "P-521"];
 
     private static ECDomainParameters NistDomain(string name) => new(NistNamedCurves.GetByName(name));

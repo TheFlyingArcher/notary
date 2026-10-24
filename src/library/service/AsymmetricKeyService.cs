@@ -176,9 +176,9 @@ namespace Notary.Service
                     throw new ArgumentException("A curve is required for Elliptic Curve keys.", nameof(curve));
                 }
 
-                var domain = new ECDomainParameters(SecNamedCurves.GetByOid(GetCurveOid(curve.Value)));
-
-                var keyGenerationParameters = new ECKeyGenerationParameters(domain, random);
+                // Pass the curve OID so the key carries a named curve; plain domain parameters would be written
+                // into certificates as explicit parameters, which RFC 5480 forbids and TLS stacks reject
+                var keyGenerationParameters = new ECKeyGenerationParameters(GetCurveOid(curve.Value), random);
                 var ecGenerator = new ECKeyPairGenerator();
                 ecGenerator.Init(keyGenerationParameters);
 
@@ -229,6 +229,8 @@ namespace Notary.Service
                 throw new InvalidOperationException(
                     $"The stored key is not an EC private key (found {privateKey?.GetType().Name ?? "null"}).");
 
+            ecPrivateKey = ToNamedCurve(ecPrivateKey);
+
             var domain = ecPrivateKey.Parameters;
             if (ecPrivateKey.D.SignValue <= 0 || ecPrivateKey.D.CompareTo(domain.N) >= 0)
                 throw new InvalidOperationException("The stored EC private key is not valid for its curve: the private scalar is out of range.");
@@ -237,6 +239,34 @@ namespace Notary.Service
             ValidateEcPublicPoint(publicPoint, domain);
 
             return new AsymmetricCipherKeyPair(new ECPublicKeyParameters(publicPoint, domain), ecPrivateKey);
+        }
+
+        /// <summary>
+        /// Make sure a key's curve is a named curve. Keys stored by earlier versions carry explicit curve
+        /// parameters; those are matched to P-256, P-384 or P-521 so certificates issued from them get a
+        /// named-curve SubjectPublicKeyInfo. The key material itself is unchanged.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The explicit parameters match none of the supported curves</exception>
+        private static ECPrivateKeyParameters ToNamedCurve(ECPrivateKeyParameters key)
+        {
+            if (key.Parameters is ECNamedDomainParameters)
+                return key;
+
+            var domain = key.Parameters;
+            foreach (var curve in Enum.GetValues<EllipticCurve>())
+            {
+                var oid = GetCurveOid(curve);
+                var known = SecNamedCurves.GetByOid(oid);
+                if (known.Curve.Equals(domain.Curve)
+                    && known.G.Equals(domain.G)
+                    && known.N.Equals(domain.N)
+                    && known.H.Equals(domain.H))
+                {
+                    return new ECPrivateKeyParameters(key.AlgorithmName, key.D, new ECNamedDomainParameters(oid, known));
+                }
+            }
+
+            throw new InvalidOperationException("The stored EC private key uses a curve that is not supported (only P-256, P-384 and P-521).");
         }
 
         /// <summary>
