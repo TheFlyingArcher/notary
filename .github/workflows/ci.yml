@@ -58,13 +58,22 @@ jobs:
       group: release
       cancel-in-progress: false
     env:
-      VERSION: ${{ vars.NOTARY_MAJOR_VERSION }}.${{ vars.NOTARY_MINOR_VERSION }}.${{ github.run_number }}
+      MAJOR: ${{ vars.NOTARY_MAJOR_VERSION }}
+      MINOR: ${{ vars.NOTARY_MINOR_VERSION }}
       IMAGE: ${{ secrets.DOCKER_HUB_USER }}/notary-web
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-tags: true
       - name: Create Tag
+        # The patch number is the highest existing v<major>.<minor>.N tag plus one. It is not github.run_number,
+        # which is counted per workflow file, restarts when a workflow is renamed and counts pull request runs.
         run: |
+          git fetch --tags --force
+          LAST=$(git tag --list "v${MAJOR}.${MINOR}.*" | sed "s/^v${MAJOR}\.${MINOR}\.//" | grep -E '^[0-9]+$' | sort -n | tail -1)
+          VERSION="${MAJOR}.${MINOR}.$(( ${LAST:-0} + 1 ))"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "v${VERSION}" -m "Release v${VERSION}"
