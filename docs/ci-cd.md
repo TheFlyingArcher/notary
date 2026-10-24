@@ -108,10 +108,38 @@ Notary needs MongoDB 5.0 or later (it requests Stable API v1). The official 5.0+
 | Host | What to do |
 | --- | --- |
 | Raspberry Pi 5, or any x64 machine | Run the bundled database: `docker compose --profile local-db up -d` |
-| **Raspberry Pi 4 (Cortex-A72, ARMv8.0)** | MongoDB cannot run on it. Run MongoDB on a separate x64 or Pi 5 host on your tailnet and set `NOTARY_DB_HOST=mongodb://<tailnet-ip>:27017`. Do not start the `local-db` profile |
+| **Raspberry Pi 4 (Cortex-A72, ARMv8.0)** | MongoDB cannot run on it. Use [MongoDB Atlas](#using-mongodb-atlas) (below), or run MongoDB on a separate x64 or Pi 5 host on your tailnet and set `NOTARY_DB_HOST=mongodb://<tailnet-ip>:27017`. Do not start the `local-db` profile |
 
 Check a Pi with `lscpu`: no `atomics` in the flags means MongoDB 5.0+ will not run. Running Postgres on the Pi 4 instead of MongoDB is tracked in [#59](https://github.com/TheFlyingArcher/notary/issues/59).
 
 When the database is on another host, allow only the Pi to reach its port (Tailscale ACL, for example `tag:pi` to `<db-host>:27017`) and enable authentication and TLS on it.
+
+### Using MongoDB Atlas
+
+The free M0 tier works for a home PKI. Notary encrypts every stored private key with `NOTARY_APP_KEY`, which never leaves the Pi, so the database alone does not expose usable CA keys. Certificate metadata is still stored there.
+
+1. **Create a cluster.** At [cloud.mongodb.com](https://cloud.mongodb.com) create a project and a free **M0** cluster. Pick a region near you. The cluster must run MongoDB 5.0 or later (the default does).
+2. **Create a database user.** Security > Database Access > Add New Database User, password authentication, role **Read and write to any database** (or restrict it to the `notary` database). Use a long random password. Notary passes the password separately, so it needs no URL-encoding. Atlas stores the user in the `admin` database, which is where Notary authenticates.
+3. **Allow the Pi.** Security > Network Access > Add IP Address, and enter your home network's **public** IP (what the Pi appears as to the internet). Do not use `0.0.0.0/0`. If your ISP changes the address, update this entry or connections will time out.
+4. **Get the connection string.** Cluster > Connect > Drivers. Copy only the host part, for example `mongodb+srv://cluster0.abcde.mongodb.net`. Leave out the username, password and any query options, since Notary supplies the credentials itself.
+5. **Set `.env` on the Pi:**
+   ```bash
+   NOTARY_DB_HOST=mongodb+srv://cluster0.abcde.mongodb.net
+   NOTARY_DB_USERNAME=<atlas user>
+   NOTARY_DB_PASSWORD=<atlas password>
+   NOTARY_DB_NAME=notary
+   ```
+   Do not start the `local-db` profile.
+6. **Check it.** Run `docker compose up -d` and `docker compose logs -f notary-web`. A connection timeout usually means the IP allow-list is wrong. An authentication error means the username or password is wrong.
+
+**Backups.** M0 has no automated backups. Take your own export regularly and store it somewhere safe. It holds encrypted keys, so protect it like the database:
+
+```bash
+mongodump --uri "mongodb+srv://<user>@cluster0.abcde.mongodb.net/notary" --out notary-backup-$(date +%F)
+```
+
+Back up `NOTARY_APP_KEY` separately. Without it, a restored backup cannot be read.
+
+Atlas compatibility has not been verified against Notary yet (see the note in `src/library/data/IocRegistration.cs`). Test it before relying on it.
 
 Roll back by running Deploy with the previous tag.
