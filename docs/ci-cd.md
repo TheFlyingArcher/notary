@@ -82,14 +82,15 @@ chmod 600 .env
 nano .env
 ```
 
-The stack runs two containers on a private network: `notary-web` (published only on `127.0.0.1:8080` for NGINX, see #50) and `mongo` (no published ports, data in the `notary-db` volume).
+The stack runs `notary-web` (published only on `127.0.0.1:8080` for NGINX, see #50). The optional `mongo` container (no published ports, data in the `notary-db` volume) only starts with `--profile local-db`; see "Database" below.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DOCKER_HUB_USER` | Yes | Docker Hub account that owns `notary-web` |
 | `NOTARY_TAG` | No | Image tag; Deploy overrides it. Defaults to `latest` |
 | `NOTARY_APP_KEY` | Yes | 16+ character passphrase protecting stored private keys. Back it up separately; never change it once keys exist ([details](private-key-storage.md)) |
-| `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD` | Yes | MongoDB root user, created on the first start of an empty volume. Notary authenticates against the `admin` database |
+| `NOTARY_DB_HOST` | No | MongoDB URL. Defaults to the bundled `mongo` service |
+| `NOTARY_DB_USERNAME`, `NOTARY_DB_PASSWORD` | Yes | MongoDB credentials. Notary authenticates against the `admin` database; the bundled `mongo` creates this root user on first start |
 | `NOTARY_DB_NAME` | No | Database name, default `notary` |
 | `NOTARY_OPENID_DOMAIN`, `NOTARY_OPENID_CLIENTID`, `NOTARY_OPENID_CLIENTSECRET` | Yes | Auth0 application used to sign in |
 | `NOTARY_CRL_ENDPOINT` | No | Public base URL for CRL distribution points, e.g. `https://pki.example.com` |
@@ -97,8 +98,20 @@ The stack runs two containers on a private network: `notary-web` (published only
 Notes:
 
 - Auth0: create a Regular Web Application. Set Allowed Callback URLs to `https://<your-host>/callback` and Allowed Logout URLs to `https://<your-host>/`.
-- MongoDB image: `mongo:7` needs a 64-bit OS and, on arm64, ARMv8.2-A (Raspberry Pi 5). A Raspberry Pi 4 cannot run MongoDB 5.0 or later, which Notary needs (it uses Stable API v1). Point `NOTARY_DB_HOST` at a MongoDB elsewhere on the tailnet, or use another host for the database.
 - First start: after editing `.env`, run `docker compose up -d` once by hand and check `docker compose logs notary-web`. The app refuses to start without a valid `NOTARY_APP_KEY`.
 - `docker compose config` prints the resolved file and names any missing required variable.
+
+### Database
+
+Notary needs MongoDB 5.0 or later (it requests Stable API v1). The official 5.0+ builds require the ARMv8.2-A CPU feature set, so:
+
+| Host | What to do |
+| --- | --- |
+| Raspberry Pi 5, or any x64 machine | Run the bundled database: `docker compose --profile local-db up -d` |
+| **Raspberry Pi 4 (Cortex-A72, ARMv8.0)** | MongoDB cannot run on it. Run MongoDB on a separate x64 or Pi 5 host on your tailnet and set `NOTARY_DB_HOST=mongodb://<tailnet-ip>:27017`. Do not start the `local-db` profile |
+
+Check a Pi with `lscpu`: no `atomics` in the flags means MongoDB 5.0+ will not run. Running Postgres on the Pi 4 instead of MongoDB is tracked in [#59](https://github.com/TheFlyingArcher/notary/issues/59).
+
+When the database is on another host, allow only the Pi to reach its port (Tailscale ACL, for example `tag:pi` to `<db-host>:27017`) and enable authentication and TLS on it.
 
 Roll back by running Deploy with the previous tag.
