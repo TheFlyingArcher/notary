@@ -339,9 +339,7 @@ namespace Notary.Service
             crlGen.AddExtension(X509Extensions.CrlNumber, false, new CrlNumber(BigInteger.ValueOf(crlNumber)));
             crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure(signingCertificate));
 
-            var signatureAlgorithm = keyInfo.KeyAlgorithm == Algorithm.EllipticCurve
-                ? "SHA256WithECDSA"
-                : "SHA256WithRSA";
+            var signatureAlgorithm = SignatureAlgorithms.ForIssuerKey(keyPair.Private);
             var crl = crlGen.Generate(new Asn1SignatureFactory(signatureAlgorithm, keyPair.Private));
             crl.Verify(signingCertificate.GetPublicKey());
             var encoded = crl.GetEncoded();

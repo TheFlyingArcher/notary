@@ -74,12 +74,31 @@ internal class FakeKeyService : IAsymmetricKeyService
 
     public Task SaveAsync(AsymmetricKey entity, string updatedBySlug)
     {
-        var generator = new ECKeyPairGenerator();
-        generator.Init(new ECKeyGenerationParameters(SecObjectIdentifiers.SecP256r1, new SecureRandom()));
-
         entity.Slug = Guid.NewGuid().ToString("N");
-        _keys[entity.Slug] = (entity, generator.GenerateKeyPair());
+        _keys[entity.Slug] = (entity, GenerateKeyPair(entity));
         return Task.CompletedTask;
+    }
+
+    // Honors the requested algorithm, curve and size; an unspecified EC curve is P-256 and an unspecified RSA size is 2048
+    private static AsymmetricCipherKeyPair GenerateKeyPair(AsymmetricKey entity)
+    {
+        var random = new SecureRandom();
+        if (entity.KeyAlgorithm == Algorithm.RSA)
+        {
+            var rsaGenerator = new RsaKeyPairGenerator();
+            rsaGenerator.Init(new KeyGenerationParameters(random, entity.KeyLength ?? 2048));
+            return rsaGenerator.GenerateKeyPair();
+        }
+
+        var curveOid = entity.KeyCurve switch
+        {
+            EllipticCurve.P384 => SecObjectIdentifiers.SecP384r1,
+            EllipticCurve.P521 => SecObjectIdentifiers.SecP521r1,
+            _ => SecObjectIdentifiers.SecP256r1
+        };
+        var generator = new ECKeyPairGenerator();
+        generator.Init(new ECKeyGenerationParameters(curveOid, random));
+        return generator.GenerateKeyPair();
     }
 
     public Task<AsymmetricKey> GetAsync(string slug) => Task.FromResult(_keys.TryGetValue(slug, out var k) ? k.Key : null);
