@@ -352,6 +352,27 @@ intents:
           - use-selector-in-signing
         run_id: run-specsmd-fire-planner-02371b-003
         completed_at: 2026-10-24T23:05:12.322Z
+  - id: named-curve-ec-keys
+    title: Encode EC keys with named curves
+    status: in_progress
+    work_items:
+      - id: named-curve-key-encoding
+        title: Named-curve EC key generation and loading
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-002
+        completed_at: 2026-10-24T23:44:32.817Z
+      - id: named-curve-key-tests
+        title: Tests for named-curve encoding
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - named-curve-key-encoding
+        run_id: run-github-issue-51-4dca63-002
+        completed_at: 2026-10-24T23:44:32.817Z
 runs:
   active: []
   completed:
@@ -592,3 +613,14 @@ runs:
           mode: confirm
       started: 2026-10-24T23:01:43.747Z
       completed: 2026-10-24T23:05:12.322Z
+    - id: run-github-issue-51-4dca63-002
+      scope: batch
+      work_items:
+        - id: named-curve-key-encoding
+          intent: named-curve-ec-keys
+          mode: confirm
+        - id: named-curve-key-tests
+          intent: named-curve-ec-keys
+          mode: confirm
+      started: 2026-10-24T23:38:56.989Z
+      completed: 2026-10-24T23:44:32.817Z
