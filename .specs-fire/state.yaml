@@ -322,6 +322,36 @@ intents:
           - ec-key-load-validation
         run_id: run-role-based-authorization-398ceb-002
         completed_at: 2026-10-23T01:09:53.259Z
+  - id: match-ecdsa-hash-to-issuer-curve
+    title: Match signature hash to the issuer key
+    status: in_progress
+    work_items:
+      - id: signature-algorithm-selector
+        title: Issuer signature algorithm selector
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-02371b-001
+        completed_at: 2026-10-24T22:51:47.672Z
+      - id: use-selector-in-signing
+        title: Use the selector for certificate and CRL signing
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - signature-algorithm-selector
+        run_id: run-specsmd-fire-planner-02371b-002
+        completed_at: 2026-10-24T22:59:55.035Z
+      - id: signature-algorithm-tests
+        title: Signature algorithm tests
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - use-selector-in-signing
+        run_id: run-specsmd-fire-planner-02371b-003
+        completed_at: 2026-10-24T23:05:12.322Z
 runs:
   active: []
   completed:
@@ -538,3 +568,27 @@ runs:
           mode: confirm
       started: 2026-10-23T01:07:23.471Z
       completed: 2026-10-23T01:09:53.259Z
+    - id: run-specsmd-fire-planner-02371b-001
+      scope: single
+      work_items:
+        - id: signature-algorithm-selector
+          intent: match-ecdsa-hash-to-issuer-curve
+          mode: confirm
+      started: 2026-10-23T22:11:06.932Z
+      completed: 2026-10-24T22:51:47.672Z
+    - id: run-specsmd-fire-planner-02371b-002
+      scope: single
+      work_items:
+        - id: use-selector-in-signing
+          intent: match-ecdsa-hash-to-issuer-curve
+          mode: confirm
+      started: 2026-10-24T22:52:33.508Z
+      completed: 2026-10-24T22:59:55.035Z
+    - id: run-specsmd-fire-planner-02371b-003
+      scope: single
+      work_items:
+        - id: signature-algorithm-tests
+          intent: match-ecdsa-hash-to-issuer-curve
+          mode: confirm
+      started: 2026-10-24T23:01:43.747Z
+      completed: 2026-10-24T23:05:12.322Z

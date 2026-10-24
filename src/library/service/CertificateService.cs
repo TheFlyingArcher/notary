@@ -148,7 +148,6 @@ namespace Notary.Service
                 var generatedCertificate = GenerateCertificate(
                     request.SubjectAlternativeNames,
                     random,
-                    request.KeyAlgorithm,
                     subject,
                     certificateKeyPair,
                     serialNumber,
@@ -417,23 +416,16 @@ namespace Notary.Service
                 attributes.Select(a => a.Value).ToList());
         }
 
-        private X509Certificate GenerateCertificate(List<SubjectAlternativeName> sanList, SecureRandom random, Algorithm alg,
+        private X509Certificate GenerateCertificate(List<SubjectAlternativeName> sanList, SecureRandom random,
             X509Name subject, AsymmetricCipherKeyPair subjectKeyPair, BigInteger subjectSn, X509Name issuer, DateTime notAfter,
             AsymmetricCipherKeyPair issuerKeyPair, BigInteger issuerSn, bool isCA, int? pathLengthConstraint, string crlEndpoint,
             int certificateKeyUsageFlags, IEnumerable<DerObjectIdentifier> usages)
         {
             var certGen = new X509V3CertificateGenerator();
             var notBefore = DateTime.UtcNow;
-            Asn1SignatureFactory signatureFactory = null;
-            switch (alg)
-            {
-                case Algorithm.RSA:
-                    signatureFactory = new Asn1SignatureFactory("SHA256WithRSA", issuerKeyPair.Private);
-                    break;
-                case Algorithm.EllipticCurve:
-                    signatureFactory = new Asn1SignatureFactory("SHA256WithECDSA", issuerKeyPair.Private);
-                    break;
-            }
+            // The issuer's key signs, so its type and strength choose the algorithm, not the subject's key
+            var signatureFactory = new Asn1SignatureFactory(
+                SignatureAlgorithms.ForIssuerKey(issuerKeyPair.Private), issuerKeyPair.Private);
 
             certGen.SetPublicKey(subjectKeyPair.Public);
             certGen.SetSerialNumber(subjectSn);
