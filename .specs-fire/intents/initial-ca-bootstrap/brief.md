@@ -46,4 +46,4 @@ Production cannot serve TLS until a certificate exists, and the CA that issues i
 
 ## Notes
 
-Deliverables: an NGINX service and config in `deploy/docker-compose.yml`, and a runbook in `docs/`. Open point for the plan: Blazor Server needs websocket upgrade headers in NGINX; forwarded headers are already honoured by the app.
+Deliverables: an NGINX site config for the Pi's existing host NGINX in `deploy/nginx/notary.conf`, and a runbook in `docs/`. Open point for the plan: Blazor Server needs websocket upgrade headers in NGINX; forwarded headers are already honoured by the app.

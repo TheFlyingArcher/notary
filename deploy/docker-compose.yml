@@ -37,25 +37,9 @@ services:
       # Optional. Public base address used in the CRL distribution points of issued certificates,
       # e.g. https://pki.example.com. When blank, the address the request arrived at is used.
       NOTARY_CRL_ENDPOINT: ${NOTARY_CRL_ENDPOINT:-}
-    expose:
-      # Reachable only by the nginx service on the compose network; nothing is published on the host.
-      - "8080"
-    networks:
-      - notary
-
-  nginx:
-    # TLS-terminating reverse proxy in front of notary-web (see #50 and docs/ci-cd.md).
-    # Needs fullchain.pem and privkey.pem in NOTARY_CERTS_DIR; it will not start until they exist.
-    image: nginx:alpine
-    restart: unless-stopped
-    depends_on:
-      - notary-web
     ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - ${NOTARY_CERTS_DIR:-./certs}:/etc/nginx/certs:ro
+      # Loopback only: the host NGINX (deploy/nginx/notary.conf) is the sole way in. See #50.
+      - "127.0.0.1:8080:8080"
     networks:
       - notary
 
