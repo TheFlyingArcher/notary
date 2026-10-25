@@ -403,6 +403,36 @@ intents:
           - ca-certificate-usages-ec
         run_id: run-github-issue-51-4dca63-003
         completed_at: 2026-10-25T00:09:34.128Z
+  - id: modern-pkcs12-export
+    title: Modern, complete PKCS
+    status: in_progress
+    work_items:
+      - id: pkcs12-modern-export-with-chain
+        title: Modern PKCS
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-004
+        completed_at: 2026-10-25T01:26:19.369Z
+      - id: pkcs7-chain-export
+        title: PKCS
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-004
+        completed_at: 2026-10-25T01:26:19.369Z
+      - id: certificate-export-tests
+        title: Round-trip tests for certificate export
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - pkcs12-modern-export-with-chain
+          - pkcs7-chain-export
+        run_id: run-github-issue-51-4dca63-004
+        completed_at: 2026-10-25T01:26:19.369Z
 runs:
   active: []
   completed:
@@ -668,3 +698,17 @@ runs:
           mode: confirm
       started: 2026-10-25T00:00:18.447Z
       completed: 2026-10-25T00:09:34.128Z
+    - id: run-github-issue-51-4dca63-004
+      scope: batch
+      work_items:
+        - id: pkcs12-modern-export-with-chain
+          intent: modern-pkcs12-export
+          mode: confirm
+        - id: pkcs7-chain-export
+          intent: modern-pkcs12-export
+          mode: confirm
+        - id: certificate-export-tests
+          intent: modern-pkcs12-export
+          mode: confirm
+      started: 2026-10-25T01:20:48.993Z
+      completed: 2026-10-25T01:26:19.369Z
