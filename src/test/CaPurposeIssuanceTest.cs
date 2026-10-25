@@ -97,7 +97,7 @@ public class CaPurposeIssuanceTest
         Assert.That(ca.Purpose, Is.Null, "a missing purpose is not rewritten");
         Assert.That(
             KeyUsageNames(certificate),
-            Is.EquivalentTo(new[] { "KeyCertSign", "CrlSign", "DigitalSignature", "KeyEncipherment", "DataEncipherment" }));
+            Is.EquivalentTo(new[] { "KeyCertSign", "CrlSign", "DigitalSignature" }));
         Assert.That(
             ExtendedKeyUsages(certificate),
             Is.EquivalentTo(new[] { "1.3.6.1.5.5.7.3.3", "1.3.6.1.5.5.7.3.1", "1.3.6.1.5.5.7.3.2", "1.3.6.1.4.1.311.20.2.2" }));
@@ -180,7 +180,7 @@ public class CaPurposeIssuanceTest
 
         var leaf = await _certificates.IssueCertificateAsync(new CertificateRequest
         {
-            CertificateKeyUsageFlags = [(int)CertificateKeyUsage.DigitalSignature, (int)CertificateKeyUsage.KeyEncipherment],
+            CertificateKeyUsageFlags = [(int)CertificateKeyUsage.DigitalSignature],
             Curve = EllipticCurve.P256,
             ExtendedKeyUsages = [KeyPurposeOids.ServerAuthentication],
             IsCaCertificate = false,
@@ -284,7 +284,6 @@ public class CaPurposeIssuanceTest
         Assert.That(await _certificateRepo.GetAllAsync(), Is.Empty);
     }
 
-    [TestCase(new[] { CertificateKeyUsage.DigitalSignature, CertificateKeyUsage.KeyEncipherment }, new[] { "DigitalSignature", "KeyEncipherment" })]
     [TestCase(new[] { CertificateKeyUsage.DigitalSignature }, new[] { "DigitalSignature" })]
     public async Task LeafKeyUsages_AreEncodedExactlyAsRequested(CertificateKeyUsage[] requested, string[] expectedNames)
     {
@@ -311,8 +310,8 @@ public class CaPurposeIssuanceTest
         Assert.That(KeyUsageNames(Parse(leaf.Value)), Is.EquivalentTo(expectedNames));
     }
 
-    private static readonly CertificateKeyUsage[] SignAndEncipher =
-        [CertificateKeyUsage.DigitalSignature, CertificateKeyUsage.KeyEncipherment];
+    // The leaves here use EC keys, which cannot encipher (RFC 5480)
+    private static readonly CertificateKeyUsage[] SignOnly = [CertificateKeyUsage.DigitalSignature];
 
     private static CertificateRequest LeafRequest(CertificateAuthority issuer, CertificateKeyUsage[] keyUsages, string[] extendedKeyUsages)
     {
@@ -361,7 +360,7 @@ public class CaPurposeIssuanceTest
         var profile = CaProfileCatalog.Get(purpose);
 
         var result = await _certificates.IssueCertificateAsync(
-            LeafRequest(ca, [.. profile.LeafKeyUsages], [.. profile.LeafExtendedKeyUsages]));
+            LeafRequest(ca, [.. profile.GetLeafKeyUsages(Algorithm.EllipticCurve)], [.. profile.LeafExtendedKeyUsages]));
 
         Assert.That(result.IsSuccess, Is.True, result.Error);
         Assert.That(ExtendedKeyUsages(Parse(result.Value)), Is.EquivalentTo(profile.LeafExtendedKeyUsages));
@@ -375,7 +374,7 @@ public class CaPurposeIssuanceTest
         int saved = (await _certificateRepo.GetAllAsync()).Count;
 
         var result = await _certificates.IssueCertificateAsync(
-            LeafRequest(tls, SignAndEncipher, [KeyPurposeOids.ServerAuthentication, KeyPurposeOids.ClientAuthentication]));
+            LeafRequest(tls, SignOnly, [KeyPurposeOids.ServerAuthentication, KeyPurposeOids.ClientAuthentication]));
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
         Assert.That(result.Error, Does.Contain("Client Authentication").And.Contain("TLS/SSL"));
@@ -399,7 +398,7 @@ public class CaPurposeIssuanceTest
     {
         var tls = await CreateAsync(CaPurpose.TlsSsl);
 
-        var result = await _certificates.IssueCertificateAsync(LeafRequest(tls, SignAndEncipher, []));
+        var result = await _certificates.IssueCertificateAsync(LeafRequest(tls, SignOnly, []));
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
     }
@@ -410,7 +409,7 @@ public class CaPurposeIssuanceTest
         var root = await CreateAsync(CaPurpose.Root);
 
         var result = await _certificates.IssueCertificateAsync(
-            LeafRequest(root, SignAndEncipher, [KeyPurposeOids.ServerAuthentication]));
+            LeafRequest(root, SignOnly, [KeyPurposeOids.ServerAuthentication]));
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
         Assert.That(result.Error, Does.Contain("intermediate"));
@@ -453,7 +452,7 @@ public class CaPurposeIssuanceTest
         var allowed = await _certificates.IssueCertificateAsync(
             LeafRequest(custom, [CertificateKeyUsage.EncipherOnly], [KeyPurposeOids.ServerAuthentication]));
         var rejected = await _certificates.IssueCertificateAsync(
-            LeafRequest(custom, SignAndEncipher, [KeyPurposeOids.ServerAuthentication, KeyPurposeOids.ClientAuthentication]));
+            LeafRequest(custom, SignOnly, [KeyPurposeOids.ServerAuthentication, KeyPurposeOids.ClientAuthentication]));
 
         Assert.That(allowed.IsSuccess, Is.True, allowed.Error);
         Assert.That(rejected.Status, Is.EqualTo(ResultStatus.Invalid));
@@ -479,7 +478,7 @@ public class CaPurposeIssuanceTest
         });
         Assert.That(issuer.IsSuccess, Is.True, issuer.Error);
 
-        var request = LeafRequest(null, SignAndEncipher, [KeyPurposeOids.EmailProtection]);
+        var request = LeafRequest(null, SignOnly, [KeyPurposeOids.EmailProtection]);
         request.ParentCertificateSlug = issuer.Value.Slug;
         request.NotAfter = issuer.Value.NotAfter;
 
@@ -557,6 +556,92 @@ public class CaPurposeIssuanceTest
         var result = await _certificates.IssueCertificateAsync(Request(isCa: false, pathLength: 0));
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+    }
+
+    [TestCase(CaPurpose.TlsSsl)]
+    [TestCase(CaPurpose.UserLogin)]
+    [TestCase(CaPurpose.Smime)]
+    [TestCase(CaPurpose.IoT)]
+    [TestCase(CaPurpose.Dot1xRadius)]
+    public async Task EcLeaf_WithKeyEnciphermentOrDataEncipherment_IsRejected_AndSavesNothing(CaPurpose purpose)
+    {
+        var ca = await CreateAsync(purpose);
+        var profile = CaProfileCatalog.Get(purpose);
+        int saved = (await _certificateRepo.GetAllAsync()).Count;
+
+        foreach (var usage in new[] { CertificateKeyUsage.KeyEncipherment, CertificateKeyUsage.DataEncipherment })
+        {
+            var result = await _certificates.IssueCertificateAsync(
+                LeafRequest(ca, [CertificateKeyUsage.DigitalSignature, usage], [.. profile.LeafExtendedKeyUsages]));
+
+            Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid), usage.ToString());
+            Assert.That(result.Error, Does.Contain("Elliptic Curve").And.Contain("RFC 5480"), usage.ToString());
+        }
+
+        Assert.That((await _certificateRepo.GetAllAsync()).Count, Is.EqualTo(saved), "nothing was issued");
+    }
+
+    [Test]
+    public async Task EcLeaf_FromACertificateWithNoCaRecord_WithKeyEncipherment_IsRejected()
+    {
+        // The rule follows the key, so it also holds where the issuer has no purpose to restrict anything
+        var request = LeafRequest(null, [CertificateKeyUsage.DigitalSignature, CertificateKeyUsage.KeyEncipherment], [KeyPurposeOids.ServerAuthentication]);
+
+        var result = await _certificates.IssueCertificateAsync(request);
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+        Assert.That(result.Error, Does.Contain("Key Encipherment"));
+    }
+
+    [TestCase(CaPurpose.TlsSsl, new[] { "DigitalSignature" })]
+    [TestCase(CaPurpose.UserLogin, new[] { "DigitalSignature" })]
+    [TestCase(CaPurpose.IoT, new[] { "DigitalSignature" })]
+    [TestCase(CaPurpose.Dot1xRadius, new[] { "DigitalSignature" })]
+    [TestCase(CaPurpose.Smime, new[] { "DigitalSignature", "NonRepudiation", "KeyAgreement" })]
+    public async Task EcLeaf_WithTheProfileUsages_CarriesNoEncipherment(CaPurpose purpose, string[] expected)
+    {
+        var ca = await CreateAsync(purpose);
+        var profile = CaProfileCatalog.Get(purpose);
+
+        var result = await _certificates.IssueCertificateAsync(
+            LeafRequest(ca, [.. profile.GetLeafKeyUsages(Algorithm.EllipticCurve)], [.. profile.LeafExtendedKeyUsages]));
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+        Assert.That(KeyUsageNames(Parse(result.Value)), Is.EquivalentTo(expected));
+    }
+
+    [TestCase(Algorithm.EllipticCurve)]
+    [TestCase(Algorithm.RSA)]
+    public async Task CaWithoutAPurpose_NeverCarriesEncipherment(Algorithm algorithm)
+    {
+        var ca = NewCa(null);
+        ca.KeyAlgorithm = algorithm;
+        if (algorithm == Algorithm.RSA)
+        {
+            ca.KeyCurve = null;
+            ca.KeyLength = 2048;
+        }
+
+        var result = await _service.CreateAsync(ca, null);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+        var names = KeyUsageNames(Parse(await _certificates.GetAsync(ca.CertificateSlug)));
+        Assert.That(names, Does.Not.Contain("KeyEncipherment").And.Not.Contain("DataEncipherment"));
+        Assert.That(names, Is.SupersetOf(new[] { "KeyCertSign", "CrlSign", "DigitalSignature" }));
+    }
+
+    [TestCase(CertificateKeyUsage.KeyEncipherment)]
+    [TestCase(CertificateKeyUsage.DataEncipherment)]
+    public async Task CustomEcCa_WithEncipherment_IsRejected_AndSavesNothing(CertificateKeyUsage usage)
+    {
+        var ca = NewCa(CaPurpose.Custom, customKeyUsages: [CertificateKeyUsage.KeyCertSign, CertificateKeyUsage.CrlSign, usage]);
+
+        var result = await _service.CreateAsync(ca, null);
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+        Assert.That(result.Error, Does.Contain("Elliptic Curve"));
+        Assert.That(await _certificateRepo.GetAllAsync(), Is.Empty);
+        Assert.That(await _caRepo.GetAllAsync(), Is.Empty);
     }
 
     private async Task<CertificateAuthority> CreateAsync(

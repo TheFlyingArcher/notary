@@ -65,7 +65,7 @@
             <MudSelect T="int" Label="Certificate Key Usages" MultiSelection="true" Required="true"
                 Error="@KeyUsageMissing" ErrorText="Select at least one key usage, e.g. Digital Signature"
                 @bind-SelectedValues="ViewModel.SelectedCertificateKeyUsage" @bind-Value="_selectedCertKeyUsage">
-                @foreach (var usage in ViewModel.CertificateKeyUsages)
+                @foreach (var usage in AvailableKeyUsages)
                 {
                     <MudSelectItem T="int" Value="usage.Key">@usage.Value</MudSelectItem>
                 }

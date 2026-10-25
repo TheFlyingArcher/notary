@@ -92,11 +92,18 @@ public partial class CreateCertificate : ComponentBase
         ViewModel.SubjectAlternativeNames.Remove(san);
     }
 
+    // An EC key cannot encipher (RFC 5480), so those usages are not offered for it
+    private IEnumerable<KeyValuePair<int, string>> AvailableKeyUsages =>
+        ViewModel.CertificateKeyUsages.Where(u =>
+            CaProfileCatalog.CheckKeyUsagesForAlgorithm(ViewModel.KeyAlgorithm, [(CertificateKeyUsage)u.Key]).IsSuccess);
+
     private bool KeyUsageMissing => _submitAttempted && ViewModel.SelectedCertificateKeyUsage.Count == 0;
 
     private async Task OnSubmitAsync()
     {
         _submitAttempted = true;
+        // Drop usages the key cannot carry before checking that some remain
+        ViewModel.SelectedCertificateKeyUsage = [.. ViewModel.SelectedCertificateKeyUsage.Where(u => AvailableKeyUsages.Any(a => a.Key == u))];
         await form.Validate();
 
         // An empty Key Usage extension is invalid (RFC 5280), so at least one usage is required
@@ -176,7 +183,7 @@ public partial class CreateCertificate : ComponentBase
         if (profile is { LocksLeafUsages: true })
         {
             ViewModel.SelectedExKeyUsages = [.. profile.LeafExtendedKeyUsages];
-            ViewModel.SelectedCertificateKeyUsage = [.. profile.LeafKeyUsages.Select(u => (int)u)];
+            ViewModel.SelectedCertificateKeyUsage = [.. profile.GetLeafKeyUsages(ViewModel.KeyAlgorithm).Select(u => (int)u)];
             _usagesApplied = true;
         }
         else if (_usagesApplied)
@@ -197,7 +204,7 @@ public partial class CreateCertificate : ComponentBase
             if (!profile.IssuesLeafCertificates)
                 return $"A {profile.DisplayName} CA never issues certificates directly. Choose another CA.";
 
-            string keyUsages = string.Join(", ", profile.LeafKeyUsages.Select(u =>
+            string keyUsages = string.Join(", ", profile.GetLeafKeyUsages(ViewModel.KeyAlgorithm).Select(u =>
                 ViewModel.CertificateKeyUsages.TryGetValue((int)u, out var name) ? name : u.ToString()));
             string extendedKeyUsages = string.Join(", ", profile.LeafExtendedKeyUsages.Select(oid =>
                 ViewModel.ExtendedKeyUsages.TryGetValue(oid, out var name) ? name : KeyPurposeOids.GetName(oid)));

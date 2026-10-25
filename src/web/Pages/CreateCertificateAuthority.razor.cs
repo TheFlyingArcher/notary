@@ -127,7 +127,7 @@ namespace Notary.Web.Pages
                 Purpose = ViewModel.SelectedPurpose,
                 // The two fixed usages are always sent for Custom. Sending them is what marks this as a deliberate
                 // choice rather than a CA created without a purpose, which would get the old broad usages.
-                CustomKeyUsages = custom ? [.. AlwaysIncludedKeyUsages.Concat(ViewModel.SelectedCustomKeyUsages).Distinct()] : null,
+                CustomKeyUsages = custom ? [.. AlwaysIncludedKeyUsages.Concat(ViewModel.SelectedCustomKeyUsages.Where(OptionalKeyUsages.Contains)).Distinct()] : null,
                 CustomExtendedKeyUsages = custom ? [.. ViewModel.SelectedCustomExtendedKeyUsages.Distinct()] : null,
                 Updated = now,
                 DistinguishedName = new C.DistinguishedName
@@ -170,7 +170,7 @@ namespace Notary.Web.Pages
         private static readonly CertificateKeyUsage[] AlwaysIncludedKeyUsages =
             [CertificateKeyUsage.KeyCertSign, CertificateKeyUsage.CrlSign];
 
-        private static readonly CertificateKeyUsage[] OptionalKeyUsages =
+        private static readonly CertificateKeyUsage[] AllOptionalKeyUsages =
         [
             CertificateKeyUsage.DigitalSignature,
             CertificateKeyUsage.NonRepudiation,
@@ -180,6 +180,10 @@ namespace Notary.Web.Pages
             CertificateKeyUsage.EncipherOnly,
             CertificateKeyUsage.DecipherOnly
         ];
+
+        // An EC key cannot encipher (RFC 5480), so those usages are not offered for it, whether the key is chosen here or inherited from the parent
+        private IEnumerable<CertificateKeyUsage> OptionalKeyUsages =>
+            AllOptionalKeyUsages.Where(u => CaProfileCatalog.CheckKeyUsagesForAlgorithm(ViewModel.KeyType, [u]).IsSuccess);
 
         // The chosen parent's profile; a parent that restricts extended key usages limits what a Custom child may carry
         private CaProfile ParentProfile =>

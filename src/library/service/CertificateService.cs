@@ -59,6 +59,12 @@ namespace Notary.Service
         [NotaryAuthorize(NotaryOperation.CertificateCreate)]
         public override Task SaveAsync(Certificate entity, string updatedBySlug) => base.SaveAsync(entity, updatedBySlug);
 
+        private static CertificateKeyUsage[] DecodeKeyUsages(IEnumerable<int> flags)
+        {
+            int combined = (flags ?? []).Aggregate(0, (all, flag) => all | flag);
+            return [.. Enum.GetValues<CertificateKeyUsage>().Where(u => (combined & (int)u) != 0)];
+        }
+
         [NotaryAuthorize(NotaryOperation.CertificateCreate)]
         public async Task<Result<Certificate>> IssueCertificateAsync(CertificateRequest request)
         {
@@ -73,6 +79,11 @@ namespace Notary.Service
 
                 if (request.PathLengthConstraint.HasValue && !request.IsCaCertificate)
                     return Result<Certificate>.Fail(ResultStatus.Invalid, "A path length constraint applies only to CA certificates.");
+
+                var requestedKeyUsages = DecodeKeyUsages(request.CertificateKeyUsageFlags);
+                var keyUsageCheck = CaProfileCatalog.CheckKeyUsagesForAlgorithm(request.KeyAlgorithm, requestedKeyUsages);
+                if (!keyUsageCheck.IsSuccess)
+                    return Result<Certificate>.Fail(keyUsageCheck.Status, keyUsageCheck.Error);
 
                 string crlEndpoint = null;
                 BigInteger issuerSn = null;
@@ -96,11 +107,9 @@ namespace Notary.Service
                         var issuingCa = await CertificateAuthorityRepository.GetByCertificateSlugAsync(parentCert.Slug);
                         if (issuingCa != null)
                         {
-                            int requestedFlags = (request.CertificateKeyUsageFlags ?? []).Aggregate(0, (all, flag) => all | flag);
-                            var requestedKeyUsages = Enum.GetValues<CertificateKeyUsage>().Where(u => (requestedFlags & (int)u) != 0);
-
                             var leafCheck = CaProfileCatalog.CheckLeaf(
                                 CaProfileCatalog.Resolve(issuingCa),
+                                request.KeyAlgorithm,
                                 requestedKeyUsages,
                                 request.ExtendedKeyUsages);
                             if (!leafCheck.IsSuccess)

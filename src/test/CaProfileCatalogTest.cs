@@ -425,10 +425,101 @@ public class CaProfileCatalogTest
         Assert.That(CaProfileCatalog.Get(null).LocksLeafUsages, Is.False);
     }
 
+    private static readonly CaPurpose[] LeafPurposes =
+        [CaPurpose.TlsSsl, CaPurpose.UserLogin, CaPurpose.Smime, CaPurpose.IoT, CaPurpose.Dot1xRadius];
+
+    [TestCaseSource(nameof(LeafPurposes))]
+    public void GetLeafKeyUsages_Rsa_IsTheProfileFullSet(CaPurpose purpose)
+    {
+        var profile = CaProfileCatalog.Get(purpose);
+
+        Assert.That(profile.GetLeafKeyUsages(Algorithm.RSA), Is.EquivalentTo(profile.LeafKeyUsages));
+    }
+
+    [TestCase(CaPurpose.TlsSsl)]
+    [TestCase(CaPurpose.UserLogin)]
+    [TestCase(CaPurpose.IoT)]
+    [TestCase(CaPurpose.Dot1xRadius)]
+    public void GetLeafKeyUsages_Ec_SigningProfilesAllowDigitalSignatureOnly(CaPurpose purpose)
+    {
+        Assert.That(
+            CaProfileCatalog.Get(purpose).GetLeafKeyUsages(Algorithm.EllipticCurve),
+            Is.EquivalentTo(new[] { CertificateKeyUsage.DigitalSignature }));
+    }
+
+    [Test]
+    public void GetLeafKeyUsages_Ec_SmimeUsesKeyAgreementInsteadOfKeyEncipherment()
+    {
+        Assert.That(
+            CaProfileCatalog.Get(CaPurpose.Smime).GetLeafKeyUsages(Algorithm.EllipticCurve),
+            Is.EquivalentTo(new[]
+            {
+                CertificateKeyUsage.DigitalSignature,
+                CertificateKeyUsage.NonRepudiation,
+                CertificateKeyUsage.KeyAgreement
+            }));
+    }
+
+    [TestCaseSource(nameof(LeafPurposes))]
+    public void CheckLeaf_EcWithTheProfileEcUsages_Succeeds(CaPurpose purpose)
+    {
+        var profile = CaProfileCatalog.Get(purpose);
+
+        var result = CaProfileCatalog.CheckLeaf(
+            profile, Algorithm.EllipticCurve, profile.GetLeafKeyUsages(Algorithm.EllipticCurve), profile.LeafExtendedKeyUsages);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+    }
+
+    [TestCase(CaPurpose.TlsSsl, CertificateKeyUsage.KeyEncipherment, "Key Encipherment")]
+    [TestCase(CaPurpose.TlsSsl, CertificateKeyUsage.DataEncipherment, "Data Encipherment")]
+    [TestCase(CaPurpose.Smime, CertificateKeyUsage.KeyEncipherment, "Key Encipherment")]
+    [TestCase(CaPurpose.Smime, CertificateKeyUsage.DataEncipherment, "Data Encipherment")]
+    [TestCase(CaPurpose.Custom, CertificateKeyUsage.KeyEncipherment, "Key Encipherment")]
+    [TestCase(CaPurpose.Custom, CertificateKeyUsage.DataEncipherment, "Data Encipherment")]
+    public void CheckLeaf_EcWithEncipherment_IsInvalidForEveryIssuer(CaPurpose purpose, CertificateKeyUsage usage, string described)
+    {
+        var profile = CaProfileCatalog.Get(purpose);
+
+        var result = CaProfileCatalog.CheckLeaf(
+            profile, Algorithm.EllipticCurve, [CertificateKeyUsage.DigitalSignature, usage], [ServerAuth]);
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+        Assert.That(result.Error, Does.Contain(described).And.Contain("Elliptic Curve"));
+    }
+
+    [Test]
+    public void CheckLeaf_RsaWithKeyEncipherment_StillSucceedsForATlsCa()
+    {
+        var result = CaProfileCatalog.CheckLeaf(
+            CaProfileCatalog.Get(CaPurpose.TlsSsl), Algorithm.RSA,
+            [CertificateKeyUsage.DigitalSignature, CertificateKeyUsage.KeyEncipherment], [ServerAuth]);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+    }
+
+    [Test]
+    public void CheckKeyUsagesForAlgorithm_EcWithKeyAgreement_Succeeds()
+    {
+        var result = CaProfileCatalog.CheckKeyUsagesForAlgorithm(
+            Algorithm.EllipticCurve, [CertificateKeyUsage.DigitalSignature, CertificateKeyUsage.KeyAgreement]);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+    }
+
+    [Test]
+    public void CheckKeyUsagesForAlgorithm_EcNamesBothOffendingUsages()
+    {
+        var result = CaProfileCatalog.CheckKeyUsagesForAlgorithm(
+            Algorithm.EllipticCurve, [CertificateKeyUsage.KeyEncipherment, CertificateKeyUsage.DataEncipherment]);
+
+        Assert.That(result.Error, Does.Contain("Key Encipherment").And.Contain("Data Encipherment"));
+    }
+
     [Test]
     public void CheckLeaf_RootIssuer_IsInvalid()
     {
-        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.Root), SignAndEncipher, [ServerAuth]);
+        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.Root), Algorithm.RSA, SignAndEncipher, [ServerAuth]);
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
         Assert.That(result.Error, Does.Contain("Root").And.Contain("intermediate"));
@@ -443,7 +534,7 @@ public class CaProfileCatalogTest
     {
         var profile = CaProfileCatalog.Get(purpose);
 
-        var result = CaProfileCatalog.CheckLeaf(profile, profile.LeafKeyUsages, profile.LeafExtendedKeyUsages);
+        var result = CaProfileCatalog.CheckLeaf(profile, Algorithm.RSA, profile.LeafKeyUsages, profile.LeafExtendedKeyUsages);
 
         Assert.That(result.IsSuccess, Is.True, result.Error);
     }
@@ -451,8 +542,7 @@ public class CaProfileCatalogTest
     [Test]
     public void CheckLeaf_ASubsetOfTheAllowedUsages_Succeeds()
     {
-        var result = CaProfileCatalog.CheckLeaf(
-            CaProfileCatalog.Get(CaPurpose.IoT),
+        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.IoT), Algorithm.RSA,
             [CertificateKeyUsage.DigitalSignature],
             [ClientAuth]);
 
@@ -462,7 +552,7 @@ public class CaProfileCatalogTest
     [Test]
     public void CheckLeaf_ExtraExtendedKeyUsage_IsInvalidAndNamesIt()
     {
-        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), SignAndEncipher, [ServerAuth, ClientAuth]);
+        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), Algorithm.RSA, SignAndEncipher, [ServerAuth, ClientAuth]);
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
         Assert.That(result.Error, Does.Contain("Client Authentication").And.Contain("TLS/SSL"));
@@ -471,8 +561,7 @@ public class CaProfileCatalogTest
     [Test]
     public void CheckLeaf_ExtraKeyUsage_IsInvalidAndNamesIt()
     {
-        var result = CaProfileCatalog.CheckLeaf(
-            CaProfileCatalog.Get(CaPurpose.TlsSsl),
+        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), Algorithm.RSA,
             [CertificateKeyUsage.DigitalSignature, CertificateKeyUsage.NonRepudiation],
             [ServerAuth]);
 
@@ -483,7 +572,7 @@ public class CaProfileCatalogTest
     [Test]
     public void CheckLeaf_EncipherOnlyOnATlsCa_IsInvalid()
     {
-        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), [CertificateKeyUsage.EncipherOnly], [ServerAuth]);
+        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), Algorithm.RSA, [CertificateKeyUsage.EncipherOnly], [ServerAuth]);
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
         Assert.That(result.Error, Does.Contain("Encipher Only"));
@@ -492,7 +581,7 @@ public class CaProfileCatalogTest
     [Test]
     public void CheckLeaf_NoExtendedKeyUsages_IsInvalid()
     {
-        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), SignAndEncipher, []);
+        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), Algorithm.RSA, SignAndEncipher, []);
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
         Assert.That(result.Error, Does.Contain("extended key usage"));
@@ -501,7 +590,7 @@ public class CaProfileCatalogTest
     [Test]
     public void CheckLeaf_NoKeyUsages_IsInvalid()
     {
-        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), [], [ServerAuth]);
+        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.TlsSsl), Algorithm.RSA, [], [ServerAuth]);
 
         Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
         Assert.That(result.Error, Does.Contain("key usage"));
@@ -510,8 +599,7 @@ public class CaProfileCatalogTest
     [Test]
     public void CheckLeaf_UnrestrictedCustomIssuer_AllowsAnything()
     {
-        var result = CaProfileCatalog.CheckLeaf(
-            CaProfileCatalog.Get(CaPurpose.Custom),
+        var result = CaProfileCatalog.CheckLeaf(CaProfileCatalog.Get(CaPurpose.Custom), Algorithm.RSA,
             [CertificateKeyUsage.EncipherOnly, CertificateKeyUsage.NonRepudiation],
             [ServerAuth, ClientAuth, Email]);
 
@@ -523,9 +611,9 @@ public class CaProfileCatalogTest
     {
         var issuer = CaProfileCatalog.CreateCustom([], [ServerAuth]);
 
-        Assert.That(CaProfileCatalog.CheckLeaf(issuer, [CertificateKeyUsage.EncipherOnly], [ServerAuth]).IsSuccess, Is.True);
+        Assert.That(CaProfileCatalog.CheckLeaf(issuer, Algorithm.RSA, [CertificateKeyUsage.EncipherOnly], [ServerAuth]).IsSuccess, Is.True);
 
-        var outside = CaProfileCatalog.CheckLeaf(issuer, [CertificateKeyUsage.DigitalSignature], [ServerAuth, ClientAuth]);
+        var outside = CaProfileCatalog.CheckLeaf(issuer, Algorithm.RSA, [CertificateKeyUsage.DigitalSignature], [ServerAuth, ClientAuth]);
         Assert.That(outside.Status, Is.EqualTo(ResultStatus.Invalid));
         Assert.That(outside.Error, Does.Contain("Client Authentication"));
     }
