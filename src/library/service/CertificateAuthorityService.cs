@@ -83,9 +83,7 @@ namespace Notary.Service
                     {
                         (int)CertificateKeyUsage.CrlSign,
                         (int)CertificateKeyUsage.KeyCertSign,
-                        (int)CertificateKeyUsage.DigitalSignature,
-                        (int)CertificateKeyUsage.KeyEncipherment,
-                        (int)CertificateKeyUsage.DataEncipherment
+                        (int)CertificateKeyUsage.DigitalSignature
                     }
                     : [.. profile.CaKeyUsages.Select(u => (int)u)],
                 Curve = entity.KeyCurve,

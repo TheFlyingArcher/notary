@@ -181,15 +181,22 @@ public static class CaProfileCatalog
     /// Check that a leaf certificate with the given usages may be issued by a CA with the given profile
     /// </summary>
     /// <param name="issuer">The issuing CA's profile</param>
+    /// <param name="subjectAlgorithm">The algorithm of the leaf's own key, which decides which key usages are valid</param>
     /// <param name="keyUsages">The key usages requested for the leaf</param>
     /// <param name="extendedKeyUsages">The extended key usage OIDs requested for the leaf</param>
     /// <returns>Success, or an Invalid result naming what is not permitted</returns>
-    public static Result CheckLeaf(CaProfile issuer, IEnumerable<CertificateKeyUsage> keyUsages, IEnumerable<string> extendedKeyUsages)
+    public static Result CheckLeaf(CaProfile issuer, Algorithm subjectAlgorithm, IEnumerable<CertificateKeyUsage> keyUsages, IEnumerable<string> extendedKeyUsages)
     {
         ArgumentNullException.ThrowIfNull(issuer);
 
         CertificateKeyUsage[] requestedKeyUsages = [.. (keyUsages ?? []).Distinct()];
         string[] requestedExtendedKeyUsages = [.. (extendedKeyUsages ?? []).Distinct()];
+
+        Result algorithmCheck = CheckKeyUsagesForAlgorithm(subjectAlgorithm, requestedKeyUsages);
+        if (!algorithmCheck.IsSuccess)
+        {
+            return algorithmCheck;
+        }
 
         if (!issuer.IssuesLeafCertificates)
         {
@@ -210,7 +217,7 @@ public static class CaProfileCatalog
                 return Result.Fail(ResultStatus.Invalid, $"Certificates from a {issuer.DisplayName} CA need at least one extended key usage.");
             }
 
-            CertificateKeyUsage[] outsideKeyUsages = [.. requestedKeyUsages.Except(issuer.LeafKeyUsages)];
+            CertificateKeyUsage[] outsideKeyUsages = [.. requestedKeyUsages.Except(issuer.GetLeafKeyUsages(subjectAlgorithm))];
             if (outsideKeyUsages.Length > 0)
             {
                 return Result.Fail(
@@ -224,6 +231,36 @@ public static class CaProfileCatalog
         // A Custom CA that chose extended key usages carries them on its certificate, so a leaf cannot go beyond them
         return issuer.RestrictsExtendedKeyUsages
             ? CheckExtendedKeyUsages(issuer, requestedExtendedKeyUsages, issuer.CaExtendedKeyUsages)
+            : Result.Ok();
+    }
+
+    /// <summary>
+    /// Check that key usages are valid for the algorithm of the key. RFC 5480 section 3 forbids KeyEncipherment and
+    /// DataEncipherment on an EC key; key agreement is what EC keys use instead.
+    /// </summary>
+    /// <param name="algorithm">The algorithm of the certificate's own key</param>
+    /// <param name="keyUsages">The key usages on the certificate</param>
+    /// <returns>Success, or an Invalid result naming the usages the key cannot carry</returns>
+    public static Result CheckKeyUsagesForAlgorithm(Algorithm algorithm, IEnumerable<CertificateKeyUsage> keyUsages)
+    {
+        ArgumentNullException.ThrowIfNull(keyUsages);
+
+        if (algorithm != Algorithm.EllipticCurve)
+        {
+            return Result.Ok();
+        }
+
+        CertificateKeyUsage[] enciphering =
+        [
+            .. keyUsages
+                .Where(u => u is CertificateKeyUsage.KeyEncipherment or CertificateKeyUsage.DataEncipherment)
+                .Distinct()
+        ];
+
+        return enciphering.Length > 0
+            ? Result.Fail(
+                ResultStatus.Invalid,
+                $"{string.Join(", ", enciphering.Select(DescribeKeyUsage))} cannot be used with an Elliptic Curve key (RFC 5480); use Key Agreement for key exchange.")
             : Result.Ok();
     }
 

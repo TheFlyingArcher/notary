@@ -39,4 +39,37 @@ public sealed record CaProfile(
     /// instead of being chosen
     /// </summary>
     public bool LocksLeafUsages => IssuesLeafCertificates && RestrictsLeafUsages;
+
+    /// <summary>
+    /// The key usages permitted on leaf certificates whose subject key uses the given algorithm. An EC key cannot
+    /// encipher (RFC 5480 section 3), so KeyEncipherment is replaced by KeyAgreement where the profile encrypts and
+    /// dropped otherwise, and DataEncipherment is dropped.
+    /// </summary>
+    /// <param name="algorithm">The subject key algorithm</param>
+    public IReadOnlyList<CertificateKeyUsage> GetLeafKeyUsages(Algorithm algorithm)
+    {
+        if (algorithm != Algorithm.EllipticCurve)
+        {
+            return LeafKeyUsages;
+        }
+
+        List<CertificateKeyUsage> usages = [];
+        foreach (CertificateKeyUsage usage in LeafKeyUsages)
+        {
+            if (usage == CertificateKeyUsage.KeyEncipherment)
+            {
+                // Only the S/MIME profile asks for more than signing; its encryption certificates use key agreement
+                if (Purpose == CaPurpose.Smime)
+                {
+                    usages.Add(CertificateKeyUsage.KeyAgreement);
+                }
+            }
+            else if (usage != CertificateKeyUsage.DataEncipherment)
+            {
+                usages.Add(usage);
+            }
+        }
+
+        return usages;
+    }
 }

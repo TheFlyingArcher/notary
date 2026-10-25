@@ -373,6 +373,36 @@ intents:
           - named-curve-key-encoding
         run_id: run-github-issue-51-4dca63-002
         completed_at: 2026-10-24T23:44:32.817Z
+  - id: ec-key-usage-rfc5480
+    title: No keyEncipherment/dataEncipherment on EC certificates
+    status: in_progress
+    work_items:
+      - id: algorithm-aware-leaf-usages
+        title: Algorithm-aware profile leaf usages and EC rejection
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-003
+        completed_at: 2026-10-25T00:09:34.128Z
+      - id: ca-certificate-usages-ec
+        title: CA certificate usages and CA form for EC keys
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-003
+        completed_at: 2026-10-25T00:09:34.128Z
+      - id: ec-key-usage-tests
+        title: Tests for EC key usage rules
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - algorithm-aware-leaf-usages
+          - ca-certificate-usages-ec
+        run_id: run-github-issue-51-4dca63-003
+        completed_at: 2026-10-25T00:09:34.128Z
 runs:
   active: []
   completed:
@@ -624,3 +654,17 @@ runs:
           mode: confirm
       started: 2026-10-24T23:38:56.989Z
       completed: 2026-10-24T23:44:32.817Z
+    - id: run-github-issue-51-4dca63-003
+      scope: batch
+      work_items:
+        - id: algorithm-aware-leaf-usages
+          intent: ec-key-usage-rfc5480
+          mode: confirm
+        - id: ca-certificate-usages-ec
+          intent: ec-key-usage-rfc5480
+          mode: confirm
+        - id: ec-key-usage-tests
+          intent: ec-key-usage-rfc5480
+          mode: confirm
+      started: 2026-10-25T00:00:18.447Z
+      completed: 2026-10-25T00:09:34.128Z
