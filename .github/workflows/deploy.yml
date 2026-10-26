@@ -4,9 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Image tag to deploy (e.g. 1.1.49). Leave blank for latest."
-        required: false
-        default: ""
+        description: "Release to deploy (e.g. 1.2.14 or v1.2.14). Must be a published GitHub Release."
+        required: true
         type: string
 
 permissions:
@@ -22,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       INPUT_TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
       PI_TARGET: ${{ vars.PI_USER }}@${{ vars.PI_HOST }}
       PI_DEPLOY_PATH: ${{ vars.PI_DEPLOY_PATH }}
     steps:
@@ -29,9 +29,13 @@ jobs:
         id: tag
         run: |
           TAG="${INPUT_TAG#v}"
-          TAG="${TAG:-latest}"
-          if [[ ! "$TAG" =~ ^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$ ]]; then
-            echo "Invalid tag: $TAG" >&2
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release tag '$INPUT_TAG'. Use a version such as 1.2.14." >&2
+            exit 1
+          fi
+          # Only published GitHub Releases go to production; a merge to main creates a tag but not a release.
+          if ! gh release view "v$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "v$TAG is not a published GitHub Release. Publish it first." >&2
             exit 1
           fi
           echo "value=$TAG" >> "$GITHUB_OUTPUT"

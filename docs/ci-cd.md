@@ -22,7 +22,7 @@ Repository configuration:
 
 ## CD (`.github/workflows/deploy.yml`)
 
-Run manually: **Actions > Deploy > Run workflow**, optionally entering a tag (`1.1.49` or `v1.1.49`). Blank means `latest`.
+Run manually: **Actions > Deploy > Run workflow** and enter a release version (`1.2.14` or `v1.2.14`). The tag is required and must be a published GitHub Release (Releases > Draft a new release on an existing `v<version>` tag); a merge to `main` creates a tag but not a release, so unreleased builds cannot be deployed.
 The runner joins your tailnet with Tailscale, SSHes to the Pi, and runs `docker compose pull && up -d` with `NOTARY_TAG` set.
 
 ### One-time Tailscale setup
@@ -87,7 +87,7 @@ The stack runs `notary-web` (published only on `127.0.0.1:8080` for NGINX, see #
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DOCKER_HUB_USER` | Yes | Docker Hub account that owns `notary-web` |
-| `NOTARY_TAG` | No | Image tag; Deploy overrides it. Defaults to `latest` |
+| `NOTARY_TAG` | Yes | Release version, e.g. `1.2.14`. Deploy overrides it; keep it set to the running release because there is no default |
 | `NOTARY_APP_KEY` | Yes | 16+ character passphrase protecting stored private keys. Back it up separately; never change it once keys exist ([details](private-key-storage.md)) |
 | `NOTARY_DB_HOST` | No | MongoDB URL. Defaults to the bundled `mongo` service |
 | `NOTARY_DB_USERNAME`, `NOTARY_DB_PASSWORD` | Yes | MongoDB credentials. Notary authenticates against the `admin` database; the bundled `mongo` creates this root user on first start |
