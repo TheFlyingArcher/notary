@@ -29,7 +29,7 @@ jobs:
         # Fails the build when any test fails or line coverage drops below the threshold.
         # The threshold is a ratchet: raise it toward 70 as coverage improves.
         run: >
-          dotnet test src/test/Notary.Test.csproj -c Release --no-build --nologo -v q
+          dotnet test src/test/Notary.Test.csproj -c Release --no-build --nologo -v q --logger "console;verbosity=normal"
           -p:CollectCoverage=true
           -p:CoverletOutputFormat=cobertura
           -p:CoverletOutput=./coverage/
