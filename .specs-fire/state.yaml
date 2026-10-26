@@ -343,7 +343,7 @@ intents:
           - nginx-compose-service
       - id: ca-data-migration
         title: Move CA data from dev to the Atlas production database
-        status: pending
+        status: completed
         complexity: high
         mode: validate
         depends_on:
