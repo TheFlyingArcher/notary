@@ -24,15 +24,18 @@ Work in a directory that is not inside the repository and is not synced (not One
 
 ```bash
 mkdir -p ~/notary-migration && cd ~/notary-migration
-docker run --rm -v "$PWD:/out" mongo:7 mongodump \
+sudo docker run --rm mongo:7 mongodump \
   --uri "mongodb://DEVUSER:DEVPASS@DEVHOST/?authSource=admin" \
-  --db notary --archive=/out/notary-dev.archive --gzip
+  --db notary --archive --gzip > notary-dev.archive
+ls -l notary-dev.archive
 ```
+
+The archive goes through stdout so your shell creates the file. Mounting a folder into the container fails with `permission denied`, because the container's `mongodb` user cannot write to your directory. Errors print to the terminal, so a tiny or empty archive means the dump failed.
 
 Check what is in the dump:
 
 ```bash
-docker run --rm -v "$PWD:/out" mongo:7 mongorestore --archive=/out/notary-dev.archive --gzip --dryRun --verbose 2>&1 | grep -E "restoring|documents"
+sudo docker run --rm -i mongo:7 mongorestore --archive --gzip --dryRun --verbose < notary-dev.archive 2>&1 | grep -E "restoring|documents"
 ```
 
 ## 2. Dry run into a scratch database
@@ -40,10 +43,10 @@ docker run --rm -v "$PWD:/out" mongo:7 mongorestore --archive=/out/notary-dev.ar
 Restore under a different database name so nothing real is touched. `--nsFrom/--nsTo` renames `notary` to `notary_dryrun`:
 
 ```bash
-docker run --rm -v "$PWD:/out" mongo:7 mongorestore \
+sudo docker run --rm -i mongo:7 mongorestore \
   --uri "mongodb+srv://ATLASUSER:ATLASPASS@ATLASHOST/?authSource=admin" \
-  --archive=/out/notary-dev.archive --gzip \
-  --nsFrom 'notary.*' --nsTo 'notary_dryrun.*'
+  --archive --gzip \
+  --nsFrom 'notary.*' --nsTo 'notary_dryrun.*' < notary-dev.archive
 ```
 
 The Atlas user needs `readWrite` on `notary_dryrun` for this.
@@ -52,7 +55,12 @@ Then prove it works: run a local Notary (Visual Studio or `dotnet run`) with `NO
 
 1. Read the startup log: it must say `Private key migration: 0 migrated, ... 0 failed`. A non-zero failed count means the app key is wrong.
 2. Open the intermediate CA and issue a throwaway leaf certificate from it. This proves the stored CA key decrypts and signs.
-3. Download that certificate's CRL URL (`/api/crl/...`) and check it with `openssl crl -inform DER -noout -text`.
+3. Fetch the CRL from your **local** Notary and check it. The URL shown in the certificate points at `http://notary.unionsquared.lan`, which does not serve this Notary yet, so keep the path from the certificate (`/api/crl/<id>`) and use the debug address in front of it. With the `http` launch profile that is `http://localhost:15176` (`https://localhost:17244` for the `https` profile; check `src/web/Properties/launchSettings.json` if you changed it):
+   ```bash
+   curl -s http://localhost:15176/api/crl/<id> -o dryrun.crl
+   openssl crl -inform DER -in dryrun.crl -noout -text
+   ```
+   Or open the same address in a browser to download the file, then run the `openssl` command on it. The output should name the intermediate as issuer, show a `Next Update` in the future, and (if you revoked the throwaway certificate) list its serial. If the browser or `curl` rejects the `https` address, use the `http` one.
 4. Drop the scratch database in Atlas (Browse Collections > `notary_dryrun` > Drop Database).
 
 Record the result:
@@ -70,9 +78,9 @@ Record the result:
 Only after the dry run passes. If `notary` already has data in Atlas (a failed earlier attempt), take a backup first (Atlas > Backup, or run the dump command against it) and add `--drop` to replace the collections:
 
 ```bash
-docker run --rm -v "$PWD:/out" mongo:7 mongorestore \
+sudo docker run --rm -i mongo:7 mongorestore \
   --uri "mongodb+srv://ATLASUSER:ATLASPASS@ATLASHOST/?authSource=admin" \
-  --archive=/out/notary-dev.archive --gzip --nsInclude 'notary.*'
+  --archive --gzip --nsInclude 'notary.*' < notary-dev.archive
 ```
 
 ## 4. Point production at it
