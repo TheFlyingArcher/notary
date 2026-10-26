@@ -14,8 +14,6 @@ services:
         # mongo only exists under the "local-db" profile; skip the wait when using an external MongoDB.
         required: false
     environment:
-      # The aspnet base image listens on 8080 by default; stated here so it is explicit.
-      ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Production
 
       # Required. Passphrase protecting every stored private key (16+ characters).
@@ -37,6 +35,10 @@ services:
       # Optional. Public base address used in the CRL distribution points of issued certificates,
       # e.g. https://pki.example.com. When blank, the address the request arrived at is used.
       NOTARY_CRL_ENDPOINT: ${NOTARY_CRL_ENDPOINT:-}
+    volumes:
+      # ASP.NET Data Protection keys (sign-in cookies, anti-forgery tokens). Without a volume they are lost when the
+      # container is recreated on each deploy, which signs everyone out.
+      - notary-dataprotection:/root/.aspnet/DataProtection-Keys
     ports:
       # Loopback only: the host NGINX (deploy/nginx/notary.conf) is the sole way in. See #50.
       - "127.0.0.1:8080:8080"
@@ -66,6 +68,7 @@ services:
     # No ports published: only notary-web on the internal network can reach the database.
 
 volumes:
+  notary-dataprotection:
   notary-db:
 
 networks:
