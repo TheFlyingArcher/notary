@@ -38,7 +38,7 @@ services:
       # e.g. https://pki.example.com. When blank, the address the request arrived at is used.
       NOTARY_CRL_ENDPOINT: ${NOTARY_CRL_ENDPOINT:-}
     ports:
-      # Published on the host for the NGINX reverse proxy (see #50). Bind to loopback if NGINX runs on the Pi itself.
+      # Loopback only: the host NGINX (deploy/nginx/notary.conf) is the sole way in. See #50.
       - "127.0.0.1:8080:8080"
     networks:
       - notary

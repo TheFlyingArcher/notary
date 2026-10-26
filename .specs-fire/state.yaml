@@ -322,6 +322,47 @@ intents:
           - ec-key-load-validation
         run_id: run-role-based-authorization-398ceb-002
         completed_at: 2026-10-23T01:09:53.259Z
+  - id: initial-ca-bootstrap
+    title: Initial CA and HTTPS bootstrap for the Raspberry Pi
+    status: in_progress
+    work_items:
+      - id: nginx-compose-service
+        title: NGINX site for the Pi host NGINX
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-001
+        completed_at: 2026-10-24T22:09:25.001Z
+      - id: ca-tls-bootstrap-runbook
+        title: CA and TLS certificate bootstrap runbook
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - nginx-compose-service
+      - id: ca-data-migration
+        title: Move CA data from dev to the Atlas production database
+        status: pending
+        complexity: high
+        mode: validate
+        depends_on:
+          - ca-tls-bootstrap-runbook
+      - id: deploy-docs-update
+        title: Update deploy docs and env template for NGINX and HTTPS
+        status: pending
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - nginx-compose-service
+      - id: https-uat-checklist
+        title: HTTPS user acceptance checklist
+        status: pending
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - nginx-compose-service
+          - ca-tls-bootstrap-runbook
   - id: match-ecdsa-hash-to-issuer-curve
     title: Match signature hash to the issuer key
     status: in_progress
@@ -649,6 +690,14 @@ runs:
           mode: confirm
       started: 2026-10-23T01:07:23.471Z
       completed: 2026-10-23T01:09:53.259Z
+    - id: run-github-issue-51-4dca63-001
+      scope: single
+      work_items:
+        - id: nginx-compose-service
+          intent: initial-ca-bootstrap
+          mode: confirm
+      started: 2026-10-24T19:28:52.570Z
+      completed: 2026-10-24T22:09:25.001Z
     - id: run-specsmd-fire-planner-02371b-001
       scope: single
       work_items:
