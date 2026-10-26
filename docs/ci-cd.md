@@ -93,13 +93,32 @@ The stack runs `notary-web` (published only on `127.0.0.1:8080` for NGINX, see #
 | `NOTARY_DB_USERNAME`, `NOTARY_DB_PASSWORD` | Yes | MongoDB credentials. Notary authenticates against the `admin` database; the bundled `mongo` creates this root user on first start |
 | `NOTARY_DB_NAME` | No | Database name, default `notary` |
 | `NOTARY_OPENID_DOMAIN`, `NOTARY_OPENID_CLIENTID`, `NOTARY_OPENID_CLIENTSECRET` | Yes | Auth0 application used to sign in |
-| `NOTARY_CRL_ENDPOINT` | No | Public base URL for CRL distribution points, e.g. `https://pki.example.com` |
+| `NOTARY_CRL_ENDPOINT` | No | Public base URL for CRL distribution points, set before issuing, it is baked into each certificate. Use `http://` (e.g. `http://notary.unionsquared.lan`): CRLs are fetched over plain HTTP so revocation checks are not circular |
 
 Notes:
 
-- Auth0: create a Regular Web Application. Set Allowed Callback URLs to `https://<your-host>/callback` and Allowed Logout URLs to `https://<your-host>/`.
+- Auth0: create a Regular Web Application. Set Allowed Callback URLs to `https://notary.unionsquared.lan/callback` and Allowed Logout URLs to `https://notary.unionsquared.lan/`.
 - First start: after editing `.env`, run `docker compose up -d` once by hand and check `docker compose logs notary-web`. The app refuses to start without a valid `NOTARY_APP_KEY`.
 - `docker compose config` prints the resolved file and names any missing required variable.
+
+### NGINX and HTTPS
+
+The Pi's host NGINX (shared with other projects) terminates TLS and proxies to `notary-web` on `127.0.0.1:8080`. Notary adds one site; the others are untouched.
+
+- Site config: [`deploy/nginx/notary.conf`](../deploy/nginx/notary.conf) goes to `/etc/nginx/sites-available/notary`, linked into `sites-enabled/`.
+- Certificate files: `/etc/nginx/certs/notary/fullchain.pem` (leaf then intermediate, `644`) and `privkey.pem` (`600`, root-owned).
+- The CA chain, the certificate files, DNS, Auth0 and trusting the root are covered step by step in [initial-ca-bootstrap.md](initial-ca-bootstrap.md); moving the CA data to Atlas is in [ca-data-migration.md](ca-data-migration.md).
+
+```bash
+sudo cp deploy/nginx/notary.conf /etc/nginx/sites-available/notary
+sudo ln -sf /etc/nginx/sites-available/notary /etc/nginx/sites-enabled/notary
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**The Deploy workflow only changes the image tag** (`docker compose pull && up -d`). It never updates `docker-compose.yml`, `.env` or the NGINX site. When those change in the repository, copy them by hand:
+
+- `deploy/docker-compose.yml` to `/opt/notary/docker-compose.yml`, then `docker compose up -d`.
+- `deploy/nginx/notary.conf` to `/etc/nginx/sites-available/notary`, then `sudo nginx -t && sudo systemctl reload nginx`.
 
 ### Database
 
