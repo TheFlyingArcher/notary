@@ -82,23 +82,83 @@ chmod 600 .env
 nano .env
 ```
 
-The stack runs two containers on a private network: `notary-web` (published only on `127.0.0.1:8080` for NGINX, see #50) and `mongo` (no published ports, data in the `notary-db` volume).
+The stack runs `notary-web` (published only on `127.0.0.1:8080` for NGINX, see #50). The optional `mongo` container (no published ports, data in the `notary-db` volume) only starts with `--profile local-db`; see "Database" below.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `DOCKER_HUB_USER` | Yes | Docker Hub account that owns `notary-web` |
 | `NOTARY_TAG` | No | Image tag; Deploy overrides it. Defaults to `latest` |
 | `NOTARY_APP_KEY` | Yes | 16+ character passphrase protecting stored private keys. Back it up separately; never change it once keys exist ([details](private-key-storage.md)) |
-| `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD` | Yes | MongoDB root user, created on the first start of an empty volume. Notary authenticates against the `admin` database |
+| `NOTARY_DB_HOST` | No | MongoDB URL. Defaults to the bundled `mongo` service |
+| `NOTARY_DB_USERNAME`, `NOTARY_DB_PASSWORD` | Yes | MongoDB credentials. Notary authenticates against the `admin` database; the bundled `mongo` creates this root user on first start |
 | `NOTARY_DB_NAME` | No | Database name, default `notary` |
 | `NOTARY_OPENID_DOMAIN`, `NOTARY_OPENID_CLIENTID`, `NOTARY_OPENID_CLIENTSECRET` | Yes | Auth0 application used to sign in |
-| `NOTARY_CRL_ENDPOINT` | No | Public base URL for CRL distribution points, e.g. `https://pki.example.com` |
+| `NOTARY_CRL_ENDPOINT` | No | Public base URL for CRL distribution points, set before issuing, it is baked into each certificate. Use `http://` (e.g. `http://notary.unionsquared.lan`): CRLs are fetched over plain HTTP so revocation checks are not circular |
 
 Notes:
 
-- Auth0: create a Regular Web Application. Set Allowed Callback URLs to `https://<your-host>/callback` and Allowed Logout URLs to `https://<your-host>/`.
-- MongoDB image: `mongo:7` needs a 64-bit OS and, on arm64, ARMv8.2-A (Raspberry Pi 5). A Raspberry Pi 4 cannot run MongoDB 5.0 or later, which Notary needs (it uses Stable API v1). Point `NOTARY_DB_HOST` at a MongoDB elsewhere on the tailnet, or use another host for the database.
+- Auth0: create a Regular Web Application. Set Allowed Callback URLs to `https://notary.unionsquared.lan/callback` and Allowed Logout URLs to `https://notary.unionsquared.lan/`.
 - First start: after editing `.env`, run `docker compose up -d` once by hand and check `docker compose logs notary-web`. The app refuses to start without a valid `NOTARY_APP_KEY`.
 - `docker compose config` prints the resolved file and names any missing required variable.
+
+### NGINX and HTTPS
+
+The Pi's host NGINX (shared with other projects) terminates TLS and proxies to `notary-web` on `127.0.0.1:8080`. Notary adds one site; the others are untouched.
+
+- Site config: [`deploy/nginx/notary.conf`](../deploy/nginx/notary.conf) goes to `/etc/nginx/sites-available/notary`, linked into `sites-enabled/`.
+- Certificate files: `/etc/nginx/certs/notary/fullchain.pem` (leaf then intermediate, `644`) and `privkey.pem` (`600`, root-owned).
+- The CA chain, the certificate files, DNS, Auth0 and trusting the root are covered step by step in [initial-ca-bootstrap.md](initial-ca-bootstrap.md); moving the CA data to Atlas is in [ca-data-migration.md](ca-data-migration.md).
+
+```bash
+sudo cp deploy/nginx/notary.conf /etc/nginx/sites-available/notary
+sudo ln -sf /etc/nginx/sites-available/notary /etc/nginx/sites-enabled/notary
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**The Deploy workflow only changes the image tag** (`docker compose pull && up -d`). It never updates `docker-compose.yml`, `.env` or the NGINX site. When those change in the repository, copy them by hand:
+
+- `deploy/docker-compose.yml` to `/opt/notary/docker-compose.yml`, then `docker compose up -d`.
+- `deploy/nginx/notary.conf` to `/etc/nginx/sites-available/notary`, then `sudo nginx -t && sudo systemctl reload nginx`.
+
+### Database
+
+Notary needs MongoDB 5.0 or later (it requests Stable API v1). The official 5.0+ builds require the ARMv8.2-A CPU feature set, so:
+
+| Host | What to do |
+| --- | --- |
+| Raspberry Pi 5, or any x64 machine | Run the bundled database: `docker compose --profile local-db up -d` |
+| **Raspberry Pi 4 (Cortex-A72, ARMv8.0)** | MongoDB cannot run on it. Use [MongoDB Atlas](#using-mongodb-atlas) (below), or run MongoDB on a separate x64 or Pi 5 host on your tailnet and set `NOTARY_DB_HOST=mongodb://<tailnet-ip>:27017`. Do not start the `local-db` profile |
+
+Check a Pi with `lscpu`: no `atomics` in the flags means MongoDB 5.0+ will not run. Running Postgres on the Pi 4 instead of MongoDB is tracked in [#59](https://github.com/TheFlyingArcher/notary/issues/59).
+
+When the database is on another host, allow only the Pi to reach its port (Tailscale ACL, for example `tag:pi` to `<db-host>:27017`) and enable authentication and TLS on it.
+
+### Using MongoDB Atlas
+
+The free M0 tier works for a home PKI. Notary encrypts every stored private key with `NOTARY_APP_KEY`, which never leaves the Pi, so the database alone does not expose usable CA keys. Certificate metadata is still stored there.
+
+1. **Create a cluster.** At [cloud.mongodb.com](https://cloud.mongodb.com) create a project and a free **M0** cluster. Pick a region near you. The cluster must run MongoDB 5.0 or later (the default does).
+2. **Create a database user.** Security > Database Access > Add New Database User, password authentication, with a long random password. Under Specific Privileges, grant the built-in role **`readWrite`** on the **`notary`** database only. Notary needs `readWrite` to create its indexes and to read and write documents. `dbAdmin` alone is not enough: it cannot read or write documents, so the app would start and then fail with "not authorized". Do not use `atlasAdmin` or "read and write to any database". Atlas stores the user in the `admin` database, which is where Notary authenticates (hard-coded in `IocRegistration.cs`), so this works as is. Notary passes the password separately, so it needs no URL-encoding. Use a password user: AWS IAM, OIDC and X.509 users do not work with Notary.
+3. **Allow the Pi.** Security > Network Access > Add IP Address, and enter your home network's **public** IP (what the Pi appears as to the internet). Do not use `0.0.0.0/0`. If your ISP changes the address, update this entry or connections will time out.
+4. **Get the connection string.** Cluster > Connect > Drivers. Copy only the host part, for example `mongodb+srv://cluster0.abcde.mongodb.net`. Leave out the username, password and any query options, since Notary supplies the credentials itself.
+5. **Set `.env` on the Pi:**
+   ```bash
+   NOTARY_DB_HOST=mongodb+srv://cluster0.abcde.mongodb.net
+   NOTARY_DB_USERNAME=<atlas user>
+   NOTARY_DB_PASSWORD=<atlas password>
+   NOTARY_DB_NAME=notary   # must match the database the user's role is scoped to
+   ```
+   Do not start the `local-db` profile.
+6. **Check it.** Run `docker compose up -d` and `docker compose logs -f notary-web`. A connection timeout usually means the IP allow-list is wrong. An authentication error means the username or password is wrong.
+
+**Backups.** M0 has no automated backups. Take your own export regularly and store it somewhere safe. It holds encrypted keys, so protect it like the database:
+
+```bash
+mongodump --uri "mongodb+srv://<user>@cluster0.abcde.mongodb.net/notary" --out notary-backup-$(date +%F)
+```
+
+Back up `NOTARY_APP_KEY` separately. Without it, a restored backup cannot be read.
+
+Atlas compatibility has not been verified against Notary yet (see the note in `src/library/data/IocRegistration.cs`). Test it before relying on it.
 
 Roll back by running Deploy with the previous tag.

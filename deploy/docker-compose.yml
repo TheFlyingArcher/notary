@@ -11,20 +11,21 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+        # mongo only exists under the "local-db" profile; skip the wait when using an external MongoDB.
+        required: false
     environment:
-      # The aspnet base image listens on 8080 by default; stated here so it is explicit.
-      ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_ENVIRONMENT: Production
 
       # Required. Passphrase protecting every stored private key (16+ characters).
       # Never change it on a deployment that already has keys. See docs/private-key-storage.md.
       NOTARY_APP_KEY: ${NOTARY_APP_KEY:?Set NOTARY_APP_KEY in .env}
 
-      # Database (MongoDB). Host is a MongoDB URL. The user is authenticated against the "admin" database.
-      NOTARY_DB_HOST: mongodb://mongo:27017
+      # Database (MongoDB 5.0 or later, Stable API v1). Host is a MongoDB URL; the user authenticates against "admin".
+      # Default targets the bundled mongo service (local-db profile). Otherwise point it at your own server.
+      NOTARY_DB_HOST: ${NOTARY_DB_HOST:-mongodb://mongo:27017}
       NOTARY_DB_NAME: ${NOTARY_DB_NAME:-notary}
-      NOTARY_DB_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in .env}
-      NOTARY_DB_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env}
+      NOTARY_DB_USERNAME: ${NOTARY_DB_USERNAME:?Set NOTARY_DB_USERNAME in .env}
+      NOTARY_DB_PASSWORD: ${NOTARY_DB_PASSWORD:?Set NOTARY_DB_PASSWORD in .env}
 
       # Auth0 sign-in (OpenID Connect). All three are required to log in.
       NOTARY_OPENID_DOMAIN: ${NOTARY_OPENID_DOMAIN:?Set NOTARY_OPENID_DOMAIN in .env}
@@ -34,20 +35,26 @@ services:
       # Optional. Public base address used in the CRL distribution points of issued certificates,
       # e.g. https://pki.example.com. When blank, the address the request arrived at is used.
       NOTARY_CRL_ENDPOINT: ${NOTARY_CRL_ENDPOINT:-}
+    volumes:
+      # ASP.NET Data Protection keys (sign-in cookies, anti-forgery tokens). Without a volume they are lost when the
+      # container is recreated on each deploy, which signs everyone out.
+      - notary-dataprotection:/root/.aspnet/DataProtection-Keys
     ports:
-      # Published on the host for the NGINX reverse proxy (see #50). Bind to loopback if NGINX runs on the Pi itself.
+      # Loopback only: the host NGINX (deploy/nginx/notary.conf) is the sole way in. See #50.
       - "127.0.0.1:8080:8080"
     networks:
       - notary
 
   mongo:
-    # The official image only runs on arm64 for 5.0+ with ARMv8.2-A (Raspberry Pi 5). On a Pi 4, see docs/ci-cd.md.
+    # Optional bundled database: start with `docker compose --profile local-db up -d`.
+    # NOT for a Raspberry Pi 4: MongoDB 5.0+ needs ARMv8.2-A (Pi 5 or x64). Pi 4 users: see docs/ci-cd.md and #59.
+    profiles: ["local-db"]
     image: mongo:7
     restart: unless-stopped
     environment:
       # Creates the root user in the "admin" database on first start, which is where Notary authenticates.
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?Set MONGO_ROOT_USERNAME in .env}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Set MONGO_ROOT_PASSWORD in .env}
+      MONGO_INITDB_ROOT_USERNAME: ${NOTARY_DB_USERNAME:?Set NOTARY_DB_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${NOTARY_DB_PASSWORD:?Set NOTARY_DB_PASSWORD in .env}
     volumes:
       - notary-db:/data/db
     healthcheck:
@@ -61,6 +68,7 @@ services:
     # No ports published: only notary-web on the internal network can reach the database.
 
 volumes:
+  notary-dataprotection:
   notary-db:
 
 networks:

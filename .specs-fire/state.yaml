@@ -322,6 +322,47 @@ intents:
           - ec-key-load-validation
         run_id: run-role-based-authorization-398ceb-002
         completed_at: 2026-10-23T01:09:53.259Z
+  - id: initial-ca-bootstrap
+    title: Initial CA and HTTPS bootstrap for the Raspberry Pi
+    status: in_progress
+    work_items:
+      - id: nginx-compose-service
+        title: NGINX site for the Pi host NGINX
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-001
+        completed_at: 2026-10-24T22:09:25.001Z
+      - id: ca-tls-bootstrap-runbook
+        title: CA and TLS certificate bootstrap runbook
+        status: pending
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - nginx-compose-service
+      - id: ca-data-migration
+        title: Move CA data from dev to the Atlas production database
+        status: completed
+        complexity: high
+        mode: validate
+        depends_on:
+          - ca-tls-bootstrap-runbook
+      - id: deploy-docs-update
+        title: Update deploy docs and env template for NGINX and HTTPS
+        status: pending
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - nginx-compose-service
+      - id: https-uat-checklist
+        title: HTTPS user acceptance checklist
+        status: pending
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - nginx-compose-service
+          - ca-tls-bootstrap-runbook
   - id: match-ecdsa-hash-to-issuer-curve
     title: Match signature hash to the issuer key
     status: in_progress
@@ -352,6 +393,87 @@ intents:
           - use-selector-in-signing
         run_id: run-specsmd-fire-planner-02371b-003
         completed_at: 2026-10-24T23:05:12.322Z
+  - id: named-curve-ec-keys
+    title: Encode EC keys with named curves
+    status: in_progress
+    work_items:
+      - id: named-curve-key-encoding
+        title: Named-curve EC key generation and loading
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-002
+        completed_at: 2026-10-24T23:44:32.817Z
+      - id: named-curve-key-tests
+        title: Tests for named-curve encoding
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - named-curve-key-encoding
+        run_id: run-github-issue-51-4dca63-002
+        completed_at: 2026-10-24T23:44:32.817Z
+  - id: ec-key-usage-rfc5480
+    title: No keyEncipherment/dataEncipherment on EC certificates
+    status: in_progress
+    work_items:
+      - id: algorithm-aware-leaf-usages
+        title: Algorithm-aware profile leaf usages and EC rejection
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-003
+        completed_at: 2026-10-25T00:09:34.128Z
+      - id: ca-certificate-usages-ec
+        title: CA certificate usages and CA form for EC keys
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-003
+        completed_at: 2026-10-25T00:09:34.128Z
+      - id: ec-key-usage-tests
+        title: Tests for EC key usage rules
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - algorithm-aware-leaf-usages
+          - ca-certificate-usages-ec
+        run_id: run-github-issue-51-4dca63-003
+        completed_at: 2026-10-25T00:09:34.128Z
+  - id: modern-pkcs12-export
+    title: Modern, complete PKCS
+    status: in_progress
+    work_items:
+      - id: pkcs12-modern-export-with-chain
+        title: Modern PKCS
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-004
+        completed_at: 2026-10-25T01:26:19.369Z
+      - id: pkcs7-chain-export
+        title: PKCS
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-github-issue-51-4dca63-004
+        completed_at: 2026-10-25T01:26:19.369Z
+      - id: certificate-export-tests
+        title: Round-trip tests for certificate export
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - pkcs12-modern-export-with-chain
+          - pkcs7-chain-export
+        run_id: run-github-issue-51-4dca63-004
+        completed_at: 2026-10-25T01:26:19.369Z
 runs:
   active: []
   completed:
@@ -568,6 +690,14 @@ runs:
           mode: confirm
       started: 2026-10-23T01:07:23.471Z
       completed: 2026-10-23T01:09:53.259Z
+    - id: run-github-issue-51-4dca63-001
+      scope: single
+      work_items:
+        - id: nginx-compose-service
+          intent: initial-ca-bootstrap
+          mode: confirm
+      started: 2026-10-24T19:28:52.570Z
+      completed: 2026-10-24T22:09:25.001Z
     - id: run-specsmd-fire-planner-02371b-001
       scope: single
       work_items:
@@ -592,3 +722,42 @@ runs:
           mode: confirm
       started: 2026-10-24T23:01:43.747Z
       completed: 2026-10-24T23:05:12.322Z
+    - id: run-github-issue-51-4dca63-002
+      scope: batch
+      work_items:
+        - id: named-curve-key-encoding
+          intent: named-curve-ec-keys
+          mode: confirm
+        - id: named-curve-key-tests
+          intent: named-curve-ec-keys
+          mode: confirm
+      started: 2026-10-24T23:38:56.989Z
+      completed: 2026-10-24T23:44:32.817Z
+    - id: run-github-issue-51-4dca63-003
+      scope: batch
+      work_items:
+        - id: algorithm-aware-leaf-usages
+          intent: ec-key-usage-rfc5480
+          mode: confirm
+        - id: ca-certificate-usages-ec
+          intent: ec-key-usage-rfc5480
+          mode: confirm
+        - id: ec-key-usage-tests
+          intent: ec-key-usage-rfc5480
+          mode: confirm
+      started: 2026-10-25T00:00:18.447Z
+      completed: 2026-10-25T00:09:34.128Z
+    - id: run-github-issue-51-4dca63-004
+      scope: batch
+      work_items:
+        - id: pkcs12-modern-export-with-chain
+          intent: modern-pkcs12-export
+          mode: confirm
+        - id: pkcs7-chain-export
+          intent: modern-pkcs12-export
+          mode: confirm
+        - id: certificate-export-tests
+          intent: modern-pkcs12-export
+          mode: confirm
+      started: 2026-10-25T01:20:48.993Z
+      completed: 2026-10-25T01:26:19.369Z

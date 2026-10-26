@@ -10,12 +10,14 @@ using log4net;
 #region Bouncy Castle Usings
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Cms;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Utilities.Collections;
 using Org.BouncyCastle.Utilities.Encoders;
 using Org.BouncyCastle.X509;
 #endregion
@@ -59,6 +61,12 @@ namespace Notary.Service
         [NotaryAuthorize(NotaryOperation.CertificateCreate)]
         public override Task SaveAsync(Certificate entity, string updatedBySlug) => base.SaveAsync(entity, updatedBySlug);
 
+        private static CertificateKeyUsage[] DecodeKeyUsages(IEnumerable<int> flags)
+        {
+            int combined = (flags ?? []).Aggregate(0, (all, flag) => all | flag);
+            return [.. Enum.GetValues<CertificateKeyUsage>().Where(u => (combined & (int)u) != 0)];
+        }
+
         [NotaryAuthorize(NotaryOperation.CertificateCreate)]
         public async Task<Result<Certificate>> IssueCertificateAsync(CertificateRequest request)
         {
@@ -73,6 +81,11 @@ namespace Notary.Service
 
                 if (request.PathLengthConstraint.HasValue && !request.IsCaCertificate)
                     return Result<Certificate>.Fail(ResultStatus.Invalid, "A path length constraint applies only to CA certificates.");
+
+                var requestedKeyUsages = DecodeKeyUsages(request.CertificateKeyUsageFlags);
+                var keyUsageCheck = CaProfileCatalog.CheckKeyUsagesForAlgorithm(request.KeyAlgorithm, requestedKeyUsages);
+                if (!keyUsageCheck.IsSuccess)
+                    return Result<Certificate>.Fail(keyUsageCheck.Status, keyUsageCheck.Error);
 
                 string crlEndpoint = null;
                 BigInteger issuerSn = null;
@@ -96,11 +109,9 @@ namespace Notary.Service
                         var issuingCa = await CertificateAuthorityRepository.GetByCertificateSlugAsync(parentCert.Slug);
                         if (issuingCa != null)
                         {
-                            int requestedFlags = (request.CertificateKeyUsageFlags ?? []).Aggregate(0, (all, flag) => all | flag);
-                            var requestedKeyUsages = Enum.GetValues<CertificateKeyUsage>().Where(u => (requestedFlags & (int)u) != 0);
-
                             var leafCheck = CaProfileCatalog.CheckLeaf(
                                 CaProfileCatalog.Resolve(issuingCa),
+                                request.KeyAlgorithm,
                                 requestedKeyUsages,
                                 request.ExtendedKeyUsages);
                             if (!leafCheck.IsSuccess)
@@ -218,25 +229,45 @@ namespace Notary.Service
                     certificateBinary = Encoding.Default.GetBytes(certificate.Data);
                     break;
                 case CertificateFormat.Pkcs12:
-                    var certKey = await KeyService.GetKeyPairAsync(certificate.KeySlug);
-                    var store = new Pkcs12StoreBuilder().Build();
-                    var certEntry = new X509CertificateEntry(cert);
-                    var keyEntry = new AsymmetricKeyEntry(certKey.Private);
-
-                    store.SetKeyEntry(certificate.Subject.ToString(), keyEntry, [certEntry]);
-                    using (var memStream = new MemoryStream())
-                    {
-                        store.Save(memStream, privateKeyPassword.ToArray(), GetSecureRandom());
-                        certificateBinary = memStream.ToArray();
-                    }
+                    certificateBinary = await ExportPkcs12Async(certificate, privateKeyPassword);
                     break;
                 case CertificateFormat.Pkcs7:
-                    //TODO: Figure this out.
+                    certificateBinary = await ExportPkcs7Async(certificate);
                     break;
                 default:
                     throw new ArgumentException(nameof(format));
             }
             return certificateBinary;
+        }
+
+        // The certificate and its issuers up to the root, parsed, certificate first
+        private async Task<List<X509Certificate>> GetChainAsync(Certificate certificate)
+        {
+            var chain = await CertificateChainResolver.ResolveAsync(certificate, GetAsync);
+            return [.. chain.Select(c => GetX509FromPem(c.Data) ?? throw new InvalidOperationException($"Certificate '{c.Slug}' could not be read."))];
+        }
+
+        private async Task<byte[]> ExportPkcs12Async(Certificate certificate, string password)
+        {
+            if (string.IsNullOrEmpty(password))
+                throw new ArgumentException("A password is required to export a PKCS #12.", nameof(password));
+
+            var keyPair = await KeyService.GetKeyPairAsync(certificate.KeySlug)
+                ?? throw new InvalidOperationException($"The private key of certificate '{certificate.Slug}' was not found.");
+            var chain = await GetChainAsync(certificate);
+
+            return Pkcs12ExportBuilder.Build(keyPair.Private, chain, certificate.Subject.ToString(), password);
+        }
+
+        // A certificates-only PKCS #7 (RFC 2315 / RFC 5652 SignedData with no content and no signers)
+        private async Task<byte[]> ExportPkcs7Async(Certificate certificate)
+        {
+            var chain = await GetChainAsync(certificate);
+
+            var generator = new CmsSignedDataGenerator();
+            generator.AddCertificates(CollectionUtilities.CreateStore(chain));
+
+            return generator.Generate(new CmsProcessableByteArray([]), false).GetEncoded("DER");
         }
 
         [NotaryAuthorize(NotaryOperation.CertificateList)]

@@ -34,6 +34,9 @@ PKI application (certificate authorities, certificates, revocation/CRLs) for a R
 
 - Containerization: Docker (`src/Dockerfile`), built in CI only
 - CI/CD: GitHub Actions
+- Production: Raspberry Pi 4 (aarch64, ARMv8.0) running Docker Compose, deployed over Tailscale; MongoDB Atlas for the database
+- DNS: the owner runs a BIND9 server, `ns1.unionsquared.lan` (192.168.1.11), that resolves all `*.unionsquared.lan` names. Verify from a machine on the same network with `ping ns1.unionsquared.lan`
+- Production hostname: `notary.unionsquared.lan` (Tailscale name `usqapp01.tailf1d37d.ts.net`)
 
 ## Development Tools
 
