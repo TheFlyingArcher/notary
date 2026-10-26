@@ -11,7 +11,7 @@ Clients --HTTP--> host NGINX (80, /api/crl/ only) --> notary-web   (CRL download
 
 ## 0. Before you start
 
-- Use a **clean dev database** and the **production `NOTARY_APP_KEY`**. Private keys are stored encrypted with that key; a CA created under a different key cannot be used after the move to production. Confirm the startup log reads `Private key migration: 0 migrated, ... 0 failed`.
+- Use a **clean dev database** and the **production `NOTARY_APP_KEY`**. Private keys are stored encrypted with that key; a CA created under a different key cannot be used after the move to production. The startup log line `Private key migration: ... 0 failed` does not prove the key is right; fetching a CRL does (see [ca-data-migration.md](ca-data-migration.md)).
 - Set `NOTARY_CRL_ENDPOINT=http://notary.unionsquared.lan` **before issuing anything**. The URL is written into every certificate and cannot be changed afterwards. It is `http`, not `https`, on purpose: checking revocation over HTTPS would need the certificate being checked.
 - Pick the profile for each certificate in the Notary UI; the values below are what the production chain uses.
 
@@ -165,5 +165,5 @@ Run after section 5 (and after the data move, if production uses the migrated CA
 - [ ] **Sign-in.** Auth0 sign-in completes and returns to `https://notary.unionsquared.lan/callback`, and sign-out returns to the site.
 - [ ] **Websocket.** After signing in the page stays interactive: no "Attempting to reconnect" banner or reconnect loop. In the browser developer tools Network tab the `_blazor` connection is a `101` websocket that stays open.
 - [ ] **CRL.** Issue a test certificate, take the URL from its CRL Distribution Points (`http://notary.unionsquared.lan/api/crl/...`) and download it: `curl -s http://notary.unionsquared.lan/api/crl/<issuer> | openssl crl -inform DER -noout -text`. Revoke the test certificate and confirm it appears in the list.
-- [ ] **Containers.** `docker compose logs notary-web` shows `Private key migration: ... 0 failed` and no errors after a restart.
+- [ ] **Containers.** `docker compose logs notary-web` shows no errors after a restart, and a CRL download succeeds (it needs the app key to decrypt the CA key).
 - [ ] **Expiry recorded.** The leaf expires 2027-10-25. Add a calendar reminder for 2027-09-25 (see section 7).
