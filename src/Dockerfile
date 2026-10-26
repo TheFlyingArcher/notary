@@ -18,12 +18,14 @@ RUN dotnet restore "./src/web/Notary.Web.csproj" -a ${TARGETARCH}
 COPY src/ src/
 COPY Notary.ServiceDefaults/ Notary.ServiceDefaults/
 WORKDIR "/repo/src/web"
-RUN dotnet build "./Notary.Web.csproj" -c $BUILD_CONFIGURATION -o /app/build --nologo --no-restore -a ${TARGETARCH}
+# No --no-restore on build and publish: the restore above saw only the csproj files, and the SDK then leaves out
+# Blazor's framework scripts (_framework/blazor.server.js), so the published image returned 404 for them.
+RUN dotnet build "./Notary.Web.csproj" -c $BUILD_CONFIGURATION -o /app/build --nologo -a ${TARGETARCH}
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 ARG TARGETARCH
-RUN dotnet publish "./Notary.Web.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false --nologo --no-restore -a ${TARGETARCH}
+RUN dotnet publish "./Notary.Web.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false --nologo -a ${TARGETARCH}
 
 FROM base AS final
 
