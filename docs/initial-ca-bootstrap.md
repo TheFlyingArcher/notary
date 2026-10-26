@@ -154,3 +154,16 @@ Because there is no HSTS, an expired or replaced certificate leaves a click-thro
 
 - The CRL endpoint is plain HTTP. Only `GET` and `HEAD` on `/api/crl/` are served on port 80; everything else on port 80 redirects to HTTPS.
 - The root CA's private key lives in Notary's database, encrypted with `NOTARY_APP_KEY`. Losing the application key means losing the ability to issue from the chain. Keep a copy of the key outside the Pi.
+
+## 9. HTTPS acceptance checklist
+
+Run after section 5 (and after the data move, if production uses the migrated CA). Tick each line.
+
+- [ ] **Trust and names.** From a client with the root installed, `https://notary.unionsquared.lan` loads with no warning. The certificate viewer shows the chain leaf, Web Server CA, Root CA, and the SANs `notary.unionsquared.lan`, `unionsquared.lan` and `usqapp01.tailf1d37d.ts.net`.
+- [ ] **Redirect.** `curl -I http://notary.unionsquared.lan/` returns `301` to `https://notary.unionsquared.lan/`.
+- [ ] **Both names.** The site loads by the LAN name and by `https://usqapp01.tailf1d37d.ts.net` (from a device on the tailnet, with the root trusted there).
+- [ ] **Sign-in.** Auth0 sign-in completes and returns to `https://notary.unionsquared.lan/callback`, and sign-out returns to the site.
+- [ ] **Websocket.** After signing in the page stays interactive: no "Attempting to reconnect" banner or reconnect loop. In the browser developer tools Network tab the `_blazor` connection is a `101` websocket that stays open.
+- [ ] **CRL.** Issue a test certificate, take the URL from its CRL Distribution Points (`http://notary.unionsquared.lan/api/crl/...`) and download it: `curl -s http://notary.unionsquared.lan/api/crl/<issuer> | openssl crl -inform DER -noout -text`. Revoke the test certificate and confirm it appears in the list.
+- [ ] **Containers.** `docker compose logs notary-web` shows `Private key migration: ... 0 failed` and no errors after a restart.
+- [ ] **Expiry recorded.** The leaf expires 2027-10-25. Add a calendar reminder for 2027-09-25 (see section 7).
