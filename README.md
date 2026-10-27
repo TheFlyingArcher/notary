@@ -11,3 +11,7 @@ Releases v1.1.37 to v1.1.45 stored private keys unencrypted in the database. The
 ## Configuration
 
 `NOTARY_APP_KEY` is required: a secret of at least 16 characters that protects the stored private keys. The application will not start without it, and changing it later makes existing keys unreadable. Details are in [docs/private-key-storage.md](docs/private-key-storage.md).
+
+## Key types
+
+A CA can use a different key type than its parent, so an RSA root can have EC intermediates. Notary never issues a CA or certificate weaker than its issuer. See [Mixed RSA/EC chains and the key strength rule](docs/key-strength.md).

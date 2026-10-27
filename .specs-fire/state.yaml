@@ -474,6 +474,76 @@ intents:
           - pkcs7-chain-export
         run_id: run-github-issue-51-4dca63-004
         completed_at: 2026-10-25T01:26:19.369Z
+  - id: mixed-chain-key-strength
+    title: Mixed RSA/EC chains with a no-weaker-than-issuer key strength rule
+    status: in_progress
+    work_items:
+      - id: key-strength-model
+        title: Key strength model
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-02371b-004
+        completed_at: 2026-10-27T00:10:37.601Z
+      - id: child-ca-own-key-settings
+        title: Child CA own key settings
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - key-strength-model
+        run_id: run-specsmd-fire-planner-02371b-005
+        completed_at: 2026-10-27T00:19:39.768Z
+      - id: leaf-key-strength-floor
+        title: Leaf key strength floor
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - key-strength-model
+        run_id: run-specsmd-fire-planner-02371b-006
+        completed_at: 2026-10-27T00:26:21.444Z
+      - id: child-ca-key-settings-ui
+        title: Child CA key settings UI
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - key-strength-model
+          - child-ca-own-key-settings
+        run_id: run-specsmd-fire-planner-02371b-007
+        completed_at: 2026-10-27T00:31:35.883Z
+      - id: key-strength-ux-clarity
+        title: Explain equal security levels in the key pickers
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - child-ca-key-settings-ui
+        run_id: run-specsmd-fire-planner-02371b-008
+        completed_at: 2026-10-27T00:53:17.623Z
+      - id: leaf-key-settings-ui
+        title: Leaf key settings UI
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - key-strength-model
+          - leaf-key-strength-floor
+          - key-strength-ux-clarity
+        run_id: run-specsmd-fire-planner-02371b-009
+        completed_at: 2026-10-27T01:00:55.055Z
+      - id: key-strength-tests-docs
+        title: Key strength tests and docs
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - child-ca-own-key-settings
+          - leaf-key-strength-floor
+        run_id: run-specsmd-fire-planner-02371b-010
+        completed_at: 2026-10-27T01:08:47.764Z
 runs:
   active: []
   completed:
@@ -761,3 +831,59 @@ runs:
           mode: confirm
       started: 2026-10-25T01:20:48.993Z
       completed: 2026-10-25T01:26:19.369Z
+    - id: run-specsmd-fire-planner-02371b-004
+      scope: single
+      work_items:
+        - id: key-strength-model
+          intent: mixed-chain-key-strength
+          mode: confirm
+      started: 2026-10-26T23:56:38.524Z
+      completed: 2026-10-27T00:10:37.601Z
+    - id: run-specsmd-fire-planner-02371b-005
+      scope: single
+      work_items:
+        - id: child-ca-own-key-settings
+          intent: mixed-chain-key-strength
+          mode: confirm
+      started: 2026-10-27T00:14:40.671Z
+      completed: 2026-10-27T00:19:39.768Z
+    - id: run-specsmd-fire-planner-02371b-006
+      scope: single
+      work_items:
+        - id: leaf-key-strength-floor
+          intent: mixed-chain-key-strength
+          mode: confirm
+      started: 2026-10-27T00:20:04.187Z
+      completed: 2026-10-27T00:26:21.444Z
+    - id: run-specsmd-fire-planner-02371b-007
+      scope: single
+      work_items:
+        - id: child-ca-key-settings-ui
+          intent: mixed-chain-key-strength
+          mode: confirm
+      started: 2026-10-27T00:26:56.806Z
+      completed: 2026-10-27T00:31:35.883Z
+    - id: run-specsmd-fire-planner-02371b-008
+      scope: single
+      work_items:
+        - id: key-strength-ux-clarity
+          intent: mixed-chain-key-strength
+          mode: confirm
+      started: 2026-10-27T00:50:04.829Z
+      completed: 2026-10-27T00:53:17.623Z
+    - id: run-specsmd-fire-planner-02371b-009
+      scope: single
+      work_items:
+        - id: leaf-key-settings-ui
+          intent: mixed-chain-key-strength
+          mode: confirm
+      started: 2026-10-27T00:57:52.583Z
+      completed: 2026-10-27T01:00:55.055Z
+    - id: run-specsmd-fire-planner-02371b-010
+      scope: single
+      work_items:
+        - id: key-strength-tests-docs
+          intent: mixed-chain-key-strength
+          mode: confirm
+      started: 2026-10-27T01:04:21.149Z
+      completed: 2026-10-27T01:08:47.764Z

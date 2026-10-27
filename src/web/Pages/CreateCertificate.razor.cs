@@ -6,6 +6,7 @@ using Notary;
 using C = Notary.Contract;
 using Notary.Interface.Service;
 using Notary.Profiles;
+using Notary.Security;
 using Notary.Validity;
 using Notary.Web.ViewModels;
 using Notary.Web.Shared;
@@ -96,6 +97,49 @@ public partial class CreateCertificate : ComponentBase
     private IEnumerable<KeyValuePair<int, string>> AvailableKeyUsages =>
         ViewModel.CertificateKeyUsages.Where(u =>
             CaProfileCatalog.CheckKeyUsagesForAlgorithm(ViewModel.KeyAlgorithm, [(CertificateKeyUsage)u.Key]).IsSuccess);
+
+    // The issuing CA's key, which the certificate's key must be at least as strong as
+    private KeySpec? IssuerKey => ViewModel.SelectedCa == null
+        ? null
+        : new KeySpec(ViewModel.SelectedCa.KeyAlgorithm, ViewModel.SelectedCa.KeyCurve, ViewModel.SelectedCa.KeyLength);
+
+    private IReadOnlyList<int> AllowedRsaLengths => KeyOptions.AllowedRsaLengths(IssuerKey!);
+
+    private IReadOnlyList<EllipticCurve> AllowedCurves => KeyOptions.AllowedCurves(IssuerKey!);
+
+    private bool RsaOffered => AllowedRsaLengths.Count > 0;
+
+    private bool EllipticCurveOffered => AllowedCurves.Count > 0;
+
+    private string IssuerKeyText => IssuerKey == null ? string.Empty : KeyOptions.DescribeIssuer(IssuerKey);
+
+    private string KeyFloorText => IssuerKey == null ? string.Empty : KeyOptions.Describe(IssuerKey);
+
+    private static string RsaLabel(int length) => KeyOptions.Label(new KeySpec(Algorithm.RSA, null, length));
+
+    private static string CurveLabel(EllipticCurve curve) => KeyOptions.Label(new KeySpec(Algorithm.EllipticCurve, curve, null));
+
+    private string? RsaRelation(int length) => RelationText(new KeySpec(Algorithm.RSA, null, length));
+
+    private string? CurveRelation(EllipticCurve curve) => RelationText(new KeySpec(Algorithm.EllipticCurve, curve, null));
+
+    private string? RelationText(KeySpec candidate)
+    {
+        var relation = IssuerKey == null ? null : KeyOptions.Relate(IssuerKey, candidate);
+        return relation.HasValue ? KeyOptions.RelationText(relation.Value) : null;
+    }
+
+    // Switching key type keeps the form valid: take the weakest allowed size or curve of the new type if the current one is
+    // not offered, then let the usages follow the key (an EC key cannot encipher, and a purpose CA sets usages per key type)
+    private void OnKeyAlgorithmChanged()
+    {
+        if (ViewModel.KeyAlgorithm == Algorithm.RSA && RsaOffered && !AllowedRsaLengths.Contains(ViewModel.KeySize))
+            ViewModel.KeySize = AllowedRsaLengths[0];
+        else if (ViewModel.KeyAlgorithm == Algorithm.EllipticCurve && EllipticCurveOffered && !AllowedCurves.Contains(ViewModel.Curve))
+            ViewModel.Curve = AllowedCurves[0];
+
+        RefreshUsages();
+    }
 
     private bool KeyUsageMissing => _submitAttempted && ViewModel.SelectedCertificateKeyUsage.Count == 0;
 
