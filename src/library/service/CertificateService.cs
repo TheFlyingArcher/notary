@@ -121,6 +121,20 @@ namespace Notary.Service
 
                     var cert = GetX509FromPem(parentCert.Data);
                     issuerKeyPair = await KeyService.GetKeyPairAsync(parentCert.KeySlug);
+                    if (issuerKeyPair == null)
+                        return Result<Certificate>.Fail(ResultStatus.NotFound, "The issuing certificate's key was not found.");
+
+                    // Nothing may be weaker than the CA that issues it; checked before a key is generated or anything saved
+                    var issuerSpec = KeySpecs.FromKey(issuerKeyPair.Public);
+                    if (!issuerSpec.IsSuccess)
+                        return Result<Certificate>.Fail(issuerSpec.Status, issuerSpec.Error);
+
+                    var strengthCheck = KeyStrength.CheckNotWeaker(
+                        issuerSpec.Value,
+                        new KeySpec(request.KeyAlgorithm, request.Curve, request.KeySize));
+                    if (!strengthCheck.IsSuccess)
+                        return Result<Certificate>.Fail(strengthCheck.Status, strengthCheck.Error);
+
                     issuerSn = cert.SerialNumber;
                     crlEndpoint = BuildCrlEndpoint(parentCert.Slug);
                 }

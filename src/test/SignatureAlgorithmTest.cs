@@ -109,14 +109,15 @@ public class SignatureAlgorithmTest
         crl.Verify(rootX509.GetPublicKey());
     }
 
+    // The key strength rule only lets an RSA leaf sit under an EC CA when it is at least as strong, so P-256 pairs with RSA-3072
     [Test]
     public async Task RsaLeafUnderEcCa_UsesTheEcIssuersAlgorithm()
     {
-        var root = await IssueAsync("root", Algorithm.EllipticCurve, EllipticCurve.P384, null, isCa: true);
-        var leaf = await IssueAsync("leaf", Algorithm.RSA, null, 2048, parent: root);
+        var root = await IssueAsync("root", Algorithm.EllipticCurve, EllipticCurve.P256, null, isCa: true);
+        var leaf = await IssueAsync("leaf", Algorithm.RSA, null, 3072, parent: root);
 
         var leafX509 = Parse(leaf);
-        Assert.That(leafX509.SigAlgOid, Is.EqualTo(X9ObjectIdentifiers.ECDsaWithSha384.Id));
+        Assert.That(leafX509.SigAlgOid, Is.EqualTo(X9ObjectIdentifiers.ECDsaWithSha256.Id));
         leafX509.Verify(Parse(root).GetPublicKey());
     }
 

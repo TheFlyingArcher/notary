@@ -1,6 +1,7 @@
 using C = Notary.Contract;
 using Notary.Interface.Service;
 using Notary.Profiles;
+using Notary.Security;
 using Notary.Validity;
 using Notary.Web.ViewModels;
 
@@ -164,6 +165,47 @@ namespace Notary.Web.Pages
 
             ViewModel.ParentCaSlug = slug;
             ViewModel.SelectedCa = slug == string.Empty ? null : await CertificateAuthorityService.GetAsync(slug);
+        }
+
+        // The chosen parent's key, which the new CA's key must be at least as strong as; null for a root, which has no issuer
+        private KeySpec ParentKey => ViewModel.SelectedCa == null
+            ? null
+            : new KeySpec(ViewModel.SelectedCa.KeyAlgorithm, ViewModel.SelectedCa.KeyCurve, ViewModel.SelectedCa.KeyLength);
+
+        private IReadOnlyList<int> AllowedRsaLengths => KeyOptions.AllowedRsaLengths(ParentKey);
+
+        private IReadOnlyList<EllipticCurve> AllowedCurves => KeyOptions.AllowedCurves(ParentKey);
+
+        private bool RsaOffered => AllowedRsaLengths.Count > 0;
+
+        private bool EllipticCurveOffered => AllowedCurves.Count > 0;
+
+        private string KeyFloorText => ParentKey == null ? string.Empty : KeyOptions.Describe(ParentKey);
+
+        private string ParentKeyText => ParentKey == null ? string.Empty : KeyOptions.DescribeIssuer(ParentKey);
+
+        private static string RsaLabel(int length) => KeyOptions.Label(new KeySpec(Algorithm.RSA, null, length));
+
+        private static string CurveLabel(EllipticCurve curve) => KeyOptions.Label(new KeySpec(Algorithm.EllipticCurve, curve, null));
+
+        // A neutral note on how an option compares with the parent's key; none for a root, which has no parent
+        private string RsaRelation(int length) => RelationText(new KeySpec(Algorithm.RSA, null, length));
+
+        private string CurveRelation(EllipticCurve curve) => RelationText(new KeySpec(Algorithm.EllipticCurve, curve, null));
+
+        private string RelationText(KeySpec candidate)
+        {
+            var relation = ParentKey == null ? null : KeyOptions.Relate(ParentKey, candidate);
+            return relation.HasValue ? KeyOptions.RelationText(relation.Value) : null;
+        }
+
+        // Switching key type keeps the form valid: take the weakest allowed size or curve of the new type if the current one is not offered
+        private void OnKeyTypeChanged()
+        {
+            if (ViewModel.KeyType == Algorithm.RSA && RsaOffered && !AllowedRsaLengths.Contains(ViewModel.KeyLength))
+                ViewModel.KeyLength = AllowedRsaLengths[0];
+            else if (ViewModel.KeyType == Algorithm.EllipticCurve && EllipticCurveOffered && !AllowedCurves.Contains(ViewModel.Curve))
+                ViewModel.Curve = AllowedCurves[0];
         }
 
         // Every CA certificate carries these; a CA cannot sign certificates or publish revocations without them

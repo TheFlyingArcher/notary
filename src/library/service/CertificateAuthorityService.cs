@@ -66,9 +66,11 @@ namespace Notary.Service
                 if (!issuerCheck.IsSuccess)
                     return Result<CertificateAuthority>.Fail(issuerCheck.Status, issuerCheck.Error);
 
-                entity.KeyCurve = parentCa.KeyCurve;
-                entity.KeyAlgorithm = parentCa.KeyAlgorithm;
-                entity.KeyLength = parentCa.KeyLength;
+                // A child chooses its own key, but may never be weaker than the CA that issues it
+                var strengthCheck = KeyStrength.CheckNotWeaker(ToKeySpec(parentCa), ToKeySpec(entity));
+                if (!strengthCheck.IsSuccess)
+                    return Result<CertificateAuthority>.Fail(strengthCheck.Status, strengthCheck.Error);
+
                 entity.ParentCaSlug = parentCa.Slug;
             }
 
@@ -119,6 +121,8 @@ namespace Notary.Service
 
             return Result<CertificateAuthority>.Ok(entity);
         }
+
+        private static KeySpec ToKeySpec(CertificateAuthority ca) => new(ca.KeyAlgorithm, ca.KeyCurve, ca.KeyLength);
 
         private static bool UsesLegacyUsages(CertificateAuthority ca)
         {

@@ -72,6 +72,11 @@ internal class FakeKeyService : IAsymmetricKeyService
 {
     private readonly Dictionary<string, (AsymmetricKey Key, AsymmetricCipherKeyPair Pair)> _keys = [];
 
+    /// <summary>
+    /// How many keys have been generated and stored
+    /// </summary>
+    public int Count => _keys.Count;
+
     public Task SaveAsync(AsymmetricKey entity, string updatedBySlug)
     {
         entity.Slug = Guid.NewGuid().ToString("N");

@@ -147,25 +147,52 @@
         <MudLink OnClick="@(()=>ViewModel.KeyAlgorithmExpanded=!ViewModel.KeyAlgorithmExpanded)">Private Key Algorithm
         </MudLink>
         <MudCollapse Expanded="ViewModel.KeyAlgorithmExpanded">
-            <MudRadioGroup @bind-Value="@ViewModel.KeyType" Disabled="ViewModel.SelectedCa!=null">
-                <MudRadio Value="@Algorithm.RSA">RSA</MudRadio>
-                <MudRadio Value="@Algorithm.EllipticCurve">Elliptic Curve</MudRadio>
+            @if (ViewModel.SelectedCa != null)
+            {
+                <MudText Typo="Typo.subtitle2" Class="mt-2">@ParentKeyText</MudText>
+                <MudAlert Severity="Severity.Info" Class="my-2">
+                    Defaults to the parent CA's key. You can choose a different key type or size. @KeyFloorText
+                </MudAlert>
+            }
+            <MudRadioGroup @bind-Value="@ViewModel.KeyType" T="Algorithm" @bind-Value:after="OnKeyTypeChanged">
+                @if (RsaOffered)
+                {
+                    <MudRadio Value="@Algorithm.RSA">RSA</MudRadio>
+                }
+                @if (EllipticCurveOffered)
+                {
+                    <MudRadio Value="@Algorithm.EllipticCurve">Elliptic Curve</MudRadio>
+                }
             </MudRadioGroup>
             <MudDivider />
             @if (ViewModel.KeyType == Algorithm.RSA)
             {
-                <MudRadioGroup @bind-Value="@ViewModel.KeyLength" T="int" Disabled="ViewModel.SelectedCa!=null">
-                    <MudRadio Value="@(2048)">2048 bit</MudRadio>
-                    <MudRadio Value="@(3072)">3072 bit</MudRadio>
-                    <MudRadio Value="@(4096)">4096 bit</MudRadio>
+                <MudRadioGroup @bind-Value="@ViewModel.KeyLength" T="int">
+                    @foreach (var length in AllowedRsaLengths)
+                    {
+                        <MudRadio Value="@length">
+                            @RsaLabel(length)
+                            @if (RsaRelation(length) is { } relation)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">@relation</MudChip>
+                            }
+                        </MudRadio>
+                    }
                 </MudRadioGroup>
             }
             else if (ViewModel.KeyType == Algorithm.EllipticCurve)
             {
-                <MudRadioGroup @bind-Value="@ViewModel.Curve" T="EllipticCurve" Disabled="ViewModel.SelectedCa!=null">
-                    <MudRadio Value="@(EllipticCurve.P256)">P256</MudRadio>
-                    <MudRadio Value="@(EllipticCurve.P384)">P384</MudRadio>
-                    <MudRadio Value="@(EllipticCurve.P521)">P521</MudRadio>
+                <MudRadioGroup @bind-Value="@ViewModel.Curve" T="EllipticCurve">
+                    @foreach (var curve in AllowedCurves)
+                    {
+                        <MudRadio Value="@curve">
+                            @CurveLabel(curve)
+                            @if (CurveRelation(curve) is { } relation)
+                            {
+                                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Class="ml-2">@relation</MudChip>
+                            }
+                        </MudRadio>
+                    }
                 </MudRadioGroup>
             }
         </MudCollapse>

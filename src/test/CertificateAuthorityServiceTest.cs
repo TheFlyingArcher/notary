@@ -22,6 +22,10 @@ public class CertificateAuthorityServiceTest : NotaryTest
     [SetUp]
     public void Setup()
     {
+        // The fixture is one instance, so clear what earlier tests set up and called
+        _caRepo.Reset();
+        _certificateService.Reset();
+
         var ca = MockCa();
         var certificate = CreateCertificateMock();
         var config = MockConfiguration();
@@ -80,6 +84,7 @@ public class CertificateAuthorityServiceTest : NotaryTest
         var parent = MockCa();
         parent.Slug = "parent";
         parent.CertificateSlug = "parent-cert";
+        SetKey(parent, Algorithm.EllipticCurve, EllipticCurve.P256, null);
         _caRepo.Setup(r => r.GetAsync("parent")).ReturnsAsync(parent);
         _certificateService
             .Setup(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()))
@@ -88,7 +93,7 @@ public class CertificateAuthorityServiceTest : NotaryTest
         var child = MockCa();
         child.Slug = "child";
         child.ParentCaSlug = "parent";
-        child.KeyAlgorithm = Algorithm.EllipticCurve;
+        SetKey(child, Algorithm.EllipticCurve, EllipticCurve.P256, null);
         child.DistinguishedName.Country = "US";
 
         var result = await _service.CreateAsync(child, null);
@@ -104,6 +109,7 @@ public class CertificateAuthorityServiceTest : NotaryTest
         var parent = MockCa();
         parent.Slug = "parent";
         parent.CertificateSlug = "parent-cert";
+        SetKey(parent, Algorithm.EllipticCurve, EllipticCurve.P256, null);
         _caRepo.Setup(r => r.GetAsync("parent")).ReturnsAsync(parent);
         _certificateService
             .Setup(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()))
@@ -112,13 +118,162 @@ public class CertificateAuthorityServiceTest : NotaryTest
         var child = MockCa();
         child.Slug = "child";
         child.ParentCaSlug = "parent";
-        child.KeyAlgorithm = Algorithm.EllipticCurve;
+        SetKey(child, Algorithm.EllipticCurve, EllipticCurve.P256, null);
         child.DistinguishedName.Country = "US";
 
         var result = await _service.CreateAsync(child, null);
 
         Assert.That(result.IsSuccess, Is.True, result.Error);
         _caRepo.Verify(r => r.SaveAsync(child), Times.Once);
+    }
+
+    [TestCase(Algorithm.RSA, null, 3072, Algorithm.EllipticCurve, EllipticCurve.P256, null)]
+    [TestCase(Algorithm.EllipticCurve, EllipticCurve.P256, null, Algorithm.RSA, null, 3072)]
+    [TestCase(Algorithm.RSA, null, 2048, Algorithm.EllipticCurve, EllipticCurve.P384, null)]
+    [TestCase(Algorithm.EllipticCurve, EllipticCurve.P384, null, Algorithm.RSA, null, 7680)]
+    [TestCase(Algorithm.EllipticCurve, EllipticCurve.P256, null, Algorithm.EllipticCurve, EllipticCurve.P521, null)]
+    [TestCase(Algorithm.RSA, null, 2048, Algorithm.RSA, null, 4096)]
+    public async Task CreateAsync_ChildAtLeastAsStrongAsParent_KeepsItsOwnKeySettings(
+        Algorithm parentAlgorithm, EllipticCurve? parentCurve, int? parentLength,
+        Algorithm childAlgorithm, EllipticCurve? childCurve, int? childLength)
+    {
+        var parent = MockCa();
+        parent.Slug = "parent";
+        parent.CertificateSlug = "parent-cert";
+        SetKey(parent, parentAlgorithm, parentCurve, parentLength);
+        _caRepo.Setup(r => r.GetAsync("parent")).ReturnsAsync(parent);
+
+        CertificateRequest issued = null;
+        _certificateService
+            .Setup(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()))
+            .Callback<CertificateRequest>(r => issued = r)
+            .ReturnsAsync(Result<Certificate>.Ok(CreateCertificateMock()));
+
+        var child = MockCa();
+        child.Slug = "child";
+        child.ParentCaSlug = "parent";
+        SetKey(child, childAlgorithm, childCurve, childLength);
+        child.DistinguishedName.Country = "US";
+
+        var result = await _service.CreateAsync(child, null);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+        Assert.That(child.KeyAlgorithm, Is.EqualTo(childAlgorithm));
+        Assert.That(child.KeyCurve, Is.EqualTo(childCurve));
+        Assert.That(child.KeyLength, Is.EqualTo(childLength));
+        Assert.That(issued.KeyAlgorithm, Is.EqualTo(childAlgorithm));
+        Assert.That(issued.Curve, Is.EqualTo(childCurve));
+        Assert.That(issued.KeySize, Is.EqualTo(childLength));
+        _caRepo.Verify(r => r.SaveAsync(child), Times.Once);
+    }
+
+    [TestCase(Algorithm.EllipticCurve, EllipticCurve.P384, null, Algorithm.EllipticCurve, EllipticCurve.P256, null)]
+    [TestCase(Algorithm.EllipticCurve, EllipticCurve.P256, null, Algorithm.RSA, null, 2048)]
+    [TestCase(Algorithm.RSA, null, 3072, Algorithm.RSA, null, 2048)]
+    [TestCase(Algorithm.RSA, null, 7680, Algorithm.EllipticCurve, EllipticCurve.P256, null)]
+    public async Task CreateAsync_ChildWeakerThanParent_ReturnsInvalidAndIssuesAndSavesNothing(
+        Algorithm parentAlgorithm, EllipticCurve? parentCurve, int? parentLength,
+        Algorithm childAlgorithm, EllipticCurve? childCurve, int? childLength)
+    {
+        var parent = MockCa();
+        parent.Slug = "parent";
+        parent.CertificateSlug = "parent-cert";
+        SetKey(parent, parentAlgorithm, parentCurve, parentLength);
+        _caRepo.Setup(r => r.GetAsync("parent")).ReturnsAsync(parent);
+
+        var child = MockCa();
+        child.Slug = "child";
+        child.ParentCaSlug = "parent";
+        SetKey(child, childAlgorithm, childCurve, childLength);
+        child.DistinguishedName.Country = "US";
+
+        var result = await _service.CreateAsync(child, null);
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+        Assert.That(result.Error, Does.Contain("at least as strong as its issuer"));
+        _certificateService.Verify(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()), Times.Never);
+        _caRepo.Verify(r => r.SaveAsync(child), Times.Never);
+    }
+
+    [Test]
+    public async Task CreateAsync_ParentAlreadyBelowItsOwnIssuer_IsComparedOnlyWithTheDirectParent()
+    {
+        // An old chain that breaks the rule keeps working: the stored P-256 parent sits under a P-384 CA
+        var grandparent = MockCa();
+        grandparent.Slug = "grandparent";
+        SetKey(grandparent, Algorithm.EllipticCurve, EllipticCurve.P384, null);
+        _caRepo.Setup(r => r.GetAsync("grandparent")).ReturnsAsync(grandparent);
+
+        var parent = MockCa();
+        parent.Slug = "parent";
+        parent.CertificateSlug = "parent-cert";
+        parent.ParentCaSlug = "grandparent";
+        SetKey(parent, Algorithm.EllipticCurve, EllipticCurve.P256, null);
+        _caRepo.Setup(r => r.GetAsync("parent")).ReturnsAsync(parent);
+
+        _certificateService
+            .Setup(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()))
+            .ReturnsAsync(Result<Certificate>.Ok(CreateCertificateMock()));
+
+        var child = MockCa();
+        child.Slug = "child";
+        child.ParentCaSlug = "parent";
+        SetKey(child, Algorithm.EllipticCurve, EllipticCurve.P256, null);
+        child.DistinguishedName.Country = "US";
+
+        var loaded = await _service.GetAsync("parent");
+        var result = await _service.CreateAsync(child, null);
+
+        Assert.That(loaded, Is.Not.Null, "The existing CA still loads");
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+        _caRepo.Verify(r => r.GetAsync("grandparent"), Times.Never);
+    }
+
+    [Test]
+    public async Task CreateAsync_EcChildWithoutACurve_ReturnsInvalid()
+    {
+        var parent = MockCa();
+        parent.Slug = "parent";
+        parent.CertificateSlug = "parent-cert";
+        SetKey(parent, Algorithm.EllipticCurve, EllipticCurve.P256, null);
+        _caRepo.Setup(r => r.GetAsync("parent")).ReturnsAsync(parent);
+
+        var child = MockCa();
+        child.Slug = "child";
+        child.ParentCaSlug = "parent";
+        SetKey(child, Algorithm.EllipticCurve, null, null);
+        child.DistinguishedName.Country = "US";
+
+        var result = await _service.CreateAsync(child, null);
+
+        Assert.That(result.Status, Is.EqualTo(ResultStatus.Invalid));
+        _certificateService.Verify(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()), Times.Never);
+    }
+
+    [Test]
+    public async Task CreateAsync_Root_IsNotComparedToAnyIssuer()
+    {
+        _certificateService
+            .Setup(s => s.IssueCertificateAsync(It.IsAny<CertificateRequest>()))
+            .ReturnsAsync(Result<Certificate>.Ok(CreateCertificateMock()));
+
+        var root = MockCa();
+        root.Slug = "root";
+        root.ParentCaSlug = null;
+        SetKey(root, Algorithm.RSA, null, 2048);
+        root.DistinguishedName.Country = "US";
+
+        var result = await _service.CreateAsync(root, null);
+
+        Assert.That(result.IsSuccess, Is.True, result.Error);
+        _caRepo.Verify(r => r.SaveAsync(root), Times.Once);
+    }
+
+    private static void SetKey(CertificateAuthority ca, Algorithm algorithm, EllipticCurve? curve, int? length)
+    {
+        ca.KeyAlgorithm = algorithm;
+        ca.KeyCurve = curve;
+        ca.KeyLength = length;
     }
 
     private CertificateAuthority MockCa()
