@@ -248,6 +248,9 @@ namespace Notary.Service
                 case CertificateFormat.Pkcs7:
                     certificateBinary = await ExportPkcs7Async(certificate);
                     break;
+                case CertificateFormat.Pkcs7Pem:
+                    certificateBinary = await ExportPkcs7PemAsync(certificate);
+                    break;
                 default:
                     throw new ArgumentException(nameof(format));
             }
@@ -282,6 +285,15 @@ namespace Notary.Service
             generator.AddCertificates(CollectionUtilities.CreateStore(chain));
 
             return generator.Generate(new CmsProcessableByteArray([]), false).GetEncoded("DER");
+        }
+
+        // The same certificates-only PKCS #7 as ExportPkcs7Async, armored as PEM (RFC 7468) so that
+        // "openssl pkcs7 -in file" reads it without "-inform DER"
+        private async Task<byte[]> ExportPkcs7PemAsync(Certificate certificate)
+        {
+            var der = await ExportPkcs7Async(certificate);
+
+            return Encoding.ASCII.GetBytes(System.Security.Cryptography.PemEncoding.WriteString("PKCS7", der) + "\n");
         }
 
         [NotaryAuthorize(NotaryOperation.CertificateList)]

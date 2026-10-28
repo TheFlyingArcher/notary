@@ -319,6 +319,52 @@ public class CertificateExportTest
         Assert.That(new CmsSignedData(p7b).GetCertificates().EnumerateMatches(null).Count(), Is.EqualTo(1));
     }
 
+    [TestCase(Algorithm.EllipticCurve)]
+    [TestCase(Algorithm.RSA)]
+    public async Task Pkcs7Pem_IsPemArmoredAndDecodesToTheDerExport(Algorithm algorithm)
+    {
+        var chain = await IssueChainAsync(algorithm);
+
+        var der = await _certificates.RequestCertificateAsync(chain.Leaf.Slug, CertificateFormat.Pkcs7, null);
+        var pem = await _certificates.RequestCertificateAsync(chain.Leaf.Slug, CertificateFormat.Pkcs7Pem, null);
+
+        var text = System.Text.Encoding.ASCII.GetString(pem);
+        var fields = PemEncoding.Find(text);
+        var signedData = new CmsSignedData(Convert.FromBase64String(text[fields.Base64Data]));
+        var subjects = signedData.GetCertificates().EnumerateMatches(null).Select(c => c.SubjectDN.ToString()).ToList();
+        Assert.Multiple(() =>
+        {
+            Assert.That(text, Does.StartWith("-----BEGIN PKCS7-----\n"));
+            Assert.That(text, Does.EndWith("-----END PKCS7-----\n"));
+            Assert.That(text, Does.Not.Contain("\r"));
+            Assert.That(text[fields.Label], Is.EqualTo("PKCS7"));
+            Assert.That(Convert.FromBase64String(text[fields.Base64Data]), Is.EqualTo(der));
+            Assert.That(subjects, Has.Count.EqualTo(3));
+            Assert.That(subjects, Has.Some.Contain("leaf.example"));
+            Assert.That(subjects, Has.Some.Contain(chain.Intermediate.Subject.CommonName));
+            Assert.That(subjects, Has.Some.Contain(chain.Root.Subject.CommonName));
+            Assert.That(signedData.GetSignerInfos().GetSigners(), Is.Empty);
+        });
+    }
+
+    [Test]
+    public async Task Pkcs7Pem_OfASelfSignedCertificate_ContainsOnlyThatCertificate()
+    {
+        var chain = await IssueChainAsync(Algorithm.EllipticCurve);
+
+        var pem = await _certificates.RequestCertificateAsync(chain.Root.Slug, CertificateFormat.Pkcs7Pem, null);
+
+        var text = System.Text.Encoding.ASCII.GetString(pem);
+        var signedData = new CmsSignedData(Convert.FromBase64String(text[PemEncoding.Find(text).Base64Data]));
+        Assert.That(signedData.GetCertificates().EnumerateMatches(null).Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Pkcs7Pem_OfAMissingCertificate_ReturnsNull()
+    {
+        Assert.That(await _certificates.RequestCertificateAsync("no-such-certificate", CertificateFormat.Pkcs7Pem, null), Is.Null);
+    }
+
     [Test]
     public async Task Resolver_ALoopInTheIssuerLinks_Throws()
     {
@@ -413,6 +459,29 @@ public class CertificateExportTest
 
             var (exitCode, output) = RunOpenSsl("pkcs7", "-inform", "DER", "-in", path, "-print_certs");
 
+            Assert.That(exitCode, Is.EqualTo(0), output);
+            Assert.That(output.Split("subject=").Length - 1, Is.EqualTo(3));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Test]
+    public async Task OpenSsl_ReadsThePkcs7PemChain_WithoutInform()
+    {
+        Assume.That(OpenSslAvailable(), "openssl is not on the path");
+        var chain = await IssueChainAsync(Algorithm.EllipticCurve);
+        var path = Path.Combine(Path.GetTempPath(), $"export-{Guid.NewGuid():N}.p7b");
+        try
+        {
+            await File.WriteAllBytesAsync(path, await _certificates.RequestCertificateAsync(chain.Leaf.Slug, CertificateFormat.Pkcs7Pem, null));
+
+            var (parseExit, parseOutput) = RunOpenSsl("pkcs7", "-in", path, "-noout");
+            var (exitCode, output) = RunOpenSsl("pkcs7", "-in", path, "-print_certs");
+
+            Assert.That(parseExit, Is.EqualTo(0), parseOutput);
             Assert.That(exitCode, Is.EqualTo(0), output);
             Assert.That(output.Split("subject=").Length - 1, Is.EqualTo(3));
         }

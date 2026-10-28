@@ -59,6 +59,7 @@ public partial class DownloadCertificateDialog : ComponentBase
                     fileName = $"{cert.Name}.pem";
                     break;
                 case CertificateFormat.Pkcs7:
+                case CertificateFormat.Pkcs7Pem:
                     fileName = $"{cert.Name}.p7b";
                     break;
             }

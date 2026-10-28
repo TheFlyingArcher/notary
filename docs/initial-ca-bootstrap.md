@@ -60,6 +60,13 @@ openssl pkcs12 -in notary-https-cert.pfx -nocerts -nodes -out privkey.pem
 awk '/BEGIN CERTIFICATE/{n++} n==2' chain.pem > root.pem
 ```
 
+   Need only the certificates, without the key? **Download** also offers a certificate chain as **PKCS #7 (PEM, chain)** or **PKCS #7 (DER, chain)**; both are saved as `.p7b`. OpenSSL reads the PEM one by default, and the DER one needs `-inform DER`:
+
+```bash
+openssl pkcs7 -in chain.p7b -print_certs
+openssl pkcs7 -inform DER -in chain-der.p7b -print_certs
+```
+
 5. Verify before copying anything:
 
 ```bash
