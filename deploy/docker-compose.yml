@@ -1,12 +1,12 @@
 # Notary production stack for the Raspberry Pi.
 #
 # Copy this file and .env.example (renamed to .env) into PI_DEPLOY_PATH (e.g. /opt/notary).
-# The Deploy workflow runs `docker compose pull && docker compose up -d` there with NOTARY_TAG exported,
-# so the tag it passes overrides any NOTARY_TAG in .env.
+# The Deploy workflow runs `docker compose pull && docker compose up -d` there with NOTARY_TAG exported, so the
+# release it passes overrides any NOTARY_TAG in .env. There is no default: only published releases go to production.
 
 services:
   notary-web:
-    image: ${DOCKER_HUB_USER:?Set DOCKER_HUB_USER in .env}/notary-web:${NOTARY_TAG:-latest}
+    image: ${DOCKER_HUB_USER:?Set DOCKER_HUB_USER in .env}/notary-web:${NOTARY_TAG:?Set NOTARY_TAG in .env to a release version, e.g. 1.2.14}
     restart: unless-stopped
     depends_on:
       mongo:
