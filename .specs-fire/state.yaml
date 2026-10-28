@@ -544,6 +544,27 @@ intents:
           - leaf-key-strength-floor
         run_id: run-specsmd-fire-planner-02371b-010
         completed_at: 2026-10-27T01:08:47.764Z
+  - id: pkcs7-pem-export
+    title: PEM-encoded PKCS
+    status: in_progress
+    work_items:
+      - id: pkcs7-pem-export
+        title: PEM-encoded PKCS
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-pkcs7-bundle-bug-rca-8da318-001
+        completed_at: 2026-10-28T00:50:18.611Z
+      - id: pkcs7-dialog-options
+        title: PKCS
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - pkcs7-pem-export
+        run_id: run-pkcs7-bundle-bug-rca-8da318-002
+        completed_at: 2026-10-28T00:52:54.437Z
 runs:
   active: []
   completed:
@@ -887,3 +908,19 @@ runs:
           mode: confirm
       started: 2026-10-27T01:04:21.149Z
       completed: 2026-10-27T01:08:47.764Z
+    - id: run-pkcs7-bundle-bug-rca-8da318-001
+      scope: single
+      work_items:
+        - id: pkcs7-pem-export
+          intent: pkcs7-pem-export
+          mode: confirm
+      started: 2026-10-27T23:15:10.023Z
+      completed: 2026-10-28T00:50:18.611Z
+    - id: run-pkcs7-bundle-bug-rca-8da318-002
+      scope: single
+      work_items:
+        - id: pkcs7-dialog-options
+          intent: pkcs7-pem-export
+          mode: autopilot
+      started: 2026-10-28T00:51:09.944Z
+      completed: 2026-10-28T00:52:54.437Z

@@ -5,11 +5,12 @@
     <DialogContent>
         <MudForm Model="ViewModel" @ref="_form" @bind-IsValid="_isValid" @bind-Errors="_errors">
             <MudText Typo="Typo.body2">Format</MudText>
-            <MudRadioGroup @bind-Value="@ViewModel.Format" T="CertificateFormat">
-                <MudRadio Value="CertificateFormat.Der">DER</MudRadio>
-                <MudRadio Value="CertificateFormat.Pem">PEM</MudRadio>
-                <MudRadio Value="CertificateFormat.Pkcs12">PKCS #12</MudRadio>
-                <MudRadio Value="CertificateFormat.Pkcs7">PKCS #7 (chain)</MudRadio>
+            <MudRadioGroup @bind-Value="@ViewModel.Format" T="CertificateFormat" Class="d-flex flex-column ml-4 mb-2">
+                <MudRadio Class="mud-width-full" Value="CertificateFormat.Der">DER</MudRadio>
+                <MudRadio Class="mud-width-full" Value="CertificateFormat.Pem">PEM</MudRadio>
+                <MudRadio Class="mud-width-full" Value="CertificateFormat.Pkcs12">PKCS #12</MudRadio>
+                <MudRadio Class="mud-width-full" Value="CertificateFormat.Pkcs7Pem">PKCS #7 (PEM, chain)</MudRadio>
+                <MudRadio Class="mud-width-full" Value="CertificateFormat.Pkcs7">PKCS #7 (DER, chain)</MudRadio>
             </MudRadioGroup>
             <MudDivider />
             <MudTextField @bind-Value="ViewModel.Password" Label="Password" InputType="InputType.Password"
