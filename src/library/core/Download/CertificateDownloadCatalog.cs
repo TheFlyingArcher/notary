@@ -10,6 +10,10 @@ namespace Notary.Download;
 /// </summary>
 public static class CertificateDownloadCatalog
 {
+    // The file is saved on the user's machine, most often Windows, not on the server, so this is a fixed set rather
+    // than Path.GetInvalidFileNameChars(), which on Linux allows everything but '/'
+    private static readonly char[] _invalidFileNameChars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*'];
+
     private static readonly CertificateDownloadOption[] _options =
     [
         new(
@@ -113,8 +117,7 @@ public static class CertificateDownloadCatalog
             return string.Empty;
         }
 
-        var invalid = Path.GetInvalidFileNameChars();
-        var cleaned = new string(name.Where(c => !invalid.Contains(c) && c != '/' && c != '\\').ToArray()).Trim();
+        var cleaned = new string(name.Where(c => !char.IsControl(c) && !_invalidFileNameChars.Contains(c)).ToArray()).Trim();
 
         if (cleaned.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
         {
