@@ -62,6 +62,12 @@ Could not migrate stored private key '<slug>': ...
 
 The migration is one way. After it runs, older releases cannot read the stored keys: they fail with a decryption error such as `pad block corrupted` when issuing a certificate or building a CRL, which looks like a wrong `NOTARY_APP_KEY` but is not. If you need to go back to an older release, restore a database backup taken before the upgrade (and then treat that backup as holding unprotected keys, as above) rather than pointing the older release at the migrated database.
 
+## Downloading a certificate
+
+The private key of a certificate authority (root or intermediate) never leaves Notary: a PKCS #12 download of a CA is refused by the service, and the download dialog does not offer it. A CA key signs everything beneath it, so a copy outside Notary would put the whole chain at risk. The CA's certificate and chain can still be downloaded in the other formats.
+
+The private key of any other certificate only ever leaves Notary inside the password-protected PKCS #12 bundle (`.pfx`), which asks for a password that you choose and Notary does not store. The key in that file is encrypted with AES-256 (PBKDF2-HMAC-SHA256), and an export without a password is refused. Every other download format (DER, PEM, and the PKCS #7 chains) contains only public certificates and never a private key. Tests check both rules. To use the key elsewhere you open the bundle yourself, for example with `openssl pkcs12`, and from then on protecting the decrypted key is up to you.
+
 ## Not covered
 
 - Per-key passphrases, hardware security modules or a cloud KMS.

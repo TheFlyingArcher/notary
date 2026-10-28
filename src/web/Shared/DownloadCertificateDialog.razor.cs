@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using Notary;
 using Notary.Contract;
+using Notary.Download;
 using Notary.Interface.Service;
 using Notary.Web.ViewModels;
 
@@ -38,31 +39,16 @@ public partial class DownloadCertificateDialog : ComponentBase
         {
             Certificate? cert = null;
             byte[]? certBinary = null;
-            string fileName = string.Empty;
+            var password = SelectedOption.RequiresPassword ? ViewModel.Password : null;
             await Task.Run(async () =>
             {
                 cert = await CertificateService.GetAsync(Slug);
-                certBinary = await CertificateService.RequestCertificateAsync(Slug, ViewModel.Format, ViewModel.Password);
+                certBinary = await CertificateService.RequestCertificateAsync(Slug, ViewModel.Format, password);
             });
             if (cert == null)
                 throw new ArgumentNullException(nameof(cert));
 
-            switch (ViewModel.Format)
-            {
-                case CertificateFormat.Der:
-                    fileName = $"{cert.Name}.cer";
-                    break;
-                case CertificateFormat.Pkcs12:
-                    fileName = $"{cert.Name}.pfx";
-                    break;
-                case CertificateFormat.Pem:
-                    fileName = $"{cert.Name}.pem";
-                    break;
-                case CertificateFormat.Pkcs7:
-                case CertificateFormat.Pkcs7Pem:
-                    fileName = $"{cert.Name}.p7b";
-                    break;
-            }
+            var fileName = CertificateDownloadCatalog.BuildFileName(ViewModel.Format, ViewModel.FileName, cert.Name);
             if (certBinary != null)
             {
                 using (var stream = new MemoryStream(certBinary))
@@ -75,14 +61,22 @@ public partial class DownloadCertificateDialog : ComponentBase
         }
     }
 
+    private void OnFormatChanged(CertificateFormat format)
+    {
+        ViewModel.Format = format;
+        // A password typed for one format must not linger once its fields are hidden
+        ViewModel.Password = null;
+        ViewModel.ConfirmPassword = null;
+    }
+
     private IEnumerable<string> PasswordStrength(string pw)
     {
-        if (string.IsNullOrWhiteSpace(pw) && ViewModel.Format != CertificateFormat.Pkcs12)
+        if (string.IsNullOrWhiteSpace(pw) && !SelectedOption.RequiresPassword)
             yield break;
 
-        if (string.IsNullOrWhiteSpace(pw) && ViewModel.Format == CertificateFormat.Pkcs12)
+        if (string.IsNullOrWhiteSpace(pw) && SelectedOption.RequiresPassword)
         {
-            yield return "Password is required when format is PKCS #12.";
+            yield return $"A password is required for the {SelectedOption.Label}.";
             yield break;
         }
 
@@ -98,7 +92,7 @@ public partial class DownloadCertificateDialog : ComponentBase
 
     private string? PasswordMatch(string pw)
     {
-        if (ViewModel.Password != pw && ViewModel.Format == CertificateFormat.Pkcs12)
+        if (ViewModel.Password != pw && SelectedOption.RequiresPassword)
             return "Passwords must match";
 
         return null;
@@ -113,9 +107,17 @@ public partial class DownloadCertificateDialog : ComponentBase
     [Inject]
     public ICertificateService CertificateService { get; set; }
 
-    private DownloadCertificateViewModel ViewModel { get; set; } = new();
+    // Start on the first option so the blurb always has a format to describe
+    private DownloadCertificateViewModel ViewModel { get; set; } = new() { Format = CertificateDownloadCatalog.All[0].Format };
+
+    private CertificateDownloadOption SelectedOption => CertificateDownloadCatalog.For(ViewModel.Format);
 
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; }
 
     [Parameter] public string Slug { get; set; }
+
+    // A CA's private key never leaves Notary, so the dialog does not offer the key bundle for one
+    [Parameter] public bool IsCaCertificate { get; set; }
+
+    private IReadOnlyList<CertificateDownloadOption> Options => CertificateDownloadCatalog.ForCertificate(IsCaCertificate);
 }

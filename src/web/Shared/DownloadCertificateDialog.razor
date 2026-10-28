@@ -1,24 +1,36 @@
-﻿<MudDialog>
+﻿@using Notary.Download
+<MudDialog>
     <TitleContent>
         <MudIcon Icon="fa-sharp fa-regular fa-download" Class="mr-3" />Download Certificate
     </TitleContent>
     <DialogContent>
         <MudForm Model="ViewModel" @ref="_form" @bind-IsValid="_isValid" @bind-Errors="_errors">
-            <MudText Typo="Typo.body2">Format</MudText>
-            <MudRadioGroup @bind-Value="@ViewModel.Format" T="CertificateFormat" Class="d-flex flex-column ml-4 mb-2">
-                <MudRadio Class="mud-width-full" Value="CertificateFormat.Der">DER</MudRadio>
-                <MudRadio Class="mud-width-full" Value="CertificateFormat.Pem">PEM</MudRadio>
-                <MudRadio Class="mud-width-full" Value="CertificateFormat.Pkcs12">PKCS #12</MudRadio>
-                <MudRadio Class="mud-width-full" Value="CertificateFormat.Pkcs7Pem">PKCS #7 (PEM, chain)</MudRadio>
-                <MudRadio Class="mud-width-full" Value="CertificateFormat.Pkcs7">PKCS #7 (DER, chain)</MudRadio>
+            <MudText Typo="Typo.body2">What do you want to download?</MudText>
+            <MudRadioGroup Value="ViewModel.Format" ValueChanged="OnFormatChanged" T="CertificateFormat" Class="d-flex flex-column ml-4 mb-2">
+                @foreach (var option in Options)
+                {
+                    <MudRadio Class="mud-width-full" Value="option.Format">@option.Label</MudRadio>
+                }
             </MudRadioGroup>
-            <MudDivider />
-            <MudTextField @bind-Value="ViewModel.Password" Label="Password" InputType="InputType.Password"
-                Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))"
-                HelperText="Private Key Password" Disabled="ViewModel.Format!=CertificateFormat.Pkcs12" />
-            <MudTextField @bind-Value="ViewModel.ConfirmPassword" InputType="InputType.Password"
-                Label="Confirm Password" Validation="@(new Func<string, string>(PasswordMatch))"
-                HelperText="Confirm Password" Disabled="ViewModel.Format!=CertificateFormat.Pkcs12" />
+            <MudAlert Severity="@(SelectedOption.ContainsPrivateKey ? Severity.Warning : Severity.Info)" Dense="true" Class="mb-3">
+                @SelectedOption.Blurb
+            </MudAlert>
+            @if (IsCaCertificate)
+            {
+                <MudText Typo="Typo.caption" Class="mb-3">A certificate authority's private key never leaves Notary, so there is no private key bundle for it.</MudText>
+            }
+            <MudDivider Class="mb-2" />
+            <MudTextField @bind-Value="ViewModel.FileName" Label="File name (optional)" MaxLength="100"
+                HelperText="Leave blank to use the certificate name. The extension is added for you." />
+            @if (SelectedOption.RequiresPassword)
+            {
+                <MudTextField @bind-Value="ViewModel.Password" Label="Password" InputType="InputType.Password"
+                    Validation="@(new Func<string, IEnumerable<string>>(PasswordStrength))"
+                    HelperText="Protects the private key in the file. You will need it to open the file." />
+                <MudTextField @bind-Value="ViewModel.ConfirmPassword" InputType="InputType.Password"
+                    Label="Confirm Password" Validation="@(new Func<string, string>(PasswordMatch))"
+                    HelperText="Confirm Password" />
+            }
         </MudForm>
     </DialogContent>
     <DialogActions>

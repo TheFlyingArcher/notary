@@ -120,7 +120,8 @@ public partial class CertificateDetail : ComponentBase
     {
         var parameters = new DialogParameters<DownloadCertificateDialog>
         {
-            { d=> d.Slug, Slug }
+            { d=> d.Slug, Slug },
+            { d=> d.IsCaCertificate, Model.IsCaCertificate }
         };
         var dialog = await DlgService.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
         var result = await dialog.Result;

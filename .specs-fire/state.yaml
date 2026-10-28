@@ -565,6 +565,35 @@ intents:
           - pkcs7-pem-export
         run_id: run-pkcs7-bundle-bug-rca-8da318-002
         completed_at: 2026-10-28T00:52:54.437Z
+  - id: download-dialog-friendly-ux
+    title: Friendlier certificate download dialog
+    status: in_progress
+    work_items:
+      - id: download-format-catalog
+        title: Download format catalog and file name builder
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-0e45fa-001
+        completed_at: 2026-10-28T01:26:52.564Z
+      - id: private-key-encryption-guard
+        title: Lock in "private key is always encrypted"
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on: []
+        run_id: run-specsmd-fire-planner-0e45fa-002
+        completed_at: 2026-10-28T06:02:29.362Z
+      - id: download-dialog-ui
+        title: Rework the download dialog
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - download-format-catalog
+        run_id: run-specsmd-fire-planner-0e45fa-003
+        completed_at: 2026-10-28T06:07:31.391Z
 runs:
   active: []
   completed:
@@ -924,3 +953,27 @@ runs:
           mode: autopilot
       started: 2026-10-28T00:51:09.944Z
       completed: 2026-10-28T00:52:54.437Z
+    - id: run-specsmd-fire-planner-0e45fa-001
+      scope: single
+      work_items:
+        - id: download-format-catalog
+          intent: download-dialog-friendly-ux
+          mode: confirm
+      started: 2026-10-28T01:23:14.550Z
+      completed: 2026-10-28T01:26:52.564Z
+    - id: run-specsmd-fire-planner-0e45fa-002
+      scope: single
+      work_items:
+        - id: private-key-encryption-guard
+          intent: download-dialog-friendly-ux
+          mode: autopilot
+      started: 2026-10-28T06:00:02.217Z
+      completed: 2026-10-28T06:02:29.362Z
+    - id: run-specsmd-fire-planner-0e45fa-003
+      scope: single
+      work_items:
+        - id: download-dialog-ui
+          intent: download-dialog-friendly-ux
+          mode: confirm
+      started: 2026-10-28T06:03:43.414Z
+      completed: 2026-10-28T06:07:31.391Z
