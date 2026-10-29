@@ -69,6 +69,8 @@ if (config.OpenId != null)
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMudServices();
+// CHANGELOG.md is published beside the application
+builder.Services.AddSingleton(new ChangelogProvider(Path.Combine(AppContext.BaseDirectory, "CHANGELOG.md")));
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 

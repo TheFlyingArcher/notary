@@ -1,48 +1,36 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
-using Notary.Contract;
-using Notary.Interface.Service;
+using Notary.Changelog;
+using Notary.Web.Services;
 
 namespace Notary.Web.Pages;
 
 [Authorize]
 public partial class Index : ComponentBase
 {
-    protected DateTime Now { get; } = DateTime.UtcNow;
+    protected IReadOnlyList<ChangelogEntry> Entries { get; private set; } = [];
 
-    protected List<Certificate> AllCertificates { get; } = new();
+    protected string? LoadError { get; private set; }
 
-    protected List<Certificate> ValidCertificates
+    protected override void OnInitialized()
     {
-        get
+        var result = ChangelogProvider.GetEntries();
+
+        if (result.IsSuccess)
         {
-            return AllCertificates.Where(a => a.NotAfter.AddDays(-30) > Now).ToList();
+            Entries = result.Value;
+        }
+        else
+        {
+            LoadError = result.Error;
         }
     }
 
-    protected List<Certificate> ExpiringCertificates
+    protected static MarkupString Render(string notes)
     {
-        get
-        {
-            return AllCertificates.Where(a => Now > a.NotAfter.AddDays(-30) && Now <= a.NotAfter).ToList();
-        }
-    }
-
-    protected List<Certificate> ExpiredCertificates
-    {
-        get
-        {
-            return AllCertificates.Where(a => Now > a.NotAfter).ToList();
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        var certificates = await CertificateService.GetAllAsync();
-        AllCertificates.AddRange(certificates);
+        return new MarkupString(ChangelogMarkdown.ToHtml(notes));
     }
 
     [Inject]
-    public ICertificateService CertificateService { get; set; }
+    public ChangelogProvider ChangelogProvider { get; set; }
 }

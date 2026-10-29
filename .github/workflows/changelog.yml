@@ -1,0 +1,59 @@
+name: Changelog
+
+# Adds a published GitHub Release to src/web/CHANGELOG.md, which the home page shows. The commit goes straight to main
+# with [skip ci], so it creates no tag and builds no image (see ci.yml). Merges that are never published as a release
+# do not appear in the change log.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: changelog
+  cancel-in-progress: false
+
+jobs:
+  changelog:
+    name: Add Release to Change Log
+    # A prerelease is not something that gets deployed, so it is not part of the change log
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    env:
+      # Release notes are untrusted text: they only ever reach the script through the environment
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      RELEASE_BODY: ${{ github.event.release.body }}
+      RELEASE_PUBLISHED_AT: ${{ github.event.release.published_at }}
+      BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          # A token that may bypass the branch protection on main; GITHUB_TOKEN cannot
+          token: ${{ secrets.CHANGELOG_PUSH_TOKEN }}
+      - name: Add Entry
+        id: entry
+        run: |
+          export RELEASE_DATE="${RELEASE_PUBLISHED_AT%%T*}"
+          # Assigned on its own line so a failing script fails the step
+          result=$(python3 .github/scripts/update-changelog.py)
+          echo "result=${result}" >> "$GITHUB_OUTPUT"
+      - name: Commit and Push
+        if: steps.entry.outputs.result == 'added'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/web/CHANGELOG.md
+          git commit -m "Add v${RELEASE_TAG#v} to the change log [skip ci]"
+          # main may have moved since the checkout, so rebase and try again a few times
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${BRANCH}"; then
+              exit 0
+            fi
+            git pull --rebase origin "${BRANCH}"
+          done
+          echo "Could not push the change log update to ${BRANCH}." >&2
+          exit 1

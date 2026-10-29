@@ -7,3 +7,24 @@
     height: 100%;
     max-height: 100%;
 }
+
+/* Release notes on the home page are rendered Markdown, so they need their own spacing */
+.changelog-notes h4 {
+    font-size: 1.05rem;
+    font-weight: 500;
+    margin: 1rem 0 0.25rem;
+}
+
+.changelog-notes p {
+    margin: 0.5rem 0;
+}
+
+.changelog-notes ul {
+    margin: 0.25rem 0 0.5rem;
+    padding-left: 1.5rem;
+}
+
+.changelog-notes code {
+    font-family: Consolas, monospace;
+    font-size: 0.9em;
+}
