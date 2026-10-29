@@ -567,7 +567,8 @@ intents:
         completed_at: 2026-10-28T00:52:54.437Z
   - id: download-dialog-friendly-ux
     title: Friendlier certificate download dialog
-    status: in_progress
+    status: completed
+    completed_at: 2026-10-28T23:59:00.000Z
     work_items:
       - id: download-format-catalog
         title: Download format catalog and file name builder
