@@ -9,6 +9,24 @@ notes are level 4 or deeper.
 
 # Changelog
 
+## v1.2.20 - 2026-10-29
+
+#### Highlights since v1.2.19
+
+#### Home page
+- **The home page is now the Notary change log.** The three certificate statistic tiles and the placeholder tile are gone. The page lists each release, newest first, with its notes, back to v1.0.15. (#87)
+- The change log is read from `src/web/CHANGELOG.md`, which ships with the app. If the file is missing, the page shows a message instead of an error.
+
+#### Release automation
+- **Publishing a GitHub Release now adds it to the change log automatically.** The Changelog workflow commits the entry to `main` as `Add vX.Y.Z to the change log [skip ci]`. It creates no tag and builds no image. Prereleases are skipped. (#87)
+- CI's release job also refuses a `[skip ci]` commit, so the change log commit can never create a tag.
+- `docs/ci-cd.md` explains the workflow and how to set up the `CHANGELOG_PUSH_TOKEN` secret and the ruleset bypass.
+
+#### Upgrade notes for the Raspberry Pi
+- Run Deploy with `v1.2.20` (Actions > Deploy > Run workflow). No change to `deploy/docker-compose.yml` or the NGINX site, so nothing needs copying by hand.
+- The running app's change log is one release behind: this release's own entry reaches the app in the next image.
+- Roll back by running Deploy with `v1.2.19`.
+
 ## v1.2.19 - 2026-10-29
 
 #### Highlights since v1.2.14
