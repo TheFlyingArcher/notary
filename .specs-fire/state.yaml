@@ -595,6 +595,45 @@ intents:
           - download-format-catalog
         run_id: run-specsmd-fire-planner-0e45fa-003
         completed_at: 2026-10-28T06:07:31.391Z
+  - id: homepage-changelog
+    title: Replace the homepage with the Notary change log
+    status: in_progress
+    work_items:
+      - id: changelog-file-and-backfill
+        title: Change log file and backfill
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on: []
+        run_id: run-specsmd-fire-planner-02371b-011
+        completed_at: 2026-10-29T22:59:23.142Z
+      - id: changelog-homepage
+        title: Homepage shows the change log
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - changelog-file-and-backfill
+        run_id: run-specsmd-fire-planner-02371b-012
+        completed_at: 2026-10-29T23:05:24.772Z
+      - id: changelog-release-workflow
+        title: Changelog release workflow
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - changelog-file-and-backfill
+        run_id: run-specsmd-fire-planner-02371b-013
+        completed_at: 2026-10-29T23:09:29.889Z
+      - id: changelog-ci-docs
+        title: CI/CD docs for the changelog automation
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - changelog-release-workflow
+        run_id: run-specsmd-fire-planner-02371b-014
+        completed_at: 2026-10-29T23:11:21.959Z
 runs:
   active: []
   completed:
@@ -978,3 +1017,35 @@ runs:
           mode: confirm
       started: 2026-10-28T06:03:43.414Z
       completed: 2026-10-28T06:07:31.391Z
+    - id: run-specsmd-fire-planner-02371b-011
+      scope: single
+      work_items:
+        - id: changelog-file-and-backfill
+          intent: homepage-changelog
+          mode: autopilot
+      started: 2026-10-29T22:57:07.851Z
+      completed: 2026-10-29T22:59:23.142Z
+    - id: run-specsmd-fire-planner-02371b-012
+      scope: single
+      work_items:
+        - id: changelog-homepage
+          intent: homepage-changelog
+          mode: confirm
+      started: 2026-10-29T23:01:01.609Z
+      completed: 2026-10-29T23:05:24.772Z
+    - id: run-specsmd-fire-planner-02371b-013
+      scope: single
+      work_items:
+        - id: changelog-release-workflow
+          intent: homepage-changelog
+          mode: confirm
+      started: 2026-10-29T23:06:20.895Z
+      completed: 2026-10-29T23:09:29.889Z
+    - id: run-specsmd-fire-planner-02371b-014
+      scope: single
+      work_items:
+        - id: changelog-ci-docs
+          intent: homepage-changelog
+          mode: autopilot
+      started: 2026-10-29T23:10:13.271Z
+      completed: 2026-10-29T23:11:21.959Z

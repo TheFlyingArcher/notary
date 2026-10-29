@@ -15,10 +15,41 @@ Release (only after the gates pass on `main`):
 
 Repository configuration:
 
-- Secrets: `DOCKER_HUB_USER`, `DOCKER_HUB_TOKEN`
+- Secrets: `DOCKER_HUB_USER`, `DOCKER_HUB_TOKEN`, `CHANGELOG_PUSH_TOKEN` (see [Change log](#change-log-githubworkflowschangelogyml))
 - Variables: `NOTARY_MAJOR_VERSION`, `NOTARY_MINOR_VERSION`
 - Branch protection on `main`: require the **Build and Quality Gates** check to pass before merging
   (Settings > Branches > `main` > Require status checks).
+
+## Change log (`.github/workflows/changelog.yml`)
+
+The home page shows [`src/web/CHANGELOG.md`](../src/web/CHANGELOG.md), newest release first. The workflow keeps it current: when you **publish** a GitHub Release, it adds that release's version, date and notes to the top of the file and pushes the commit straight to `main`.
+
+How it behaves:
+
+- **Only published releases appear.** A merge to `main` creates a tag but not a release, so unreleased work is not in the change log. Prereleases are skipped too.
+- **No tag, no image.** The commit is `Add vX.Y.Z to the change log [skip ci]`. `[skip ci]` stops CI from running for it, and the CI `release` job also refuses a `[skip ci]` commit, so it never creates a tag or builds an image.
+- **The deployed app is one release behind.** The image for `v1.2.20` is built when its tag is created, before you publish the release, so it contains the change log up to `v1.2.19`. Its own entry is in `main` straight away but reaches a running app only in the next image. The file in `main` is always current.
+- **Release notes are cleaned.** The "Full Changelog" link is dropped, "by @user in <PR URL>" becomes "(#PR)", and every heading in the notes is made level 4 or deeper, so a note cannot add an entry of its own. An empty release gets `_No release notes._`.
+- **Safe to re-run.** If the version is already in the file, nothing is committed. To redo a missed release, use **Actions > Changelog > Re-run** on its run, or edit the file in a pull request (keep the `## vX.Y.Z - yyyy-MM-dd` heading format described at the top of the file).
+
+### One-time setup: the push token
+
+`main` is protected by a ruleset (Settings > Rules > Rulesets > `main`) that requires a pull request. The workflow's built-in `GITHUB_TOKEN` cannot bypass that, so the workflow pushes with a token you create, stored as the secret `CHANGELOG_PUSH_TOKEN`.
+
+1. **Create a fine-grained personal access token.** GitHub > your avatar > Settings > Developer settings > Personal access tokens > Fine-grained tokens > **Generate new token**.
+   - Token name: `notary-changelog`
+   - Resource owner: your account
+   - Expiration: the longest you are comfortable with (up to one year). Put a reminder in your calendar, because the workflow fails when the token expires.
+   - Repository access: **Only select repositories**, then `TheFlyingArcher/notary`
+   - Permissions > Repository permissions: **Contents: Read and write**. Leave everything else at "No access" (Metadata read-only is added for you).
+2. Click **Generate token** and copy it now; GitHub shows it only once.
+3. **Add it as a secret.** In the repository: Settings > Secrets and variables > Actions > **New repository secret**. Name `CHANGELOG_PUSH_TOKEN`, value the token you copied.
+4. **Let it bypass the ruleset.** Settings > Rules > Rulesets > `main` > Bypass list > **Add bypass** > **Repository admin** > Bypass mode **Always** > Save. The token acts as you, and you are the repository admin, so this is what lets its direct push through. The ruleset still blocks deleting `main` and force pushes for everyone.
+5. **Check it.** Publish a release and open **Actions > Changelog**. `main` should gain an `Add vX.Y.Z to the change log [skip ci]` commit, no new `v1.2.N` tag should appear, and CI should not run for that commit.
+
+If the **Checkout Repository** step fails with a 401 or 403, the secret is missing, wrong or expired. If **Commit and Push** fails with a "protected branch" or "changes must be made through a pull request" error, the bypass in step 4 is not in place.
+
+Keep the token to this one repository and to Contents access. Anyone who can read the secret can push to `main`, so do not widen who can edit workflows or secrets, and rotate it (repeat steps 1 to 3) if you think it has leaked.
 
 ## CD (`.github/workflows/deploy.yml`)
 
