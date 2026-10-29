@@ -10,6 +10,8 @@ using Notary.Profiles;
 using Notary.Service;
 
 using Org.BouncyCastle.Cms;
+using Org.BouncyCastle.Pkcs;
+using Org.BouncyCastle.Crypto.Parameters;
 
 namespace Notary.Test;
 
@@ -254,15 +256,44 @@ public class CertificateExportTest
         Assert.That(scheme.ReadObjectIdentifier(), Is.EqualTo("2.16.840.1.101.3.4.1.42"), $"{what}: AES-256-CBC");
     }
 
-    [TestCase(Algorithm.EllipticCurve)]
-    [TestCase(Algorithm.RSA)]
-    public async Task Pkcs12_OfASelfSignedCertificate_ContainsOnlyThatCertificate(Algorithm algorithm)
+    [Test]
+    public async Task Pkcs12_OfARootCa_IsRefused([Values(Algorithm.EllipticCurve, Algorithm.RSA)] Algorithm algorithm)
     {
         var chain = await IssueChainAsync(algorithm);
 
-        var pfx = await ExportPkcs12Async(chain.Root);
+        var ex = Assert.ThrowsAsync<InvalidOperationException>(async () => await ExportPkcs12Async(chain.Root));
 
-        Assert.That(ReadCertificates(pfx, Password), Has.Count.EqualTo(1));
+        Assert.That(ex!.Message, Does.Contain("cannot be exported"));
+    }
+
+    [Test]
+    public async Task Pkcs12_OfAnIntermediateCa_IsRefused([Values(Algorithm.EllipticCurve, Algorithm.RSA)] Algorithm algorithm)
+    {
+        var chain = await IssueChainAsync(algorithm);
+
+        Assert.ThrowsAsync<InvalidOperationException>(async () => await ExportPkcs12Async(chain.Intermediate));
+    }
+
+    [Test]
+    public async Task Pkcs12_OfACertificateWhoseStoredFlagSaysNotCa_IsStillRefusedByItsBasicConstraints()
+    {
+        var chain = await IssueChainAsync(Algorithm.EllipticCurve);
+        var intermediate = await _certificates.GetAsync(chain.Intermediate.Slug);
+        intermediate.IsCaCertificate = false;
+        await _certificateRepo.SaveAsync(intermediate);
+
+        Assert.ThrowsAsync<InvalidOperationException>(async () => await ExportPkcs12Async(intermediate));
+    }
+
+    [Test]
+    public async Task Pkcs12_OfACa_StillAllowsEveryFormatThatHoldsNoKey(
+        [Values(CertificateFormat.Der, CertificateFormat.Pem, CertificateFormat.Pkcs7, CertificateFormat.Pkcs7Pem)] CertificateFormat format)
+    {
+        var chain = await IssueChainAsync(Algorithm.EllipticCurve);
+
+        var exported = await _certificates.RequestCertificateAsync(chain.Root.Slug, format, null);
+
+        Assert.That(exported, Is.Not.Empty);
     }
 
     [Test]
@@ -276,6 +307,32 @@ public class CertificateExportTest
         var ex = Assert.ThrowsAsync<InvalidOperationException>(async () => await ExportPkcs12Async(leaf));
 
         Assert.That(ex!.Message, Does.Contain("no-such-certificate").And.Contain("not found"));
+    }
+
+    [Test]
+    public async Task Export_NeverContainsThePlaintextPrivateKey(
+        [Values(Algorithm.EllipticCurve, Algorithm.RSA)] Algorithm algorithm,
+        [Values(CertificateFormat.Der, CertificateFormat.Pem, CertificateFormat.Pkcs7, CertificateFormat.Pkcs7Pem, CertificateFormat.Pkcs12)] CertificateFormat format)
+    {
+        var chain = await IssueChainAsync(algorithm);
+        var keyPair = await _keys.GetKeyPairAsync(chain.Leaf.KeySlug);
+        var pkcs8 = PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair.Private).GetEncoded();
+        var privateScalarOrExponent = keyPair.Private switch
+        {
+            ECPrivateKeyParameters ec => ec.D.ToByteArrayUnsigned(),
+            RsaPrivateCrtKeyParameters rsa => rsa.Exponent.ToByteArrayUnsigned(),
+            _ => throw new NotSupportedException()
+        };
+
+        var exported = await _certificates.RequestCertificateAsync(
+            chain.Leaf.Slug, format, format == CertificateFormat.Pkcs12 ? Password : null);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(exported.AsSpan().IndexOf(pkcs8), Is.EqualTo(-1), "PKCS #8 private key");
+            Assert.That(exported.AsSpan().IndexOf(privateScalarOrExponent), Is.EqualTo(-1), "private key value");
+            Assert.That(System.Text.Encoding.Latin1.GetString(exported), Does.Not.Contain("PRIVATE KEY"));
+        });
     }
 
     [TestCase(null)]

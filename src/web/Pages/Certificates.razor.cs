@@ -105,7 +105,8 @@ public partial class Certificates : ComponentBase
     {
         var parameters = new DialogParameters<DownloadCertificateDialog>
         {
-            { d=> d.Slug, slug }
+            { d=> d.Slug, slug },
+            { d=> d.IsCaCertificate, false }
         };
         var dialog = await Dialog.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
         var result = await dialog.Result;

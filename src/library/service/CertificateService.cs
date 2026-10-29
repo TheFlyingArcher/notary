@@ -243,6 +243,14 @@ namespace Notary.Service
                     certificateBinary = Encoding.Default.GetBytes(certificate.Data);
                     break;
                 case CertificateFormat.Pkcs12:
+                    // A CA's key signs everything beneath it, so it never leaves Notary. The stored flag and the
+                    // certificate's own BasicConstraints are both checked so neither can be out of step
+                    if (certificate.IsCaCertificate || cert.GetBasicConstraints() >= 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"The private key of certificate authority '{certificate.Slug}' cannot be exported. Download the certificate or its chain instead.");
+                    }
+
                     certificateBinary = await ExportPkcs12Async(certificate, privateKeyPassword);
                     break;
                 case CertificateFormat.Pkcs7:
