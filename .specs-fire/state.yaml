@@ -634,6 +634,35 @@ intents:
           - changelog-release-workflow
         run_id: run-specsmd-fire-planner-02371b-014
         completed_at: 2026-10-29T23:11:21.959Z
+  - id: ca-detail-improvements
+    title: Improve the CA detail page
+    status: in_progress
+    work_items:
+      - id: ca-detail-info-panel
+        title: CA info panel
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-02371b-015
+        completed_at: 2026-10-30T00:17:32.645Z
+      - id: ca-detail-hide-root-tree
+        title: Hide the issuer tree on root CAs
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - ca-detail-info-panel
+        run_id: run-specsmd-fire-planner-02371b-016
+        completed_at: 2026-10-30T00:24:53.873Z
+      - id: ca-issued-certificates-table
+        title: Issued certificates table
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-02371b-017
+        completed_at: 2026-10-30T00:45:20.273Z
 runs:
   active: []
   completed:
@@ -1049,3 +1078,27 @@ runs:
           mode: autopilot
       started: 2026-10-29T23:10:13.271Z
       completed: 2026-10-29T23:11:21.959Z
+    - id: run-specsmd-fire-planner-02371b-015
+      scope: single
+      work_items:
+        - id: ca-detail-info-panel
+          intent: ca-detail-improvements
+          mode: confirm
+      started: 2026-10-30T00:12:26.363Z
+      completed: 2026-10-30T00:17:32.645Z
+    - id: run-specsmd-fire-planner-02371b-016
+      scope: single
+      work_items:
+        - id: ca-detail-hide-root-tree
+          intent: ca-detail-improvements
+          mode: autopilot
+      started: 2026-10-30T00:23:48.328Z
+      completed: 2026-10-30T00:24:53.873Z
+    - id: run-specsmd-fire-planner-02371b-017
+      scope: single
+      work_items:
+        - id: ca-issued-certificates-table
+          intent: ca-detail-improvements
+          mode: confirm
+      started: 2026-10-30T00:38:07.846Z
+      completed: 2026-10-30T00:45:20.273Z

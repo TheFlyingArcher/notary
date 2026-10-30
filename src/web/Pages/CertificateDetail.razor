@@ -49,20 +49,59 @@ else if (Model.Subject != null)
 </MudPaper>
     <MudGrid Class="mt-6">
         <MudItem xs="6">
-            <MudText Typo="Typo.h6">Status</MudText>
+            <MudText Typo="Typo.h6">@(Model.IsCaCertificate ? "Info" : "Status")</MudText>
             <MudPaper Class="mt-2 pa-3">
                 <MudStack>
-                    <MudItem Class="pa-1">
-                        <MudGrid Spacing="2">
-                            <MudItem xs="3">
-                                <MudText Typo="Typo.button">Valid</MudText>
-                            </MudItem>
-                            <MudItem xs="1">
-                                <MudText Typo="Typo.button">:</MudText>
-                            </MudItem>
-                            <MudItem xs="8">@Model.NotBefore to @Model.NotAfter</MudItem>
-                        </MudGrid>
-                    </MudItem>
+                    @if (Model.IsCaCertificate)
+                    {
+                        <MudItem Class="pa-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.button">CA kind</MudText>
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudText Typo="Typo.button">:</MudText>
+                                </MudItem>
+                                <MudItem xs="8">@Model.CaKind</MudItem>
+                            </MudGrid>
+                        </MudItem>
+                        <MudItem Class="pa-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.button">Not Before</MudText>
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudText Typo="Typo.button">:</MudText>
+                                </MudItem>
+                                <MudItem xs="8">@Model.NotBefore</MudItem>
+                            </MudGrid>
+                        </MudItem>
+                        <MudItem Class="pa-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.button">Not After</MudText>
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudText Typo="Typo.button">:</MudText>
+                                </MudItem>
+                                <MudItem xs="8">@Model.NotAfter</MudItem>
+                            </MudGrid>
+                        </MudItem>
+                    }
+                    else
+                    {
+                        <MudItem Class="pa-1">
+                            <MudGrid Spacing="2">
+                                <MudItem xs="3">
+                                    <MudText Typo="Typo.button">Valid</MudText>
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudText Typo="Typo.button">:</MudText>
+                                </MudItem>
+                                <MudItem xs="8">@Model.NotBefore to @Model.NotAfter</MudItem>
+                            </MudGrid>
+                        </MudItem>
+                    }
                     <MudItem Class="pa-1">
                         <MudGrid Spacing="2">
                             <MudItem xs="3">
@@ -367,15 +406,50 @@ else if (Model.Subject != null)
             </MudItem>
         </MudGrid>
     }
-    <MudPaper Class="mt-6">
-        <MudText Typo="Typo.h6">Issuer Tree</MudText>
-        <MudTreeView T="CertificateIssuerTreeItem" Items="@Model.Issuers">
-            <ItemTemplate>
-                <MudTreeViewItem Items="@context.Children" Value="@context.Value" Text="@context.Value.Name">
-                </MudTreeViewItem>
-            </ItemTemplate>
-        </MudTreeView>
-    </MudPaper>
+    @if (!Model.IsRootCa)
+    {
+        <MudPaper Class="mt-6">
+            <MudText Typo="Typo.h6">Issuer Tree</MudText>
+            <MudTreeView T="CertificateIssuerTreeItem" Items="@Model.Issuers">
+                <ItemTemplate>
+                    <MudTreeViewItem Items="@context.Children" Value="@context.Value" Text="@context.Value.Name">
+                    </MudTreeViewItem>
+                </ItemTemplate>
+            </MudTreeView>
+        </MudPaper>
+    }
+    @if (Model.IsCaCertificate)
+    {
+        <MudText Typo="Typo.h6" Class="mt-6">Issued Certificates</MudText>
+        <MudTable Items="@Model.IssuedCertificates" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-2">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Common Name</MudTh>
+                <MudTh>Expiry</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>&nbsp;</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Common Name">@context.CommonName</MudTd>
+                <MudTd DataLabel="Expiry">@context.Expiry</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudText Color="@StatusColor(context.Status)">@context.Status</MudText>
+                </MudTd>
+                <MudTd>
+                    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Search" Size="Size.Small"
+                        Href="@string.Format("certificate?slug={0}", context.Slug)" />
+                    &nbsp;
+                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small"
+                        Disabled="@context.IsRevoked"
+                        OnClick="@(() => OnIssuedCertificateDownloadClick(context))" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body1" Class="my-4">This CA has not issued any certificates.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    }
 }
 else
 {

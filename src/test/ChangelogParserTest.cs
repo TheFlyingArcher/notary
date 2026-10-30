@@ -97,10 +97,13 @@ public class ChangelogParserTest
     {
         var entries = ChangelogParser.Parse(File.ReadAllText(FindChangelog()));
 
-        Assert.That(entries.Select(e => e.Version), Is.EqualTo(new[]
+        // Release automation prepends newer releases, so assert the backfilled ones are present rather than the full list
+        var versions = entries.Select(e => e.Version).ToList();
+        Assert.That(versions, Is.SupersetOf(new[]
         {
             "v1.2.19", "v1.2.14", "v1.1.29", "v1.1.19", "v1.0.18", "v1.0.15"
         }));
+        Assert.That(versions.Last(), Is.EqualTo("v1.0.15"));
         Assert.That(entries.Select(e => e.Date), Is.Ordered.Descending);
         Assert.That(entries.Select(e => e.Notes), Has.None.Empty);
     }

@@ -63,8 +63,9 @@ public partial class CertificateDetail : ComponentBase
 
         DateTime utcNow = DateTime.UtcNow;
         Model.EllipticCurve = key.KeyCurve;
-        Model.Expired = utcNow > c.NotAfter;
-        Model.Expiring = utcNow > c.NotAfter.AddDays(-30) && utcNow <= c.NotAfter;
+        var status = CertificateStatusCalculator.Get(c.NotAfter, c.RevocationDate, utcNow);
+        Model.Expired = status == CertificateStatus.Expired;
+        Model.Expiring = status == CertificateStatus.Expiring;
         Model.Issuer = c.Issuer;
         Model.KeyAlgorithm = key.KeyAlgorithm;
         Model.Name = c.Name;
@@ -88,12 +89,70 @@ public partial class CertificateDetail : ComponentBase
 
         if (c.IsCaCertificate)
         {
+            await PopulateCaInfoAsync(c.Slug);
+            await PopulateIssuedCertificatesAsync(c.Slug, utcNow);
             await PopulateCrlAsync(c.Slug);
         }
 
-        await PopulateIssuerTree(c.Slug);
+        // A root has no issuers above it, so there is no tree to show
+        if (!Model.IsRootCa)
+        {
+            await PopulateIssuerTree(c.Slug);
+        }
+
         IsLoading = false;
     }
+
+    private async Task PopulateCaInfoAsync(string certificateSlug)
+    {
+        // The detail page is keyed by certificate slug, while purpose and parent live on the CA record
+        var authorities = await CaService.GetAllAsync();
+        var ca = authorities.FirstOrDefault(a => a.CertificateSlug == certificateSlug);
+        if (ca == null)
+        {
+            Model.CaKind = "Unknown";
+            return;
+        }
+
+        Model.CaKind = CaDetailInfo.KindName(ca);
+        Model.IsRootCa = CaDetailInfo.IsRoot(ca);
+    }
+
+    private async Task PopulateIssuedCertificatesAsync(string certificateSlug, DateTime utcNow)
+    {
+        // Keyed by the CA's certificate slug, the same value the certificates page passes
+        var issued = await CertificateService.GetCertificatesByCaAsync(certificateSlug);
+        foreach (var cert in IssuedCertificateFilter.ForCa(issued, Model.IsRootCa))
+        {
+            Model.IssuedCertificates.Add(new IssuedCertificateRow(
+                cert.Slug,
+                cert.Name,
+                cert.Subject?.CommonName ?? string.Empty,
+                cert.NotAfter,
+                CertificateStatusCalculator.Get(cert.NotAfter, cert.RevocationDate, utcNow),
+                cert.IsCaCertificate,
+                cert.RevocationDate.HasValue));
+        }
+    }
+
+    protected async Task OnIssuedCertificateDownloadClick(IssuedCertificateRow row)
+    {
+        var parameters = new DialogParameters<DownloadCertificateDialog>
+        {
+            { d=> d.Slug, row.Slug },
+            { d=> d.IsCaCertificate, row.IsCaCertificate }
+        };
+        var dialog = await DlgService.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
+        await dialog.Result;
+    }
+
+    protected static Color StatusColor(CertificateStatus status) => status switch
+    {
+        CertificateStatus.Expired => Color.Error,
+        CertificateStatus.Expiring => Color.Warning,
+        CertificateStatus.Revoked => Color.Info,
+        _ => Color.Success
+    };
 
     private async Task PopulateCrlAsync(string caSlug)
     {
