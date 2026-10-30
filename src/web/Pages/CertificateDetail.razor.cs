@@ -135,6 +135,12 @@ public partial class CertificateDetail : ComponentBase
         }
     }
 
+    // This page reads its slug only on first load, so a link to the same route would leave the old certificate showing
+    protected void OnIssuedCertificateViewClick(IssuedCertificateRow row)
+    {
+        NavManager.NavigateTo($"/certificate?slug={Uri.EscapeDataString(row.Slug)}", forceLoad: true);
+    }
+
     protected async Task OnIssuedCertificateDownloadClick(IssuedCertificateRow row)
     {
         var parameters = new DialogParameters<DownloadCertificateDialog>
@@ -237,35 +243,62 @@ public partial class CertificateDetail : ComponentBase
     // CA certificates are not shown on the certificates list, so return to the CA list instead
     protected string ListUrl => Model.IsCaCertificate ? "/ca" : "/certificates";
 
-    private async Task PopulateIssuerTree(string slug, List<TreeItemData<CertificateIssuerTreeItem>> children = null)
+    // The tree starts at the root and runs down to this certificate: root -> CA -> [CA] -> certificate, fully expanded
+    private async Task PopulateIssuerTree(string slug)
     {
-        var certificate = await CertificateService.GetAsync(slug);
-        if (certificate == null)
+        var chain = new List<Certificate>();
+        var seen = new HashSet<string>();
+        for (var current = slug; !string.IsNullOrEmpty(current) && seen.Add(current);)
         {
-            throw new ArgumentNullException(nameof(certificate));
+            var certificate = await CertificateService.GetAsync(current);
+            if (certificate == null)
+            {
+                break;
+            }
+
+            chain.Add(certificate);
+            current = certificate.IssuingSlug;
         }
 
-        var caItem = new CertificateIssuerTreeItem
-        {
-            Name = certificate.Name,
-            Slug = certificate.Slug
-        };
+        chain.Reverse();
 
-        var rootItem = new TreeItemData<CertificateIssuerTreeItem>()
-        {
-            Value = caItem
-        };
+        var authorities = (await CaService.GetAllAsync())
+            .Where(a => !string.IsNullOrEmpty(a.CertificateSlug))
+            .GroupBy(a => a.CertificateSlug)
+            .ToDictionary(g => g.Key, g => g.First());
 
-        if (!string.IsNullOrEmpty(certificate.IssuingSlug))
+        TreeItemData<CertificateIssuerTreeItem> parent = null;
+        foreach (var certificate in chain)
         {
-            var issuerChildren = new List<TreeItemData<CertificateIssuerTreeItem>>();
-            await PopulateIssuerTree(certificate.IssuingSlug, issuerChildren);
-            rootItem.Children = issuerChildren;
+            authorities.TryGetValue(certificate.Slug, out var ca);
+            var item = new TreeItemData<CertificateIssuerTreeItem>
+            {
+                Value = new CertificateIssuerTreeItem(certificate.Name, certificate.Slug),
+                Icon = TreeIcon(certificate, ca),
+                Expanded = true
+            };
+
+            if (parent == null)
+            {
+                Model.Issuers.Add(item);
+            }
+            else
+            {
+                parent.Children = new List<TreeItemData<CertificateIssuerTreeItem>> { item };
+            }
+
+            parent = item;
         }
-        if (children != null)
-            children.Add(rootItem);
-        else
-            Model.Issuers.Add(rootItem);
+    }
+
+    private static string TreeIcon(Certificate certificate, CertificateAuthority ca)
+    {
+        if (!certificate.IsCaCertificate)
+        {
+            return CaPurposeIcons.Certificate;
+        }
+
+        return ca != null && CaDetailInfo.IsRoot(ca) ? CaPurposeIcons.Root : CaPurposeIcons.ForSubordinate(ca?.Purpose);
     }
 
     [Inject]

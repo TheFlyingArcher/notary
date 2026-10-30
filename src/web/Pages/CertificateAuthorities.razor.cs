@@ -44,17 +44,9 @@ public partial class CertificateAuthorities : ComponentBase
 
     // Roots show no icon; every other CA shows its purpose, and a CA created before purposes existed counts as Custom
     private static string PurposeIcon(CaHierarchyRow row) =>
-        row.Authority.Purpose switch
-        {
-            CaPurpose.Root => null,
-            CaPurpose.TlsSsl => Icons.Material.Filled.Http,
-            CaPurpose.UserLogin => Icons.Material.Filled.AssignmentInd,
-            CaPurpose.Smime => Icons.Material.Filled.Email,
-            CaPurpose.IoT => Icons.Material.Filled.Devices,
-            CaPurpose.Dot1xRadius => Icons.Material.Filled.WifiPassword,
-            CaPurpose.Custom => Icons.Material.Filled.Tune,
-            _ => row.Depth > 0 ? Icons.Material.Filled.Tune : null
-        };
+        row.Authority.Purpose == CaPurpose.Root || (row.Authority.Purpose == null && row.Depth == 0)
+            ? null
+            : CaPurposeIcons.ForSubordinate(row.Authority.Purpose);
 
     private static bool CanAddIntermediate(CertificateAuthority ca) =>
         CaProfileCatalog.CheckCanIssueCas(ca).IsSuccess;

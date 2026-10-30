@@ -412,7 +412,8 @@ else if (Model.Subject != null)
             <MudText Typo="Typo.h6">Issuer Tree</MudText>
             <MudTreeView T="CertificateIssuerTreeItem" Items="@Model.Issuers">
                 <ItemTemplate>
-                    <MudTreeViewItem Items="@context.Children" Value="@context.Value" Text="@context.Value.Name">
+                    <MudTreeViewItem Items="@context.Children" Value="@context.Value" Text="@context.Value.Name"
+                        Icon="@context.Icon" Expanded="@context.Expanded">
                     </MudTreeViewItem>
                 </ItemTemplate>
             </MudTreeView>
@@ -438,7 +439,7 @@ else if (Model.Subject != null)
                 </MudTd>
                 <MudTd>
                     <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Search" Size="Size.Small"
-                        Href="@string.Format("certificate?slug={0}", context.Slug)" />
+                        OnClick="@(() => OnIssuedCertificateViewClick(context))" />
                     &nbsp;
                     <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small"
                         Disabled="@context.IsRevoked"
@@ -450,6 +451,7 @@ else if (Model.Subject != null)
             </NoRecordsContent>
         </MudTable>
     }
+    <div class="mb-8"></div>
 }
 else
 {
