@@ -48,9 +48,9 @@ else if (Model.Subject != null)
     </MudToolBar>
 </MudPaper>
     <MudGrid Class="mt-6">
-        <MudItem xs="6">
+        <MudItem xs="@(Model.IsCaCertificate ? 12 : 6)" md="6" Class="d-flex flex-column">
             <MudText Typo="Typo.h6">@(Model.IsCaCertificate ? "Info" : "Status")</MudText>
-            <MudPaper Class="mt-2 pa-3">
+            <MudPaper Class="mt-2 pa-3 flex-grow-1">
                 <MudStack>
                     @if (Model.IsCaCertificate)
                     {
@@ -175,13 +175,11 @@ else if (Model.Subject != null)
                 </MudStack>
             </MudPaper>
         </MudItem>
-    </MudGrid>
-    @if (Model.IsCaCertificate)
-    {
-        <MudGrid Class="mt-6">
-            <MudItem xs="6">
+        @if (Model.IsCaCertificate)
+        {
+            <MudItem xs="12" md="6" Class="d-flex flex-column">
                 <MudText Typo="Typo.h6">Certificate Revocation List</MudText>
-                <MudPaper Class="mt-2 pa-3">
+                <MudPaper Class="mt-2 pa-3 flex-grow-1">
                     <MudStack>
                         <MudItem Class="pa-1">
                             <MudGrid Spacing="2">
@@ -230,12 +228,12 @@ else if (Model.Subject != null)
                     </MudStack>
                 </MudPaper>
             </MudItem>
-        </MudGrid>
-    }
+        }
+    </MudGrid>
     <MudGrid class="mt-6">
-        <MudItem xs="6">
+        <MudItem xs="6" Class="d-flex flex-column">
             <MudText Typo="Typo.h6">Subject</MudText>
-            <MudPaper Class="mt-2 pa-3">
+            <MudPaper Class="mt-2 pa-3 flex-grow-1">
                 <MudStack>
                     <MudItem Class="pa-1">
                         <MudGrid Spacing="2">
@@ -306,9 +304,9 @@ else if (Model.Subject != null)
                 </MudStack>
             </MudPaper>
         </MudItem>
-        <MudItem xs="6">
+        <MudItem xs="6" Class="d-flex flex-column">
             <MudText Typo="Typo.h6">Issuer</MudText>
-            <MudPaper Class="mt-2 pa-3">
+            <MudPaper Class="mt-2 pa-3 flex-grow-1">
                 <MudStack>
                     <MudItem Class="pa-1">
                         <MudGrid Spacing="2">
@@ -406,10 +404,9 @@ else if (Model.Subject != null)
             </MudItem>
         </MudGrid>
     }
-    @if (!Model.IsRootCa)
-    {
-        <MudPaper Class="mt-6">
-            <MudText Typo="Typo.h6">Issuer Tree</MudText>
+    RenderFragment issuerTree = @<div class="d-flex flex-column flex-grow-1">
+        <MudText Typo="Typo.h6">Issuer Tree</MudText>
+        <MudPaper Class="mt-2 pa-3 flex-grow-1">
             <MudTreeView T="CertificateIssuerTreeItem" Items="@Model.Issuers">
                 <ItemTemplate>
                     <MudTreeViewItem Items="@context.Children" Value="@context.Value" Text="@context.Value.Name"
@@ -418,38 +415,50 @@ else if (Model.Subject != null)
                 </ItemTemplate>
             </MudTreeView>
         </MudPaper>
-    }
+    </div>;
     @if (Model.IsCaCertificate)
     {
-        <MudText Typo="Typo.h6" Class="mt-6">Issued Certificates</MudText>
-        <MudTable Items="@Model.IssuedCertificates" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-2">
-            <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Common Name</MudTh>
-                <MudTh>Expiry</MudTh>
-                <MudTh>Status</MudTh>
-                <MudTh>&nbsp;</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Name">@context.Name</MudTd>
-                <MudTd DataLabel="Common Name">@context.CommonName</MudTd>
-                <MudTd DataLabel="Expiry">@context.Expiry</MudTd>
-                <MudTd DataLabel="Status">
-                    <MudText Color="@StatusColor(context.Status)">@context.Status</MudText>
-                </MudTd>
-                <MudTd>
-                    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Search" Size="Size.Small"
-                        OnClick="@(() => OnIssuedCertificateViewClick(context))" />
-                    &nbsp;
-                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small"
-                        Disabled="@context.IsRevoked"
-                        OnClick="@(() => OnIssuedCertificateDownloadClick(context))" />
-                </MudTd>
-            </RowTemplate>
-            <NoRecordsContent>
-                <MudText Typo="Typo.body1" Class="my-4">This CA has not issued any certificates.</MudText>
-            </NoRecordsContent>
-        </MudTable>
+        <MudGrid Class="mt-6">
+            @if (!Model.IsRootCa)
+            {
+                <MudItem xs="12" md="4" Class="d-flex flex-column">@issuerTree</MudItem>
+            }
+            <MudItem xs="12" md="@(Model.IsRootCa ? 12 : 8)" Class="d-flex flex-column">
+                <MudText Typo="Typo.h6">Issued Certificates</MudText>
+                <MudTable Items="@Model.IssuedCertificates" Hover="true" Breakpoint="Breakpoint.Sm" Class="mt-2 flex-grow-1">
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Common Name</MudTh>
+                        <MudTh>Expiry</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>&nbsp;</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Common Name">@context.CommonName</MudTd>
+                        <MudTd DataLabel="Expiry">@context.Expiry</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudText Color="@StatusColor(context.Status)">@context.Status</MudText>
+                        </MudTd>
+                        <MudTd>
+                            <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Search" Size="Size.Small"
+                                OnClick="@(() => OnIssuedCertificateViewClick(context))" />
+                            &nbsp;
+                            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download" Size="Size.Small"
+                                Disabled="@context.IsRevoked"
+                                OnClick="@(() => OnIssuedCertificateDownloadClick(context))" />
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body1" Class="my-4">This CA has not issued any certificates.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
+    }
+    else
+    {
+        <div class="mt-6">@issuerTree</div>
     }
     <div class="mb-8"></div>
 }

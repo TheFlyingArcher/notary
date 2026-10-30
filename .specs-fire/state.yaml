@@ -663,6 +663,26 @@ intents:
         depends_on: []
         run_id: run-specsmd-fire-planner-02371b-017
         completed_at: 2026-10-30T00:45:20.273Z
+  - id: ca-detail-layout
+    title: CA detail page layout, iteration 2
+    status: in_progress
+    work_items:
+      - id: ca-info-crl-side-by-side
+        title: Info and CRL side by side
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on: []
+        run_id: run-specsmd-fire-planner-02371b-018
+        completed_at: 2026-10-30T23:11:48.578Z
+      - id: ca-tree-beside-issued-table
+        title: Issuer Tree beside Issued Certificates
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-02371b-019
+        completed_at: 2026-10-30T23:14:45.809Z
 runs:
   active: []
   completed:
@@ -1102,3 +1122,19 @@ runs:
           mode: confirm
       started: 2026-10-30T00:38:07.846Z
       completed: 2026-10-30T00:45:20.273Z
+    - id: run-specsmd-fire-planner-02371b-018
+      scope: single
+      work_items:
+        - id: ca-info-crl-side-by-side
+          intent: ca-detail-layout
+          mode: autopilot
+      started: 2026-10-30T23:10:24.100Z
+      completed: 2026-10-30T23:11:48.578Z
+    - id: run-specsmd-fire-planner-02371b-019
+      scope: single
+      work_items:
+        - id: ca-tree-beside-issued-table
+          intent: ca-detail-layout
+          mode: confirm
+      started: 2026-10-30T23:11:54.183Z
+      completed: 2026-10-30T23:14:45.809Z
