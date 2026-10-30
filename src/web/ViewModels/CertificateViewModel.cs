@@ -7,6 +7,7 @@ namespace Notary.Web.ViewModels
     {
         public CertificateViewModel()
         {
+            CaKind = string.Empty;
             Issuer = new DistinguishedName();
             Issuers = new List<TreeItemData<CertificateIssuerTreeItem>>();
             KeyUsages = new List<string>();
@@ -18,6 +19,11 @@ namespace Notary.Web.ViewModels
             SubjectAlternativeNames = new List<SubjectAlternativeName>();
             Thumbprint = string.Empty;
         }
+
+        /// <summary>
+        /// Get or set the kind of CA, such as Root or TLS/SSL (CAs only)
+        /// </summary>
+        public string CaKind { get; set; }
 
         /// <summary>
         /// Get or set the CRL number of the CRL currently published for this CA
@@ -44,9 +50,19 @@ namespace Notary.Web.ViewModels
         public bool Expired { get; set; }
 
         /// <summary>
+        /// Get the certificates issued by this CA (CAs only)
+        /// </summary>
+        public List<IssuedCertificateRow> IssuedCertificates { get; } = new();
+
+        /// <summary>
         /// Get or set whether this certificate is a certificate authority
         /// </summary>
         public bool IsCaCertificate { get; set; }
+
+        /// <summary>
+        /// Get or set whether this certificate authority is a root (CAs only)
+        /// </summary>
+        public bool IsRootCa { get; set; }
 
         /// <summary>
         /// Get or set whether the certificate is only temporarily revoked and can be reinstated
