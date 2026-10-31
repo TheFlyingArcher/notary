@@ -1,0 +1,68 @@
+name: CodeQL
+
+# Replaces GitHub's CodeQL "Default setup", which cannot be limited to certain paths. Pull requests are scanned only when
+# they change .NET inputs (see .github/scripts/detect-dotnet-changes.sh); every push to main and a weekly schedule always
+# scan, so a skipped pull request scan never leaves the code unchecked. Turn Default setup off (Settings > Advanced
+# Security > Code scanning), otherwise both run.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect Changes (CodeQL)
+    runs-on: ubuntu-latest
+    outputs:
+      dotnet: ${{ steps.detect.outputs.dotnet }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect .NET Changes
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: bash .github/scripts/detect-dotnet-changes.sh
+
+  analyze:
+    name: Analyze (csharp)
+    # A skipped job counts as passing for a required status check, so a docs-only pull request is not blocked.
+    needs: [changes]
+    if: needs.changes.outputs.dotnet == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          dotnet-quality: "ga"
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          build-mode: manual
+      - name: Build Notary
+        run: dotnet build src/Notary.sln -c Release --nologo -v q
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:csharp"

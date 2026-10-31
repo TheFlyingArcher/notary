@@ -10,8 +10,32 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      dotnet: ${{ steps.detect.outputs.dotnet }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect .NET Changes
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: bash .github/scripts/detect-dotnet-changes.sh
+
   quality:
     name: Build and Quality Gates
+    # A job that is skipped counts as passing for a required status check, so a docs-only pull request can still merge.
+    # Workflow-level paths filters would leave the check pending forever instead.
+    needs: [changes]
+    if: needs.changes.outputs.dotnet == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -48,11 +72,12 @@ jobs:
 
   release:
     name: Tag and Publish Image
-    # Runs only after a PR merges (push to main) and the quality gates pass.
+    # Runs only after a PR merges (push to main) and the quality gates pass. When the merge changed no .NET inputs the
+    # gates are skipped, and so is this job: no new tag and no new image.
     # The change log commit (changelog.yml) is marked [skip ci], which already stops this workflow; the check here is a
     # second layer so that commit can never create a tag.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !contains(github.event.head_commit.message, '[skip ci]')
-    needs: [quality]
+    needs: [changes, quality]
     runs-on: ubuntu-latest
     permissions:
       contents: write
