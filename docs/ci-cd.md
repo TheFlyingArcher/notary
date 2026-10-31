@@ -40,6 +40,22 @@ What this means:
 - **If Detect Changes fails, the gates are skipped and look green.** That is why **Detect Changes** should be a required check as well; the script itself never fails because of a diff problem.
 - **To change what counts**, edit the `RELEVANT` pattern at the top of the script. Both workflows use it, and a change to the script runs everything.
 
+## FIRE state check (`.github/workflows/fire-state.yml`)
+
+The `.specs-fire/` folder is the planning record. Its `state.yaml` and the `brief.md` and work item files must agree, or finished work stays marked `in_progress`. This workflow runs [`check-fire-state.cjs`](../.github/scripts/check-fire-state.cjs) and fails a pull request when:
+
+- an intent is not `completed` (with `completed_at`) although every one of its work items is `completed`, or is `completed` while an item is not
+- a `brief.md` or work item file has a different `status` than `state.yaml`, or a completed brief has no `completed_at`
+
+It runs only when `.specs-fire/**`, the script, its tests or the workflow change, so build, test and CodeQL are still skipped for those pull requests. It is **not** a required check: a workflow filtered out by `paths:` leaves a required check pending on every other pull request.
+
+To fix a failure, run this from the repository root (it needs the `yaml` package, for example `npm install --no-save yaml`) and commit the result:
+
+```bash
+node .github/scripts/check-fire-state.cjs --fix
+```
+
+`--fix` only changes `status` and `completed_at` values; `state.yaml` is the source of truth for work item statuses. Run it after the last run of an intent, because the FIRE run scripts do not close the intent in `state.yaml`. The script's tests run with `node --test ".github/scripts/tests/*.test.cjs"`.
 ## CodeQL (`.github/workflows/codeql.yml`)
 
 Scans C# on pull requests (only when .NET inputs changed), on every push to `main`, every Monday at 03:17 UTC, and on demand. The push and weekly scans mean a skipped pull request scan never leaves the code unchecked. Results appear under Security > Code scanning.

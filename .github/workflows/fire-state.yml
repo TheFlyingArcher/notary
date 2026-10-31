@@ -1,0 +1,47 @@
+name: FIRE State
+
+# Fails a pull request when the FIRE bookkeeping disagrees with itself (an intent still in_progress after its last work
+# item, or a brief or work item file with a different status than state.yaml). Runs only when FIRE files or the check
+# change, so it is not a required check: a workflow that is filtered out by paths leaves a required check pending.
+# To repair a failure locally: node .github/scripts/check-fire-state.cjs --fix (needs the yaml package).
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".specs-fire/**"
+      - ".github/scripts/check-fire-state.cjs"
+      - ".github/scripts/tests/**"
+      - ".github/workflows/fire-state.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".specs-fire/**"
+      - ".github/scripts/check-fire-state.cjs"
+      - ".github/scripts/tests/**"
+      - ".github/workflows/fire-state.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fire-state:
+    name: FIRE State Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install yaml
+        run: npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/fire-state-deps" yaml
+      - name: Test the Check
+        env:
+          NODE_PATH: ${{ runner.temp }}/fire-state-deps/node_modules
+        run: node --test ".github/scripts/tests/*.test.cjs"
+      - name: Check FIRE State
+        env:
+          NODE_PATH: ${{ runner.temp }}/fire-state-deps/node_modules
+        run: node .github/scripts/check-fire-state.cjs
