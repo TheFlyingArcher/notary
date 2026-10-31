@@ -28,8 +28,6 @@ jobs:
   fire-state:
     name: FIRE State Consistency
     runs-on: ubuntu-latest
-    env:
-      DEPS: ${{ runner.temp }}/fire-state-deps
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -38,7 +36,7 @@ jobs:
         with:
           node-version: "22"
       - name: Install yaml
-        run: npm install --no-save --no-audit --no-fund --prefix "$DEPS" yaml
+        run: npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/fire-state-deps" yaml
       - name: Test the Check
         env:
           NODE_PATH: ${{ runner.temp }}/fire-state-deps/node_modules
