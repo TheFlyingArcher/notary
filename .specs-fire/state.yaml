@@ -729,6 +729,38 @@ intents:
         run_id: run-notary-002
         completed_at: 2026-10-31T21:07:37.375Z
     completed_at: 2026-10-31T21:07:37.396Z
+  - id: fire-state-consistency-check
+    title: CI check for FIRE state consistency
+    status: completed
+    work_items:
+      - id: fire-state-check-script
+        title: FIRE state check script with --fix
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-notary-003
+        completed_at: 2026-10-31T21:54:46.837Z
+      - id: fire-state-check-tests
+        title: Tests for the FIRE state check
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - fire-state-check-script
+        run_id: run-notary-003
+        completed_at: 2026-10-31T21:54:46.837Z
+      - id: fire-state-check-workflow
+        title: Workflow and docs for the FIRE state check
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - fire-state-check-script
+          - fire-state-check-tests
+        run_id: run-notary-003
+        completed_at: 2026-10-31T21:54:46.837Z
+    completed_at: 2026-10-31T21:54:46.862Z
 runs:
   active: []
   completed:
@@ -1203,3 +1235,17 @@ runs:
           mode: autopilot
       started: 2026-10-31T21:07:07.047Z
       completed: 2026-10-31T21:07:37.375Z
+    - id: run-notary-003
+      scope: wide
+      work_items:
+        - id: fire-state-check-script
+          intent: fire-state-consistency-check
+          mode: confirm
+        - id: fire-state-check-tests
+          intent: fire-state-consistency-check
+          mode: confirm
+        - id: fire-state-check-workflow
+          intent: fire-state-consistency-check
+          mode: confirm
+      started: 2026-10-31T21:37:32.009Z
+      completed: 2026-10-31T21:54:46.837Z
