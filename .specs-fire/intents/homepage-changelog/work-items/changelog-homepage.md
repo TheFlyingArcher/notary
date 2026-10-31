@@ -4,7 +4,7 @@ title: Homepage shows the change log
 intent: homepage-changelog
 complexity: medium
 mode: confirm
-status: pending
+status: completed
 depends_on: [changelog-file-and-backfill]
 created: 2026-10-29T00:00:00Z
 ---

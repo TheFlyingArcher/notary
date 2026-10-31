@@ -1,8 +1,9 @@
 ---
 id: initial-ca-bootstrap
 title: Initial CA and HTTPS bootstrap for the Raspberry Pi
-status: in_progress
+status: completed
 created: 2026-10-24T00:00:00Z
+completed_at: 2026-10-26T01:29:19.000Z
 ---
 
 # Intent: Initial CA and HTTPS bootstrap for the Raspberry Pi

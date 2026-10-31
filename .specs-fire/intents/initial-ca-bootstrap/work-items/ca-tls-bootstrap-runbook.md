@@ -4,7 +4,7 @@ title: CA and TLS certificate bootstrap runbook
 intent: initial-ca-bootstrap
 complexity: medium
 mode: confirm
-status: pending
+status: completed
 depends_on: [nginx-compose-service]
 created: 2026-10-24T00:00:00Z
 ---

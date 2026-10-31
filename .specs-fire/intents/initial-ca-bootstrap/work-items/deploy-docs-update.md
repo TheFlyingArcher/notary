@@ -4,7 +4,7 @@ title: Update deploy docs and env template for NGINX and HTTPS
 intent: initial-ca-bootstrap
 complexity: low
 mode: autopilot
-status: pending
+status: completed
 depends_on: [nginx-compose-service]
 created: 2026-10-24T00:00:00Z
 ---

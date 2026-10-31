@@ -4,7 +4,7 @@ title: CI/CD docs for the changelog automation
 intent: homepage-changelog
 complexity: low
 mode: autopilot
-status: pending
+status: completed
 depends_on: [changelog-release-workflow]
 created: 2026-10-29T00:00:00Z
 ---

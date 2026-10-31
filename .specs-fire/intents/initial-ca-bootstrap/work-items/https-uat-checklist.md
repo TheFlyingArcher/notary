@@ -4,7 +4,7 @@ title: HTTPS user acceptance checklist
 intent: initial-ca-bootstrap
 complexity: low
 mode: autopilot
-status: pending
+status: completed
 depends_on: [nginx-compose-service, ca-tls-bootstrap-runbook]
 created: 2026-10-24T00:00:00Z
 ---

@@ -4,7 +4,7 @@ title: Create buttons on the Certificates page
 intent: organize-certificates-by-ca
 complexity: low
 mode: autopilot
-status: pending
+status: completed
 depends_on: [certificates-ca-dropdown-ui, create-certificate-scoped-to-ca, self-signed-certificate-form]
 created: 2026-10-13T00:00:00Z
 ---
