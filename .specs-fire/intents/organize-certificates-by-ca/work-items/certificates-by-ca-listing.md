@@ -4,7 +4,7 @@ title: Scoped certificate listing by CA
 intent: organize-certificates-by-ca
 complexity: medium
 mode: confirm
-status: pending
+status: completed
 depends_on: []
 created: 2026-10-13T00:00:00Z
 ---

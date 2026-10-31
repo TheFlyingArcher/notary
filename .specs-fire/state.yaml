@@ -172,7 +172,7 @@ intents:
         completed_at: 2026-10-13T23:45:23.099Z
   - id: hierarchical-ca-ordering
     title: Hierarchical ordering of CAs
-    status: in_progress
+    status: completed
     work_items:
       - id: ca-hierarchy-ordering
         title: CA hierarchy ordering
@@ -210,9 +210,10 @@ intents:
           - create-intermediate-ca-under-parent
         run_id: run-specs-md-fire-planner-fad6e4-001
         completed_at: 2026-10-14T23:32:46.906Z
+    completed_at: 2026-10-14T23:32:46.918Z
   - id: encrypt-stored-private-keys
     title: Encrypt stored private keys
-    status: in_progress
+    status: completed
     work_items:
       - id: pbes2-key-encryption
         title: PBES2 AES-256 private key encryption
@@ -249,6 +250,7 @@ intents:
           - plaintext-key-migration
         run_id: run-specs-md-fire-planner-fad6e4-005
         completed_at: 2026-10-16T00:23:18.146Z
+    completed_at: 2026-10-16T00:23:18.158Z
   - id: role-based-authorization
     title: Role-based authorization on service methods
     status: completed
@@ -324,7 +326,7 @@ intents:
         completed_at: 2026-10-23T01:09:53.259Z
   - id: initial-ca-bootstrap
     title: Initial CA and HTTPS bootstrap for the Raspberry Pi
-    status: in_progress
+    status: completed
     work_items:
       - id: nginx-compose-service
         title: NGINX site for the Pi host NGINX
@@ -336,11 +338,12 @@ intents:
         completed_at: 2026-10-24T22:09:25.001Z
       - id: ca-tls-bootstrap-runbook
         title: CA and TLS certificate bootstrap runbook
-        status: pending
+        status: completed
         complexity: medium
         mode: confirm
         depends_on:
           - nginx-compose-service
+        completed_at: 2026-10-26T01:08:03.000Z
       - id: ca-data-migration
         title: Move CA data from dev to the Atlas production database
         status: completed
@@ -350,22 +353,25 @@ intents:
           - ca-tls-bootstrap-runbook
       - id: deploy-docs-update
         title: Update deploy docs and env template for NGINX and HTTPS
-        status: pending
+        status: completed
         complexity: low
         mode: autopilot
         depends_on:
           - nginx-compose-service
+        completed_at: 2026-10-26T01:29:19.000Z
       - id: https-uat-checklist
         title: HTTPS user acceptance checklist
-        status: pending
+        status: completed
         complexity: low
         mode: autopilot
         depends_on:
           - nginx-compose-service
           - ca-tls-bootstrap-runbook
+        completed_at: 2026-10-26T01:29:19.000Z
+    completed_at: 2026-10-26T01:29:19.000Z
   - id: match-ecdsa-hash-to-issuer-curve
     title: Match signature hash to the issuer key
-    status: in_progress
+    status: completed
     work_items:
       - id: signature-algorithm-selector
         title: Issuer signature algorithm selector
@@ -393,9 +399,10 @@ intents:
           - use-selector-in-signing
         run_id: run-specsmd-fire-planner-02371b-003
         completed_at: 2026-10-24T23:05:12.322Z
+    completed_at: 2026-10-24T23:05:12.336Z
   - id: named-curve-ec-keys
     title: Encode EC keys with named curves
-    status: in_progress
+    status: completed
     work_items:
       - id: named-curve-key-encoding
         title: Named-curve EC key generation and loading
@@ -414,9 +421,10 @@ intents:
           - named-curve-key-encoding
         run_id: run-github-issue-51-4dca63-002
         completed_at: 2026-10-24T23:44:32.817Z
+    completed_at: 2026-10-24T23:44:32.835Z
   - id: ec-key-usage-rfc5480
     title: No keyEncipherment/dataEncipherment on EC certificates
-    status: in_progress
+    status: completed
     work_items:
       - id: algorithm-aware-leaf-usages
         title: Algorithm-aware profile leaf usages and EC rejection
@@ -444,9 +452,10 @@ intents:
           - ca-certificate-usages-ec
         run_id: run-github-issue-51-4dca63-003
         completed_at: 2026-10-25T00:09:34.128Z
+    completed_at: 2026-10-25T00:09:34.147Z
   - id: modern-pkcs12-export
     title: Modern, complete PKCS
-    status: in_progress
+    status: completed
     work_items:
       - id: pkcs12-modern-export-with-chain
         title: Modern PKCS
@@ -474,9 +483,10 @@ intents:
           - pkcs7-chain-export
         run_id: run-github-issue-51-4dca63-004
         completed_at: 2026-10-25T01:26:19.369Z
+    completed_at: 2026-10-25T01:26:19.393Z
   - id: mixed-chain-key-strength
     title: Mixed RSA/EC chains with a no-weaker-than-issuer key strength rule
-    status: in_progress
+    status: completed
     work_items:
       - id: key-strength-model
         title: Key strength model
@@ -544,9 +554,10 @@ intents:
           - leaf-key-strength-floor
         run_id: run-specsmd-fire-planner-02371b-010
         completed_at: 2026-10-27T01:08:47.764Z
+    completed_at: 2026-10-27T01:08:47.780Z
   - id: pkcs7-pem-export
     title: PEM-encoded PKCS
-    status: in_progress
+    status: completed
     work_items:
       - id: pkcs7-pem-export
         title: PEM-encoded PKCS
@@ -565,6 +576,7 @@ intents:
           - pkcs7-pem-export
         run_id: run-pkcs7-bundle-bug-rca-8da318-002
         completed_at: 2026-10-28T00:52:54.437Z
+    completed_at: 2026-10-28T00:52:54.456Z
   - id: download-dialog-friendly-ux
     title: Friendlier certificate download dialog
     status: completed
@@ -597,7 +609,7 @@ intents:
         completed_at: 2026-10-28T06:07:31.391Z
   - id: homepage-changelog
     title: Replace the homepage with the Notary change log
-    status: in_progress
+    status: completed
     work_items:
       - id: changelog-file-and-backfill
         title: Change log file and backfill
@@ -634,9 +646,10 @@ intents:
           - changelog-release-workflow
         run_id: run-specsmd-fire-planner-02371b-014
         completed_at: 2026-10-29T23:11:21.959Z
+    completed_at: 2026-10-29T23:11:21.973Z
   - id: ca-detail-improvements
     title: Improve the CA detail page
-    status: in_progress
+    status: completed
     work_items:
       - id: ca-detail-info-panel
         title: CA info panel
@@ -663,9 +676,10 @@ intents:
         depends_on: []
         run_id: run-specsmd-fire-planner-02371b-017
         completed_at: 2026-10-30T00:45:20.273Z
+    completed_at: 2026-10-30T00:45:20.287Z
   - id: ca-detail-layout
     title: CA detail page layout, iteration 2
-    status: in_progress
+    status: completed
     work_items:
       - id: ca-info-crl-side-by-side
         title: Info and CRL side by side
@@ -683,9 +697,10 @@ intents:
         depends_on: []
         run_id: run-specsmd-fire-planner-02371b-019
         completed_at: 2026-10-30T23:14:45.809Z
+    completed_at: 2026-10-30T23:14:45.823Z
   - id: selective-ci-runs
     title: Run CI and CodeQL only for relevant changes
-    status: in_progress
+    status: completed
     work_items:
       - id: ci-change-detection
         title: Skip the .NET build and release for non-code changes
@@ -713,6 +728,7 @@ intents:
           - codeql-advanced-workflow
         run_id: run-notary-002
         completed_at: 2026-10-31T21:07:37.375Z
+    completed_at: 2026-10-31T21:07:37.396Z
 runs:
   active: []
   completed:
