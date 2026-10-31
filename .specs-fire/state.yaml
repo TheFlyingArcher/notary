@@ -700,7 +700,7 @@ intents:
     completed_at: 2026-10-30T23:14:45.823Z
   - id: selective-ci-runs
     title: Run CI and CodeQL only for relevant changes
-    status: completed
+    status: in_progress
     work_items:
       - id: ci-change-detection
         title: Skip the .NET build and release for non-code changes
