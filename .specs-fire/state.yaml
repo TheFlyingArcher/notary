@@ -683,6 +683,36 @@ intents:
         depends_on: []
         run_id: run-specsmd-fire-planner-02371b-019
         completed_at: 2026-10-30T23:14:45.809Z
+  - id: selective-ci-runs
+    title: Run CI and CodeQL only for relevant changes
+    status: in_progress
+    work_items:
+      - id: ci-change-detection
+        title: Skip the .NET build and release for non-code changes
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-notary-001
+        completed_at: 2026-10-31T21:06:50.947Z
+      - id: codeql-advanced-workflow
+        title: Add a path-gated CodeQL workflow
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-notary-001
+        completed_at: 2026-10-31T21:06:50.947Z
+      - id: selective-ci-docs-uat
+        title: Document selective CI and the UAT checks
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - ci-change-detection
+          - codeql-advanced-workflow
+        run_id: run-notary-002
+        completed_at: 2026-10-31T21:07:37.375Z
 runs:
   active: []
   completed:
@@ -1138,3 +1168,22 @@ runs:
           mode: confirm
       started: 2026-10-30T23:11:54.183Z
       completed: 2026-10-30T23:14:45.809Z
+    - id: run-notary-001
+      scope: batch
+      work_items:
+        - id: ci-change-detection
+          intent: selective-ci-runs
+          mode: confirm
+        - id: codeql-advanced-workflow
+          intent: selective-ci-runs
+          mode: confirm
+      started: 2026-10-31T20:44:06.756Z
+      completed: 2026-10-31T21:06:50.947Z
+    - id: run-notary-002
+      scope: single
+      work_items:
+        - id: selective-ci-docs-uat
+          intent: selective-ci-runs
+          mode: autopilot
+      started: 2026-10-31T21:07:07.047Z
+      completed: 2026-10-31T21:07:37.375Z

@@ -4,8 +4,10 @@
 
 | Trigger | What runs |
 | --- | --- |
-| Pull request to `main` | Restore, Release build, tests with a line-coverage gate (65%, ratchet toward 70%) |
-| Push to `main` (PR merge) | The same gates, then **release** |
+| Pull request to `main` | If .NET inputs changed: restore, Release build, tests with a line-coverage gate (65%, ratchet toward 70%) |
+| Push to `main` (PR merge) | If .NET inputs changed: the same gates, then **release** |
+
+Only changes that can affect the .NET code trigger the build, tests and release (see [Selective runs](#selective-runs)).
 
 Release (only after the gates pass on `main`):
 
@@ -18,7 +20,40 @@ Repository configuration:
 - Secrets: `DOCKER_HUB_USER`, `DOCKER_HUB_TOKEN`, `CHANGELOG_PUSH_TOKEN` (see [Change log](#change-log-githubworkflowschangelogyml))
 - Variables: `NOTARY_MAJOR_VERSION`, `NOTARY_MINOR_VERSION`
 - Branch protection on `main`: require the **Build and Quality Gates** check to pass before merging
-  (Settings > Branches > `main` > Require status checks).
+  (Settings > Branches > `main` > Require status checks). Also require **Detect Changes** (see [Selective runs](#selective-runs)).
+
+## Selective runs
+
+`ci.yml` and `codeql.yml` each start with a small **Detect Changes** job that runs [`.github/scripts/detect-dotnet-changes.sh`](../.github/scripts/detect-dotnet-changes.sh). It compares the pull request with its base (or a push with the commit before it) and reports whether any .NET input changed. The heavy jobs run only if it did:
+
+| Runs when the change touches | Skipped for |
+| --- | --- |
+| `src/` (code, tests, `Dockerfile`, `CHANGELOG.md`), `Notary.AppHost/`, `Notary.ServiceDefaults/` | `docs/`, `deploy/`, `README.md` |
+| `Directory.*.props`/`.targets`, `global.json`, `nuget.config`, `.editorconfig`, `.globalconfig` anywhere | `.specs-fire/`, `.specsmd/`, `.claude/`, `.vscode/` |
+| `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, the detection script | other workflows (`deploy.yml`, `changelog.yml`), issue and PR templates |
+
+What this means:
+
+- **A skipped job counts as passing.** A docs-only pull request shows **Build and Quality Gates** and **Analyze (csharp)** as skipped and can still merge. A workflow-level `paths:` filter would not do this: the required check would stay pending forever.
+- **No code change, no release.** `release` needs `quality`, so a merge that changed no .NET inputs creates no tag and no image.
+- **When in doubt, everything runs.** Scheduled and manual runs, a first push, a missing commit or a failed diff all count as "changed".
+- **If Detect Changes fails, the gates are skipped and look green.** That is why **Detect Changes** should be a required check as well; the script itself never fails because of a diff problem.
+- **To change what counts**, edit the `RELEVANT` pattern at the top of the script. Both workflows use it, and a change to the script runs everything.
+
+## CodeQL (`.github/workflows/codeql.yml`)
+
+Scans C# on pull requests (only when .NET inputs changed), on every push to `main`, every Monday at 03:17 UTC, and on demand. The push and weekly scans mean a skipped pull request scan never leaves the code unchecked. Results appear under Security > Code scanning.
+
+This workflow replaces GitHub's **Default setup**, which cannot be limited to paths. Turn Default setup off (Settings > Advanced Security > Code scanning > CodeQL analysis > **Switch to advanced** / disable Default setup), otherwise every pull request is scanned twice. The new job is also named `Analyze (csharp)`, so a required check with that name keeps working.
+
+### Checking the setup (UAT)
+
+1. In Settings, confirm CodeQL Default setup is off, and that **Build and Quality Gates**, **Analyze (csharp)** (if you require it) and **Detect Changes** are required checks.
+2. Open a pull request that changes only a file under `docs/`. Expect `Detect Changes` to run, **Build and Quality Gates** and **Analyze (csharp)** to be skipped, and the pull request to be mergeable.
+3. Open a pull request that changes a file under `src/`. Expect the build, tests, coverage gate and CodeQL scan to run.
+4. Merge the docs-only pull request. Expect no new `v*` tag and no new image.
+5. Merge the code pull request. Expect the tag and image as before.
+6. Run Actions > CodeQL > **Run workflow** once. Manual runs always scan, which also proves the full scan works.
 
 ## Change log (`.github/workflows/changelog.yml`)
 
