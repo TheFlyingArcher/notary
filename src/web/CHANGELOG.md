@@ -9,6 +9,33 @@ notes are level 4 or deeper.
 
 # Changelog
 
+## v1.2.24 - 2026-11-02
+
+#### Highlights since v1.2.20
+
+#### Sign-in: separate Auth0 tenants
+- **Development and production now use different Auth0 tenants**, so work on the development tenant can no longer break production sign-in. (#95)
+- **New setting `NOTARY_OPENID_TENANT`** (`development` or `production`). Notary refuses to start when it does not suit `ASPNETCORE_ENVIRONMENT`: `development` is accepted only in the Development environment, `production` everywhere else. A missing or unknown label also stops startup. No message includes the client secret.
+- **Settings can now come from user secrets** as well as environment variables, so local development no longer needs machine-wide environment variables. An environment variable still wins over a user secret.
+- **The Auth0 client secret is now used for sign-in.** A domain without a client ID or client secret stops startup with a message naming the missing setting.
+- `docs/ci-cd.md` has a new "Auth0 tenants" section with the `dotnet user-secrets` commands, the callback and logout URLs for each tenant, and a UAT checklist.
+
+#### CA detail page
+- **Info panel and Issued Certificates table on every CA.** The Info panel shows the CA kind with separate Not Before and Not After rows. A root CA lists its child CAs, any other CA lists its leaf certificates, each with status and View/Download. (#88)
+- **The Issuer Tree is hidden on root CAs.** Elsewhere it runs root, CA, certificate, fully expanded, with CA purpose icons. (#88)
+- **Tighter layout.** Info and the CRL panel sit side by side, and the Issuer Tree sits beside Issued Certificates. Panels stack on narrow screens and stretch to equal height. (#90)
+
+#### Build and CI
+- **The .NET build, tests and CodeQL run only when a change can affect the .NET code.** Docs-only and workflow-only merges publish no tag or image. CodeQL is now an advanced workflow. (#91)
+- **New FIRE State check on pull requests** that touch `.specs-fire/`, with a `--fix` mode. (#93)
+- The FIRE planning records were brought up to date. (#92)
+
+#### Upgrade notes for the Raspberry Pi
+- **Before deploying, `/opt/notary/.env` must contain `NOTARY_OPENID_TENANT=production`**, together with the production Auth0 tenant's domain, client ID and client secret. Without it `docker compose up` refuses to start. `deploy/docker-compose.yml` changed, so copy it to the Pi.
+- Run Deploy with `v1.2.24` (Actions > Deploy > Run workflow).
+- After the deploy, check `docker compose logs notary-web` for Auth0 errors and confirm sign-in and sign-out at `https://notary.unionsquared.lan`.
+- Roll back by running Deploy with `v1.2.23`. The older compose file does not read the new setting, so it still starts.
+
 ## v1.2.20 - 2026-10-29
 
 #### Highlights since v1.2.19
