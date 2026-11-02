@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Threading.RateLimiting;
 using Auth0.AspNetCore.Authentication;
 using Autofac;
@@ -22,8 +21,9 @@ builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 log4net.Config.BasicConfigurator.Configure(LogManager.GetRepository(typeof(Program).Assembly));
 
 var config = new NotaryConfiguration();
-SetEnvironmentVariables(config);
+NotaryConfigurationBinder.Bind(config, key => builder.Configuration[key]);
 config.Validate();
+OpenIdTenantGuard.Validate(config.OpenId, builder.Environment.EnvironmentName);
 
 builder.Host.ConfigureContainer<ContainerBuilder>(c =>
 {
@@ -64,6 +64,7 @@ if (config.OpenId != null)
     {
         o.Domain = config.OpenId.Domain;
         o.ClientId = config.OpenId.ClientId;
+        o.ClientSecret = config.OpenId.ClientSecret;
     });
 }
 
@@ -124,40 +125,3 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
-
-static void SetEnvironmentVariables(NotaryConfiguration config)
-{
-    if (config == null)
-        throw new ArgumentNullException(nameof(config));
-
-    // Set root environment variables
-    SetPropertiesEnvVariable(config);
-
-    // Set database environment variables
-    SetPropertiesEnvVariable(config.Database);
-
-    // Set OpenID environment variables
-    SetPropertiesEnvVariable(config.OpenId);
-}
-
-static void SetPropertiesEnvVariable<T>(T configType) where T : class
-{
-    if (configType == null)
-        return;
-
-    var type = configType.GetType();
-    var typeProperties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-
-    foreach (var p in typeProperties)
-    {
-        var attribute = p.GetCustomAttribute<NotaryEnvironmentVariableAttribute>();
-        if (attribute == null)
-            continue;
-
-        var evValue = Environment.GetEnvironmentVariable(attribute.EnvironmentVariable);
-        if (!string.IsNullOrEmpty(evValue))
-        {
-            p.SetValue(configType, evValue);
-        }
-    }
-}

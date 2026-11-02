@@ -76,4 +76,54 @@ public class NotaryConfigurationTest
 
         Assert.DoesNotThrow(config.Validate);
     }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void ValidateIgnoresOpenIdSettingsWhenNoDomainIsSet(string? domain)
+    {
+        var config = new NotaryConfiguration { ApplicationKey = ValidApplicationKey };
+        config.OpenId.Domain = domain!;
+
+        Assert.DoesNotThrow(config.Validate);
+    }
+
+    [TestCase(null, "NOTARY_OPENID_CLIENTID")]
+    [TestCase("", "NOTARY_OPENID_CLIENTID")]
+    [TestCase("   ", "NOTARY_OPENID_CLIENTID")]
+    public void ValidateRequiresAClientIdWhenADomainIsSet(string? clientId, string expectedSetting)
+    {
+        var config = new NotaryConfiguration { ApplicationKey = ValidApplicationKey };
+        config.OpenId.Domain = "tenant.us.auth0.com";
+        config.OpenId.ClientId = clientId!;
+        config.OpenId.ClientSecret = "a-client-secret";
+
+        var ex = Assert.Throws<InvalidOperationException>(config.Validate);
+        Assert.That(ex.Message, Does.Contain(expectedSetting));
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    public void ValidateRequiresAClientSecretWhenADomainIsSet(string? clientSecret)
+    {
+        var config = new NotaryConfiguration { ApplicationKey = ValidApplicationKey };
+        config.OpenId.Domain = "tenant.us.auth0.com";
+        config.OpenId.ClientId = "a-client-id";
+        config.OpenId.ClientSecret = clientSecret!;
+
+        var ex = Assert.Throws<InvalidOperationException>(config.Validate);
+        Assert.That(ex.Message, Does.Contain("NOTARY_OPENID_CLIENTSECRET"));
+    }
+
+    [Test]
+    public void ValidateAcceptsACompleteOpenIdConfiguration()
+    {
+        var config = new NotaryConfiguration { ApplicationKey = ValidApplicationKey };
+        config.OpenId.Domain = "tenant.us.auth0.com";
+        config.OpenId.ClientId = "a-client-id";
+        config.OpenId.ClientSecret = "a-client-secret";
+
+        Assert.DoesNotThrow(config.Validate);
+    }
 }
