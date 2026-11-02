@@ -101,6 +101,8 @@ In the Notary application in the **production** Auth0 tenant set:
 
 Do not add localhost URLs here: local development uses its own Auth0 tenant. In `/opt/notary/.env` set the production tenant's domain, client ID and client secret, and `NOTARY_OPENID_TENANT=production`. The tenant setup, the startup guard and the UAT checklist are in [ci-cd.md](ci-cd.md#auth0-tenants).
 
+The production tenant also needs the `NotaryUser`, `NotaryWriter` and `NotaryAdmin` roles, a role assigned to your user, and a post-login Action that adds the roles to the ID token. Without them you can sign in but are told "unauthorized". Follow [Getting roles from Auth0](authorization.md#getting-roles-from-auth0), then sign in again.
+
 ## 5. Install on the Pi
 
 Host NGINX is shared with other projects, so Notary adds one site and leaves the others alone.
