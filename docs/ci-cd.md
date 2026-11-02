@@ -174,14 +174,60 @@ The stack runs `notary-web` (published only on `127.0.0.1:8080` for NGINX, see #
 | `NOTARY_DB_HOST` | No | MongoDB URL. Defaults to the bundled `mongo` service |
 | `NOTARY_DB_USERNAME`, `NOTARY_DB_PASSWORD` | Yes | MongoDB credentials. Notary authenticates against the `admin` database; the bundled `mongo` creates this root user on first start |
 | `NOTARY_DB_NAME` | No | Database name, default `notary` |
-| `NOTARY_OPENID_DOMAIN`, `NOTARY_OPENID_CLIENTID`, `NOTARY_OPENID_CLIENTSECRET` | Yes | Auth0 application used to sign in |
+| `NOTARY_OPENID_DOMAIN`, `NOTARY_OPENID_CLIENTID`, `NOTARY_OPENID_CLIENTSECRET` | Yes | The **production** Auth0 application used to sign in. See [Auth0 tenants](#auth0-tenants) |
+| `NOTARY_OPENID_TENANT` | Yes | `production` on the Pi. Notary refuses to start if it does not match the environment. **Add it before deploying the release that introduced it** |
 | `NOTARY_CRL_ENDPOINT` | No | Public base URL for CRL distribution points, set before issuing, it is baked into each certificate. Use `http://` (e.g. `http://notary.unionsquared.lan`): CRLs are fetched over plain HTTP so revocation checks are not circular |
 
 Notes:
 
-- Auth0: create a Regular Web Application. Set Allowed Callback URLs to `https://notary.unionsquared.lan/callback` and Allowed Logout URLs to `https://notary.unionsquared.lan/`.
+- Auth0: use a separate production tenant, set up as described in [Auth0 tenants](#auth0-tenants).
 - First start: after editing `.env`, run `docker compose up -d` once by hand and check `docker compose logs notary-web`. The app refuses to start without a valid `NOTARY_APP_KEY`.
 - `docker compose config` prints the resolved file and names any missing required variable.
+
+### Auth0 tenants
+
+Notary uses two Auth0 tenants so that work on the development tenant (callback URLs, rules, users, deleting an application) can never break production sign-in:
+
+| | Development tenant | Production tenant |
+| --- | --- | --- |
+| Used by | Visual Studio and `dotnet run` on your PC | Notary on the Pi |
+| Settings come from | `dotnet user-secrets` on `src/web` | `/opt/notary/.env` |
+| `NOTARY_OPENID_TENANT` | `development` | `production` |
+| Allowed Callback URLs | `https://localhost:17244/callback` | `https://notary.unionsquared.lan/callback` |
+| Allowed Logout URLs | `https://localhost:17244/` | `https://notary.unionsquared.lan/` |
+
+For each tenant create a **Regular Web Application**, then copy its domain, client ID and client secret. Leave Application Login URI blank (Auth0 rejects the `.lan` name) and leave Allowed Web Origins and Allowed Origins (CORS) blank: Notary signs in on the server. Do not put localhost URLs on the production tenant, or the production URL on the development tenant.
+
+A startup guard enforces the split. When `NOTARY_OPENID_DOMAIN` is set, `NOTARY_OPENID_TENANT` must be `development` or `production`. `development` is accepted only when `ASPNETCORE_ENVIRONMENT` is `Development`; `production` is accepted in every other environment. Anything else stops Notary at startup with a message naming the setting. A domain also needs a client ID and a client secret. No message ever includes the secret.
+
+**Production (the Pi).** Before deploying the release that adds the guard, add this line to `/opt/notary/.env`, or `docker compose up` refuses to start:
+
+```bash
+NOTARY_OPENID_TENANT=production
+```
+
+Set the production tenant's domain, client ID and client secret in the same file (see `deploy/.env.example`), then run `docker compose config` to check that no variable is missing.
+
+**Local development.** Store the development tenant's values in user secrets, which live outside the repository. Run these from the repository root and type the real values yourself:
+
+```bash
+dotnet user-secrets set NOTARY_OPENID_DOMAIN "<dev-tenant>.us.auth0.com" --project src/web
+dotnet user-secrets set NOTARY_OPENID_CLIENTID "<dev client id>" --project src/web
+dotnet user-secrets set NOTARY_OPENID_CLIENTSECRET "<dev client secret>" --project src/web
+dotnet user-secrets set NOTARY_OPENID_TENANT "development" --project src/web
+```
+
+`dotnet user-secrets list --project src/web` shows what is stored (it prints values, so do not run it on a shared screen). A real environment variable with the same name overrides the user secret. Remove the old `NOTARY_OPENID_*` environment variables from your PC if you set them, so they do not shadow the secrets.
+
+**UAT checklist.**
+
+- [ ] **Dev sign-in.** Run the `https` profile in Visual Studio. Sign-in goes to the development tenant's domain and returns to `https://localhost:17244`; sign-out returns to the app.
+- [ ] **Wrong tenant is refused.** Set `NOTARY_OPENID_TENANT` to `production` in user secrets and start the app: it stops with a message naming `NOTARY_OPENID_TENANT`, `production` and `Development`. Set it back to `development`.
+- [ ] **Missing label is refused.** Remove `NOTARY_OPENID_TENANT` and start the app: it stops with "must be 'development' or 'production'". Restore it.
+- [ ] **Missing credentials are refused.** Remove `NOTARY_OPENID_CLIENTSECRET` and start the app: it stops with a message naming `NOTARY_OPENID_CLIENTSECRET`. Restore it.
+- [ ] **Pi pre-deploy.** `/opt/notary/.env` has `NOTARY_OPENID_TENANT=production` and the production tenant's values; `docker compose config` shows no missing variable.
+- [ ] **Pi sign-in.** After the deploy, `docker compose logs notary-web` shows no OpenID or Auth0 errors, and sign-in and sign-out work at `https://notary.unionsquared.lan`.
+- [ ] **Tenants stay apart.** The production tenant has no localhost URLs and the development tenant has no `notary.unionsquared.lan` URLs.
 
 ### NGINX and HTTPS
 

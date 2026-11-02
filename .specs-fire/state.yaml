@@ -761,6 +761,48 @@ intents:
         run_id: run-notary-003
         completed_at: 2026-10-31T21:54:46.837Z
     completed_at: 2026-10-31T21:54:46.862Z
+  - id: separate-auth0-tenants
+    title: Separate Auth0 tenants for development and production
+    status: completed
+    work_items:
+      - id: config-value-source
+        title: Read Notary settings from configuration so user secrets work
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-notary-004
+        completed_at: 2026-11-02T02:30:35.211Z
+      - id: openid-tenant-guard
+        title: Startup guard that matches the Auth0 tenant to the environment
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - config-value-source
+        run_id: run-notary-004
+        completed_at: 2026-11-02T02:30:35.211Z
+      - id: auth0-client-secret
+        title: Pass the Auth0 client secret to the SDK
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - openid-tenant-guard
+        run_id: run-notary-004
+        completed_at: 2026-11-02T02:30:35.211Z
+      - id: auth0-tenant-docs-uat
+        title: Document both Auth0 tenants and the UAT checklist
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - config-value-source
+          - openid-tenant-guard
+          - auth0-client-secret
+        run_id: run-notary-004
+        completed_at: 2026-11-02T02:30:35.211Z
+    completed_at: 2026-11-02T02:30:35.211Z
 runs:
   active: []
   completed:
@@ -1249,3 +1291,20 @@ runs:
           mode: confirm
       started: 2026-10-31T21:37:32.009Z
       completed: 2026-10-31T21:54:46.837Z
+    - id: run-notary-004
+      scope: wide
+      work_items:
+        - id: config-value-source
+          intent: separate-auth0-tenants
+          mode: confirm
+        - id: openid-tenant-guard
+          intent: separate-auth0-tenants
+          mode: confirm
+        - id: auth0-client-secret
+          intent: separate-auth0-tenants
+          mode: confirm
+        - id: auth0-tenant-docs-uat
+          intent: separate-auth0-tenants
+          mode: autopilot
+      started: 2026-11-02T02:22:39.305Z
+      completed: 2026-11-02T02:30:35.211Z

@@ -55,6 +55,9 @@ namespace Notary.Configuration
                 throw new InvalidOperationException(
                     $"NOTARY_CRL_ENDPOINT '{CrlEndpoint}' is not a valid absolute http(s) URL, e.g. https://pki.example.com");
             }
+
+            // Auth0 sign-in is optional, but once a domain is set its client credentials are required
+            OpenId?.Validate();
         }
 
         /// <summary>

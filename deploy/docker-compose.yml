@@ -27,10 +27,12 @@ services:
       NOTARY_DB_USERNAME: ${NOTARY_DB_USERNAME:?Set NOTARY_DB_USERNAME in .env}
       NOTARY_DB_PASSWORD: ${NOTARY_DB_PASSWORD:?Set NOTARY_DB_PASSWORD in .env}
 
-      # Auth0 sign-in (OpenID Connect). All three are required to log in.
+      # Auth0 sign-in (OpenID Connect). All four are required to log in.
       NOTARY_OPENID_DOMAIN: ${NOTARY_OPENID_DOMAIN:?Set NOTARY_OPENID_DOMAIN in .env}
       NOTARY_OPENID_CLIENTID: ${NOTARY_OPENID_CLIENTID:?Set NOTARY_OPENID_CLIENTID in .env}
       NOTARY_OPENID_CLIENTSECRET: ${NOTARY_OPENID_CLIENTSECRET:?Set NOTARY_OPENID_CLIENTSECRET in .env}
+      # Which Auth0 tenant these values belong to. Notary refuses to start if it does not suit ASPNETCORE_ENVIRONMENT.
+      NOTARY_OPENID_TENANT: ${NOTARY_OPENID_TENANT:?Set NOTARY_OPENID_TENANT=production in .env}
 
       # Optional. Public base address used in the CRL distribution points of issued certificates,
       # e.g. https://pki.example.com. When blank, the address the request arrived at is used.

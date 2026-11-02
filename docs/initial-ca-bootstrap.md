@@ -94,12 +94,12 @@ ping notary.unionsquared.lan
 
 ## 4. Auth0
 
-In the Notary application in Auth0 set:
+In the Notary application in the **production** Auth0 tenant set:
 
 - Allowed Callback URLs: `https://notary.unionsquared.lan/callback`
 - Allowed Logout URLs: `https://notary.unionsquared.lan/`
 
-Keep any dev URLs you still use, comma separated.
+Do not add localhost URLs here: local development uses its own Auth0 tenant. In `/opt/notary/.env` set the production tenant's domain, client ID and client secret, and `NOTARY_OPENID_TENANT=production`. The tenant setup, the startup guard and the UAT checklist are in [ci-cd.md](ci-cd.md#auth0-tenants).
 
 ## 5. Install on the Pi
 
