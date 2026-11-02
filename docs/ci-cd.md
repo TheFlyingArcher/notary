@@ -198,6 +198,8 @@ Notary uses two Auth0 tenants so that work on the development tenant (callback U
 
 For each tenant create a **Regular Web Application**, then copy its domain, client ID and client secret. Leave Application Login URI blank (Auth0 rejects the `.lan` name) and leave Allowed Web Origins and Allowed Origins (CORS) blank: Notary signs in on the server. Do not put localhost URLs on the production tenant, or the production URL on the development tenant.
 
+Each tenant also needs the three roles (`NotaryUser`, `NotaryWriter`, `NotaryAdmin`) and a post-login Action that adds them to the ID token. Without the Action, sign-in works but every user is denied with "unauthorized". The steps are in [authorization.md](authorization.md#getting-roles-from-auth0).
+
 A startup guard enforces the split. When `NOTARY_OPENID_DOMAIN` is set, `NOTARY_OPENID_TENANT` must be `development` or `production`. `development` is accepted only when `ASPNETCORE_ENVIRONMENT` is `Development`; `production` is accepted in every other environment. Anything else stops Notary at startup with a message naming the setting. A domain also needs a client ID and a client secret. No message ever includes the secret.
 
 **Production (the Pi).** Before deploying the release that adds the guard, add this line to `/opt/notary/.env`, or `docker compose up` refuses to start:
@@ -222,11 +224,12 @@ dotnet user-secrets set NOTARY_OPENID_TENANT "development" --project src/web
 **UAT checklist.**
 
 - [ ] **Dev sign-in.** Run the `https` profile in Visual Studio. Sign-in goes to the development tenant's domain and returns to `https://localhost:17244`; sign-out returns to the app.
+- [ ] **Roles.** After signing in, `/showprofile` lists a `http://schemas.microsoft.com/ws/2008/06/identity/claims/role` claim with your role (for example `NotaryAdmin`), and the Certificates page loads instead of showing "unauthorized". If not, see [authorization.md](authorization.md#getting-roles-from-auth0).
 - [ ] **Wrong tenant is refused.** Set `NOTARY_OPENID_TENANT` to `production` in user secrets and start the app: it stops with a message naming `NOTARY_OPENID_TENANT`, `production` and `Development`. Set it back to `development`.
 - [ ] **Missing label is refused.** Remove `NOTARY_OPENID_TENANT` and start the app: it stops with "must be 'development' or 'production'". Restore it.
 - [ ] **Missing credentials are refused.** Remove `NOTARY_OPENID_CLIENTSECRET` and start the app: it stops with a message naming `NOTARY_OPENID_CLIENTSECRET`. Restore it.
 - [ ] **Pi pre-deploy.** `/opt/notary/.env` has `NOTARY_OPENID_TENANT=production` and the production tenant's values; `docker compose config` shows no missing variable.
-- [ ] **Pi sign-in.** After the deploy, `docker compose logs notary-web` shows no OpenID or Auth0 errors, and sign-in and sign-out work at `https://notary.unionsquared.lan`.
+- [ ] **Pi sign-in.** After the deploy, `docker compose logs notary-web` shows no OpenID or Auth0 errors, and sign-in and sign-out work at `https://notary.unionsquared.lan`. Sign in again after adding or changing a role or the Action, because roles are read at sign-in.
 - [ ] **Tenants stay apart.** The production tenant has no localhost URLs and the development tenant has no `notary.unionsquared.lan` URLs.
 
 ### NGINX and HTTPS
