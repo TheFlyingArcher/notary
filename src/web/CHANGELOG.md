@@ -9,6 +9,22 @@ notes are level 4 or deeper.
 
 # Changelog
 
+## v1.2.25 - 2026-11-08
+
+#### Loading overlay
+- **A "Loading…" overlay now covers the window while Notary waits on its services**, so it is clear the app is working and a second request cannot be started by accident. It appears after 200 ms and stays for at least 300 ms, so quick loads never flash it. (#97, #98)
+- The page behind the overlay cannot be reached with the mouse or the keyboard until the call finishes. The overlay clears even when a call fails.
+- Pages and dialogs that call a service all use it: certificate and CA lists, the detail pages, creating certificates and CAs, reinstating, revoking and downloading.
+- **The Download and Revoke dialogs disable OK and Cancel while their call runs**, so a double click submits once.
+- `docs/loading-overlay.md` explains how it works, how to wrap a new call, and the UAT checklist.
+
+#### Development
+- **New "https (slow calls)" launch profile** in the web project and in `Notary.AppHost`. It delays every tracked call by 1.5 seconds (`NOTARY_SIMULATED_LATENCY_MS`) so the overlay can be seen on a fast machine. It works only in the Development environment and is ignored in production.
+- Replaced the obsolete `ForwardedHeadersOptions.KnownNetworks` with `KnownIPNetworks`.
+
+#### Upgrade notes for the Raspberry Pi
+No configuration changes are needed. Deploy `v1.2.25` as usual.
+
 ## v1.2.24 - 2026-11-02
 
 #### Highlights since v1.2.20
