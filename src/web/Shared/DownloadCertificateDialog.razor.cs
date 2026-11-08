@@ -6,6 +6,7 @@ using Notary;
 using Notary.Contract;
 using Notary.Download;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Web.ViewModels;
 
 namespace Notary.Web.Shared;
@@ -14,6 +15,7 @@ public partial class DownloadCertificateDialog : ComponentBase
 {
     private MudForm _form;
     private bool _isValid = false;
+    private bool _busy = false;
     private string[] _errors = { };
 
     public DownloadCertificateDialog()
@@ -33,31 +35,45 @@ public partial class DownloadCertificateDialog : ComponentBase
 
     private async Task OnOk()
     {
+        // The dialog sits outside the layout the overlay disables, so it guards itself against a second click
+        if (_busy)
+        {
+            return;
+        }
+
         await _form.Validate();
 
         if (_isValid)
         {
-            Certificate? cert = null;
-            byte[]? certBinary = null;
-            var password = SelectedOption.RequiresPassword ? ViewModel.Password : null;
-            await Task.Run(async () =>
+            _busy = true;
+            try
             {
-                cert = await CertificateService.GetAsync(Slug);
-                certBinary = await CertificateService.RequestCertificateAsync(Slug, ViewModel.Format, password);
-            });
-            if (cert == null)
-                throw new ArgumentNullException(nameof(cert));
-
-            var fileName = CertificateDownloadCatalog.BuildFileName(ViewModel.Format, ViewModel.FileName, cert.Name);
-            if (certBinary != null)
-            {
-                using (var stream = new MemoryStream(certBinary))
+                Certificate? cert = null;
+                byte[]? certBinary = null;
+                var password = SelectedOption.RequiresPassword ? ViewModel.Password : null;
+                await LoadingTracker.RunAsync(() => Task.Run(async () =>
                 {
-                    using var streamRef = new DotNetStreamReference(stream, false);
-                    await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+                    cert = await CertificateService.GetAsync(Slug);
+                    certBinary = await CertificateService.RequestCertificateAsync(Slug, ViewModel.Format, password);
+                }));
+                if (cert == null)
+                    throw new ArgumentNullException(nameof(cert));
+
+                var fileName = CertificateDownloadCatalog.BuildFileName(ViewModel.Format, ViewModel.FileName, cert.Name);
+                if (certBinary != null)
+                {
+                    using (var stream = new MemoryStream(certBinary))
+                    {
+                        using var streamRef = new DotNetStreamReference(stream, false);
+                        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+                    }
                 }
+                MudDialog.Close();
             }
-            MudDialog.Close();
+            finally
+            {
+                _busy = false;
+            }
         }
     }
 
@@ -97,6 +113,9 @@ public partial class DownloadCertificateDialog : ComponentBase
 
         return null;
     }
+
+    [Inject]
+    public ILoadingTracker LoadingTracker { get; set; } = default!;
 
     [Inject]
     public IJSRuntime JS { get; set; }

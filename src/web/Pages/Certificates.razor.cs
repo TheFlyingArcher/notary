@@ -1,6 +1,7 @@
 using Notary;
 using Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Web.ViewModels;
 using Notary.Web.Shared;
 
@@ -46,9 +47,13 @@ public partial class Certificates : ComponentBase
         if (!firstRender)
             return;
 
-        caList = await CertificateAuthorityService.GetLeafIssuingAuthoritiesAsync();
-        selectedScope = await ResolveInitialScopeAsync();
-        await LoadCertificatesAsync();
+        // One operation for the whole sequence, so the overlay does not restart its delay between the calls
+        await LoadingTracker.RunAsync(async () =>
+        {
+            caList = await CertificateAuthorityService.GetLeafIssuingAuthoritiesAsync();
+            selectedScope = await ResolveInitialScopeAsync();
+            await LoadCertificatesAsync();
+        });
 
         IsLoading = false;
         StateHasChanged();
@@ -88,7 +93,7 @@ public partial class Certificates : ComponentBase
     {
         selectedScope = scope;
         IsLoading = true;
-        await LoadCertificatesAsync();
+        await LoadingTracker.RunAsync(() => LoadCertificatesAsync());
         IsLoading = false;
 
         try
@@ -111,6 +116,9 @@ public partial class Certificates : ComponentBase
         var dialog = await Dialog.ShowAsync<DownloadCertificateDialog>("Download Certificate", parameters);
         var result = await dialog.Result;
     }
+
+    [Inject]
+    public ILoadingTracker LoadingTracker { get; set; } = default!;
 
     [Inject]
     public IDialogService Dialog { get; set; }

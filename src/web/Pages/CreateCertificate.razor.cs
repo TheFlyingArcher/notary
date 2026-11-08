@@ -5,6 +5,7 @@ using MudBlazor;
 using Notary;
 using C = Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Profiles;
 using Notary.Security;
 using Notary.Validity;
@@ -29,7 +30,7 @@ public partial class CreateCertificate : ComponentBase
         _isLoading = true;
 
         // Only a CA that can currently issue leaf certificates is eligible (not revoked, not a Root)
-        var eligible = await CertificateAuthorityService.GetLeafIssuingAuthoritiesAsync();
+        var eligible = await LoadingTracker.RunAsync(() => CertificateAuthorityService.GetLeafIssuingAuthoritiesAsync());
         var ca = string.IsNullOrEmpty(CaSlug) ? null : eligible.FirstOrDefault(c => c.Slug == CaSlug);
 
         if (ca == null)
@@ -177,7 +178,7 @@ public partial class CreateCertificate : ComponentBase
         request.ParentCertificateSlug = ViewModel.SelectedCa != null ? ViewModel.SelectedCa.CertificateSlug : null;
 
         _isLoading = true;
-        var result = await Task.Run(async () => await CertificateService.IssueCertificateAsync(request));
+        var result = await LoadingTracker.RunAsync(() => Task.Run(async () => await CertificateService.IssueCertificateAsync(request)));
         _isLoading = false;
 
         if (!result.IsSuccess)
@@ -259,6 +260,9 @@ public partial class CreateCertificate : ComponentBase
 
     [SupplyParameterFromQuery(Name = "ca")]
     public string CaSlug { get; set; }
+
+    [Inject]
+    public ILoadingTracker LoadingTracker { get; set; } = default!;
 
     [Inject]
     public ICertificateService CertificateService { get; set; }

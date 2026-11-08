@@ -4,9 +4,11 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using log4net;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MudBlazor.Services;
 using Notary.Configuration;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Security;
 using Notary.Service;
 using Notary.Web.Services;
@@ -70,6 +72,26 @@ if (config.OpenId != null)
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMudServices();
+// One tracker per Blazor circuit counts the service calls in flight for the loading overlay
+builder.Services.TryAddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(LoadingTrackerOptions.Default);
+builder.Services.AddScoped<LoadingTracker>();
+
+// UAT aid: on a fast machine nothing ever loads slowly enough to show the overlay. In Development only, setting
+// NOTARY_SIMULATED_LATENCY_MS (milliseconds) delays every tracked call; the "https (slow calls)" launch profile does so.
+var simulatedLatencyMs = builder.Environment.IsDevelopment()
+    && int.TryParse(builder.Configuration["NOTARY_SIMULATED_LATENCY_MS"], out var latency) && latency > 0
+    ? latency
+    : 0;
+if (simulatedLatencyMs > 0)
+{
+    builder.Services.AddScoped<ILoadingTracker>(sp => new SimulatedLatencyLoadingTracker(
+        sp.GetRequiredService<LoadingTracker>(), TimeSpan.FromMilliseconds(simulatedLatencyMs), sp.GetRequiredService<TimeProvider>()));
+}
+else
+{
+    builder.Services.AddScoped<ILoadingTracker>(sp => sp.GetRequiredService<LoadingTracker>());
+}
 // CHANGELOG.md is published beside the application
 builder.Services.AddSingleton(new ChangelogProvider(Path.Combine(AppContext.BaseDirectory, "CHANGELOG.md")));
 builder.Services.AddRazorPages();

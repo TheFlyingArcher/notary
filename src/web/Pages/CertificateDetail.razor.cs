@@ -7,6 +7,7 @@ using MudBlazor;
 
 using Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Web.Shared;
 using Notary.Web.ViewModels;
 
@@ -36,6 +37,12 @@ public partial class CertificateDetail : ComponentBase
         }
 
         IsLoading = true;
+        // One operation for the whole sequence of calls, so the overlay does not restart its delay between them
+        await LoadingTracker.RunAsync(LoadAsync);
+    }
+
+    private async Task LoadAsync()
+    {
         Certificate? c = null;
         AsymmetricKey? key = null;
         Revocation? rc = null;
@@ -229,7 +236,7 @@ public partial class CertificateDetail : ComponentBase
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var userName = authState.User?.Identity?.Name;
 
-        var result = await RevokeSvc.ReinstateCertificateAsync(Slug, userName);
+        var result = await LoadingTracker.RunAsync(() => RevokeSvc.ReinstateCertificateAsync(Slug, userName));
         if (!result.IsSuccess)
         {
             Snackbar.Add(result.Error, Severity.Error);
@@ -300,6 +307,9 @@ public partial class CertificateDetail : ComponentBase
 
         return ca != null && CaDetailInfo.IsRoot(ca) ? CaPurposeIcons.Root : CaPurposeIcons.ForSubordinate(ca?.Purpose);
     }
+
+    [Inject]
+    public ILoadingTracker LoadingTracker { get; set; } = default!;
 
     [Inject]
     public AuthenticationStateProvider AuthProvider { get; set; }

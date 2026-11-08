@@ -4,6 +4,7 @@ using MudBlazor;
 using Notary;
 using Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Web.ViewModels;
 using System.Text.RegularExpressions;
 
@@ -13,6 +14,7 @@ public partial class RevokeCertificateDialog : ComponentBase
 {
     protected MudForm _form;
     private bool _isValid = false;
+    private bool _busy = false;
     private string[] _errors = { };
     public RevokeCertificateDialog()
     {
@@ -35,7 +37,23 @@ public partial class RevokeCertificateDialog : ComponentBase
 
     protected async Task OnOk()
     {
-        var result = await RevocationService.RevokeCertificateAsync(Slug, Model.RevocationReason, Model.UserRevoking);
+        // The dialog sits outside the layout the overlay disables, so it guards itself against a second click
+        if (_busy)
+        {
+            return;
+        }
+
+        _busy = true;
+        Result<int> result;
+        try
+        {
+            result = await LoadingTracker.RunAsync(() => RevocationService.RevokeCertificateAsync(Slug, Model.RevocationReason, Model.UserRevoking));
+        }
+        finally
+        {
+            _busy = false;
+        }
+
         if (result.IsSuccess)
         {
             Snackbar.Add(
@@ -60,6 +78,9 @@ public partial class RevokeCertificateDialog : ComponentBase
     [Parameter] public bool IsCaCertificate { get; set; }
 
     protected RevokeCertificateDialogViewModel Model { get; } = new();
+
+    [Inject]
+    public ILoadingTracker LoadingTracker { get; set; } = default!;
 
     [Inject]
     public ICertificateRevokeService RevocationService { get; set; }
