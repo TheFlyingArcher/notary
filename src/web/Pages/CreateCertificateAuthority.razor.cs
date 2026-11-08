@@ -1,5 +1,6 @@
 using C = Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Profiles;
 using Notary.Security;
 using Notary.Validity;
@@ -32,7 +33,7 @@ namespace Notary.Web.Pages
                     IsLoading = true;
                     await Task.Run(async () =>
                     {
-                        ViewModel.SelectedCa = await CertificateAuthorityService.GetAsync(c);
+                        ViewModel.SelectedCa = await LoadingTracker.RunAsync(() => CertificateAuthorityService.GetAsync(c));
                     });
                     IsLoading = false;
 
@@ -73,7 +74,7 @@ namespace Notary.Web.Pages
             IsLoading = true;
             await Task.Run(async () =>
             {
-                ViewModel.CertificateAuthorities = await CertificateAuthorityService.GetAllAsync();
+                ViewModel.CertificateAuthorities = await LoadingTracker.RunAsync(() => CertificateAuthorityService.GetAllAsync());
             });
             IsLoading = false;
 
@@ -146,7 +147,7 @@ namespace Notary.Web.Pages
             };
 
             IsLoading = true;
-            var result = await Task.Run(async () => await CertificateAuthorityService.CreateAsync(ca, null));
+            var result = await LoadingTracker.RunAsync(() => Task.Run(async () => await CertificateAuthorityService.CreateAsync(ca, null)));
             IsLoading = false;
 
             if (!result.IsSuccess)
@@ -164,7 +165,7 @@ namespace Notary.Web.Pages
                 return;
 
             ViewModel.ParentCaSlug = slug;
-            ViewModel.SelectedCa = slug == string.Empty ? null : await CertificateAuthorityService.GetAsync(slug);
+            ViewModel.SelectedCa = slug == string.Empty ? null : await LoadingTracker.RunAsync(() => CertificateAuthorityService.GetAsync(slug));
         }
 
         // The chosen parent's key, which the new CA's key must be at least as strong as; null for a root, which has no issuer
@@ -373,6 +374,9 @@ namespace Notary.Web.Pages
         private bool IsIntermediateMode => !Root && !string.IsNullOrEmpty(Parent);
 
         private string PageTitle => IsRootMode ? "Create Root CA" : IsIntermediateMode ? "Create Intermediate CA" : "Create Certificate Authority";
+
+        [Inject]
+        public ILoadingTracker LoadingTracker { get; set; } = default!;
 
         [Inject]
         public ICrlBaseUrlProvider CrlBaseUrlProvider { get; set; }

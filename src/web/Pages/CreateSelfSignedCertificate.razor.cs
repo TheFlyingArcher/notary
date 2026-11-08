@@ -4,6 +4,7 @@ using MudBlazor;
 using Notary;
 using C = Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Validity;
 using Notary.Web.ViewModels;
 using Notary.Web.Shared;
@@ -78,7 +79,7 @@ public partial class CreateSelfSignedCertificate : ComponentBase
             request.Curve = ViewModel.Curve;
 
         _isLoading = true;
-        var result = await Task.Run(async () => await CertificateService.IssueCertificateAsync(request));
+        var result = await LoadingTracker.RunAsync(() => Task.Run(async () => await CertificateService.IssueCertificateAsync(request)));
         _isLoading = false;
 
         if (!result.IsSuccess)
@@ -104,6 +105,9 @@ public partial class CreateSelfSignedCertificate : ComponentBase
 
         ViewModel.SelectedPeriod = (allowed.FirstOrDefault(o => o.IsRecommended) ?? allowed.LastOrDefault())?.Period;
     }
+
+    [Inject]
+    public ILoadingTracker LoadingTracker { get; set; } = default!;
 
     [Inject]
     public ICertificateService CertificateService { get; set; }

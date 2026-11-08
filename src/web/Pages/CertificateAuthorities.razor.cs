@@ -6,6 +6,7 @@ using MudBlazor;
 using Notary;
 using Notary.Contract;
 using Notary.Interface.Service;
+using Notary.Loading;
 using Notary.Profiles;
 using Notary.Web.Shared;
 using Notary.Web.ViewModels;
@@ -22,7 +23,7 @@ public partial class CertificateAuthorities : ComponentBase
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
-        CaList = await CaService.GetAllAsync();
+        CaList = await LoadingTracker.RunAsync(() => CaService.GetAllAsync());
         CaRows = CaHierarchy.Flatten(CaList);
         _isLoading = false;
         await base.OnInitializedAsync();
@@ -50,6 +51,9 @@ public partial class CertificateAuthorities : ComponentBase
 
     private static bool CanAddIntermediate(CertificateAuthority ca) =>
         CaProfileCatalog.CheckCanIssueCas(ca).IsSuccess;
+
+    [Inject]
+    public ILoadingTracker LoadingTracker { get; set; } = default!;
 
     [Inject]
     public IJSRuntime JS { get; set; }

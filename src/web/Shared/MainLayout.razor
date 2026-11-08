@@ -10,7 +10,7 @@
 <MudLayout>
     <AuthorizeView>
         <Authorized>
-            <MudAppBar Fixed="true">
+            <MudAppBar Fixed="true" inert="@_loading">
                 <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
                 @if (_darkMode)
                 {
@@ -23,14 +23,15 @@
                 <MudSpacer />
                 <LoginDisplay />
             </MudAppBar>
-            <MudDrawer @bind-Open="@_drawerOpen">
+            <MudDrawer @bind-Open="@_drawerOpen" inert="@_loading">
                 <NavMenu />
             </MudDrawer>
-            <MudMainContent>
+            <MudMainContent inert="@_loading" aria-busy="@(_loading ? "true" : "false")">
                 <MudContainer MaxWidth="MaxWidth.Large">
                     @Body
                 </MudContainer>
             </MudMainContent>
+            <LoadingOverlay Visible="_loading" />
         </Authorized>
         <NotAuthorized>
             @if (context != null && context.User.Identity != null && context.User.Identity.IsAuthenticated == false)

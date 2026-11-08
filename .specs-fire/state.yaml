@@ -803,6 +803,47 @@ intents:
         run_id: run-notary-004
         completed_at: 2026-11-02T02:30:35.211Z
     completed_at: 2026-11-02T02:30:35.211Z
+  - id: loading-overlay
+    title: Display loading overlay while data is being retrieved
+    status: completed
+    work_items:
+      - id: loading-tracker-service
+        title: Loading tracker service
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on: []
+        run_id: run-specsmd-fire-planner-6274df-001
+        completed_at: 2026-11-08T02:20:10.726Z
+      - id: loading-overlay-component
+        title: Loading overlay in the layout
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - loading-tracker-service
+        run_id: run-specsmd-fire-planner-6274df-002
+        completed_at: 2026-11-08T17:46:57.891Z
+      - id: wrap-service-calls
+        title: Wrap page and dialog service calls
+        status: completed
+        complexity: medium
+        mode: confirm
+        depends_on:
+          - loading-tracker-service
+          - loading-overlay-component
+        run_id: run-specsmd-fire-planner-6274df-003
+        completed_at: 2026-11-08T17:59:26.112Z
+      - id: loading-overlay-docs-uat
+        title: Loading overlay docs and UAT checklist
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on:
+          - wrap-service-calls
+        run_id: run-specsmd-fire-planner-6274df-004
+        completed_at: 2026-11-08T18:12:24.174Z
+    completed_at: 2026-11-08T18:12:24.195Z
 runs:
   active: []
   completed:
@@ -1308,3 +1349,35 @@ runs:
           mode: autopilot
       started: 2026-11-02T02:22:39.305Z
       completed: 2026-11-02T02:30:35.211Z
+    - id: run-specsmd-fire-planner-6274df-001
+      scope: single
+      work_items:
+        - id: loading-tracker-service
+          intent: loading-overlay
+          mode: confirm
+      started: 2026-11-08T02:10:54.764Z
+      completed: 2026-11-08T02:20:10.726Z
+    - id: run-specsmd-fire-planner-6274df-002
+      scope: single
+      work_items:
+        - id: loading-overlay-component
+          intent: loading-overlay
+          mode: confirm
+      started: 2026-11-08T02:23:01.572Z
+      completed: 2026-11-08T17:46:57.891Z
+    - id: run-specsmd-fire-planner-6274df-003
+      scope: single
+      work_items:
+        - id: wrap-service-calls
+          intent: loading-overlay
+          mode: confirm
+      started: 2026-11-08T17:48:42.383Z
+      completed: 2026-11-08T17:59:26.112Z
+    - id: run-specsmd-fire-planner-6274df-004
+      scope: single
+      work_items:
+        - id: loading-overlay-docs-uat
+          intent: loading-overlay
+          mode: autopilot
+      started: 2026-11-08T18:11:45.992Z
+      completed: 2026-11-08T18:12:24.174Z

@@ -12,6 +12,19 @@
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22201"
       }
     },
+    "https (slow calls)": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:17244;http://localhost:15176",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DOTNET_ENVIRONMENT": "Development",
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21168",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22201",
+        "NOTARY_SIMULATED_LATENCY_MS": "1500"
+      }
+    },
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,
