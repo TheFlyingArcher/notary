@@ -846,7 +846,7 @@ intents:
     completed_at: 2026-11-08T18:12:24.195Z
   - id: upgrade-automapper-security
     title: Upgrade AutoMapper to fix Dependabot alert
-    status: in_progress
+    status: completed
     work_items:
       - id: bump-automapper
         title: Bump AutoMapper to 16.3.0
@@ -856,6 +856,7 @@ intents:
         depends_on: []
         run_id: run-dependabot-security-alert-95cd80-001
         completed_at: 2026-11-14T16:40:12.745Z
+    completed_at: 2026-11-14T16:40:12.768Z
 runs:
   active: []
   completed:
