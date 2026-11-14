@@ -844,6 +844,18 @@ intents:
         run_id: run-specsmd-fire-planner-6274df-004
         completed_at: 2026-11-08T18:12:24.174Z
     completed_at: 2026-11-08T18:12:24.195Z
+  - id: upgrade-automapper-security
+    title: Upgrade AutoMapper to fix Dependabot alert
+    status: in_progress
+    work_items:
+      - id: bump-automapper
+        title: Bump AutoMapper to 16.3.0
+        status: completed
+        complexity: low
+        mode: autopilot
+        depends_on: []
+        run_id: run-dependabot-security-alert-95cd80-001
+        completed_at: 2026-11-14T16:40:12.745Z
 runs:
   active: []
   completed:
@@ -1381,3 +1393,11 @@ runs:
           mode: autopilot
       started: 2026-11-08T18:11:45.992Z
       completed: 2026-11-08T18:12:24.174Z
+    - id: run-dependabot-security-alert-95cd80-001
+      scope: single
+      work_items:
+        - id: bump-automapper
+          intent: upgrade-automapper-security
+          mode: autopilot
+      started: 2026-11-14T16:37:47.158Z
+      completed: 2026-11-14T16:40:12.745Z
